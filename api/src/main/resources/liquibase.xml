@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ 
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog/1.9"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog/1.9
+                  http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd">
+ 
+    <!--
+    	See http://wiki.openmrs.org/display/docs/Module+liquibase+File for 
+    	documentation on this file.
+    
+        See http://www.liquibase.org/manual/home#available_database_refactorings
+        for a list of supported elements and attributes
+    -->
+
+    <changeSet id="cohortprograms-2021-03-21-21:03" author="Willa Mhawila">
+        <preConditions onError="MARK_RAN">
+            <not><tableExists tableName="cohortprograms_program_cohort"/></not>
+        </preConditions>
+        <comment>
+            Creating cohortprograms_program_cohort table
+        </comment>
+        <createTable tableName="cohortprograms_program_cohort">
+            <column name="program_cohort_id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="program_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="cohort_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="cohortprograms-2021-03-21-21:10" author="Willa">
+        <preConditions onFail="MARK_RAN">
+            <not><foreignKeyConstraintExists foreignKeyName="cohortprograms_program_cohort_program_fk"/></not>
+        </preConditions>
+        <comment>
+            Adding foreign key cohortprograms_program_cohort_program_fk
+        </comment>
+        <addForeignKeyConstraint baseTableName="cohortprograms_program_cohort"
+                                 baseColumnNames="program_id"
+                                 constraintName="cohortprograms_program_cohort_program_fk"
+                                 referencedTableName="program" referencedColumnNames="program_id"/>
+    </changeSet>
+
+    <changeSet id="cohortprograms-2021-03-21-21:13" author="Willa">
+        <preConditions onFail="MARK_RAN">
+            <not><foreignKeyConstraintExists foreignKeyName="cohortprograms_program_cohort_cohort_fk"/></not>
+        </preConditions>
+        <comment>
+            Adding foreign key cohortprograms_program_cohort_cohort_fk
+        </comment>
+        <addForeignKeyConstraint baseTableName="cohortprograms_program_cohort"
+                                 baseColumnNames="cohort_id"
+                                 constraintName="cohortprograms_program_cohort_cohort_fk"
+                                 referencedTableName="cohort" referencedColumnNames="cohort_id"/>
+    </changeSet>
+</databaseChangeLog>
