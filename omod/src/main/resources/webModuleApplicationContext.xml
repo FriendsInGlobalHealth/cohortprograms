@@ -20,10 +20,36 @@
   		    http://www.springframework.org/schema/util
   		    http://www.springframework.org/schema/util/spring-util-3.0.xsd http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd">
 
-	<context:component-scan base-package="org.openmrs.module.cohortprograms.web.controller" />
+	<context:component-scan base-package="org.openmrs.module.cohortprograms.web" />
+
+	<bean id="programModelValidator" class="org.openmrs.module.cohortprograms.web.validator.ProgramModelValidator" />
+
+	<bean id="cohortProgramProgramForm" class="org.openmrs.module.cohortprograms.web.controller.CohortProgramProgramFormController">
+		<property name="cpService"><ref bean="cohortprograms.CohortProgramsService"/> </property>
+		<property name="commandName"><value>programModel</value></property>
+		<property name="validator">
+			<ref bean="programModelValidator" />
+		</property>
+		<property name="formView"><value>/module/cohortprograms/admin/programs/programForm</value></property>
+		<property name="successView"><value>program.list</value></property>
+	</bean>
 
 	<mvc:interceptors>
 		<bean id="addProgramPortletInterceptor" class="org.openmrs.module.cohortprograms.web.interceptor.CohortProgramsInterceptor"/>
 	</mvc:interceptors>
 
+	<bean id="cohortProgramsUrlMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+		<property name="interceptors">
+			<list>
+				<ref bean="localeChangeInterceptor" />
+				<ref bean="themeChangeInterceptor" />
+			</list>
+		</property>
+		<property name="order"><value>299</value></property>
+		<property name="mappings">
+			<props>
+				<prop key="module/cohortprograms/admin/programs/program.form">cohortProgramProgramForm</prop>
+			</props>
+		</property>
+	</bean>
 </beans>

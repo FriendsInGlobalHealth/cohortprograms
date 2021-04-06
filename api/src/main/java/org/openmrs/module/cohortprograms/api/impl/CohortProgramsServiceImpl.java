@@ -29,7 +29,7 @@ public class CohortProgramsServiceImpl extends BaseOpenmrsService implements Coh
 	
 	UserService userService;
 	
-	ProgramCohortDao dao;
+	protected ProgramCohortDao dao;
 	
 	/**
 	 * Injected in moduleApplicationContext.xml
@@ -85,5 +85,50 @@ public class CohortProgramsServiceImpl extends BaseOpenmrsService implements Coh
 			}
 		}
 		return mappedList;
+	}
+	
+	@Override
+	public void deleteProgramCohort(@NotNull final ProgramCohort programCohort) throws APIException {
+		dao.deleteProgramCohort(programCohort);
+	}
+	
+	@Override
+	public List<ProgramCohort> addCohortsToProgram(@NotNull final Program program, @NotNull final List<Cohort> cohorts)
+	        throws APIException {
+		List<ProgramCohort> addedProgramCohorts = new ArrayList<ProgramCohort>();
+		for (Cohort cohort : cohorts) {
+			if (!dao.isCohortAssociatedWithProgram(program, cohort)) {
+				ProgramCohort created = createProgramCohort(program, cohort);
+				addedProgramCohorts.add(created);
+			}
+		}
+		return addedProgramCohorts;
+	}
+	
+	@Override
+	public boolean removeCohortFromProgram(@NotNull final Program program, @NotNull final Cohort cohort) throws APIException {
+		ProgramCohort programCohort = dao.getProgramCohortByProgramAndCohort(program, cohort);
+		
+		if (programCohort != null) {
+			dao.deleteProgramCohort(programCohort);
+			return true;
+		}
+		return false;
+	}
+	
+	@Override
+	public boolean removeCohortsFromProgram(@NotNull final Program program, @NotNull final List<Cohort> cohorts)
+	        throws APIException {
+		boolean status = true;
+		for (Cohort cohort : cohorts) {
+			status = status && removeCohortFromProgram(program, cohort);
+		}
+		return status;
+	}
+	
+	@Override
+	public boolean isCohortAssociatedWithProgram(@NotNull final Program program, @NotNull final Cohort cohort) {
+		ProgramCohort result = dao.getProgramCohortByProgramAndCohort(program, cohort);
+		return result != null;
 	}
 }

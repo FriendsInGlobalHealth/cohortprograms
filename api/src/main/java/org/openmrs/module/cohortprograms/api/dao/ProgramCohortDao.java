@@ -1,5 +1,6 @@
 package org.openmrs.module.cohortprograms.api.dao;
 
+import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
 import org.openmrs.Cohort;
 import org.openmrs.Program;
@@ -9,6 +10,7 @@ import org.openmrs.module.cohortprograms.ProgramCohort;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
 /**
@@ -29,6 +31,12 @@ public class ProgramCohortDao {
 		        .add(Restrictions.eq("id", id)).uniqueResult();
 	}
 	
+	public ProgramCohort getProgramCohortByProgramAndCohort(@NotNull final Program program, @NotNull final Cohort cohort) {
+		Criteria criteria = getSession().createCriteria(ProgramCohort.class).add(
+		    Restrictions.and(Restrictions.eq("program", program), Restrictions.eq("cohort", cohort)));
+		return (ProgramCohort) criteria.uniqueResult();
+	}
+	
 	public List<ProgramCohort> getProgramCohortsByProgram(Program program) {
 		return (List) getSession().createCriteria(ProgramCohort.class).add(Restrictions.eq("program", program)).list();
 	}
@@ -44,5 +52,17 @@ public class ProgramCohortDao {
 	public ProgramCohort saveProgramCohort(ProgramCohort programCohort) {
 		getSession().saveOrUpdate(programCohort);
 		return programCohort;
+	}
+	
+	public void deleteProgramCohort(ProgramCohort programCohort) {
+		getSession().delete(programCohort);
+	}
+	
+	public boolean isCohortAssociatedWithProgram(Program program, Cohort cohort) {
+		Criteria criteria = getSession().createCriteria(ProgramCohort.class).add(
+		    Restrictions.and(Restrictions.eq("program", program), Restrictions.eq("cohort", cohort)));
+		ProgramCohort result = (ProgramCohort) criteria.uniqueResult();
+		
+		return result != null;
 	}
 }

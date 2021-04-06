@@ -131,11 +131,12 @@
 </script>
 
 <h2><openmrs:message code="Program.addEdit.title"/></h2>
-<spring:hasBindErrors name="program">
+<spring:hasBindErrors name="programModel">
     <openmrs:message htmlEscape="false" code="fix.error"/>
     <br />
 </spring:hasBindErrors>
 
+<spring:nestedPath path="programModel">
 <form method="post" id="theForm">
     <table>
         <tr>
@@ -239,7 +240,7 @@
             <td valign="top">
                 <table id="associatedCohortsDisplay">
                 </table>
-                <spring:bind path="associatedCohorts">
+                <spring:bind path="cohorts">
                     <c:choose>
                         <c:when test="${not empty cohorts}">
                             <select id="associatedCohortsDropdown" multiple="multiple" name="${status.expression}" onchange="associatedCohortsDropdownChanged(event)">
@@ -263,10 +264,11 @@
     <br />
     <input type="submit" value='<openmrs:message code="Program.save"/>' onClick="jQuery('#theForm').submit()" />
 </form>
+</spring:nestedPath>
 
 <script type="text/javascript">
     cleanupWorkflowsValue();
-    <c:forEach var="workflow" items="${program.allWorkflows}">
+    <c:forEach var="workflow" items="${programModel.program.allWorkflows}">
     <c:choose>
     <c:when test="${!workflow.retired}">
     idToNameMap[${workflow.concept.conceptId}] = '<openmrs:concept conceptId="${workflow.concept.conceptId}" nameVar="n" var="v" numericVar="nv"><c:out value="${n.name}"/></openmrs:concept>';

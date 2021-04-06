@@ -31,7 +31,13 @@ public interface CohortProgramsService extends OpenmrsService {
 	@Authorized(CohortProgramsConfig.MODULE_PRIVILEGE)
 	ProgramCohort createProgramCohort(Program program, Cohort cohort) throws APIException;
 	
+	@Transactional
+	@Authorized
 	ProgramCohort saveProgramCohort(ProgramCohort programCohort) throws APIException;
+	
+	@Transactional
+	@Authorized
+	void deleteProgramCohort(ProgramCohort programCohort) throws APIException;
 	
 	@Transactional
 	@Authorized
@@ -40,4 +46,18 @@ public interface CohortProgramsService extends OpenmrsService {
 	@Transactional
 	@Authorized
 	Map<Program, List<Cohort>> getCohortsForPrograms() throws APIException;
+	
+	@Transactional
+	@Authorized
+	List<ProgramCohort> addCohortsToProgram(Program program, List<Cohort> cohorts) throws APIException;
+	
+	@Transactional
+	@Authorized
+	boolean removeCohortFromProgram(Program program, Cohort cohort) throws APIException;
+	
+	@Transactional
+	@Authorized
+	boolean removeCohortsFromProgram(Program program, List<Cohort> cohorts) throws APIException;
+	
+	boolean isCohortAssociatedWithProgram(Program program, Cohort cohort);
 }
