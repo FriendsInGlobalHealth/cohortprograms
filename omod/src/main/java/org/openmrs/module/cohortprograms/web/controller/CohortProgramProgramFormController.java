@@ -9,11 +9,12 @@ import org.openmrs.api.ProgramWorkflowService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.cohortprograms.ProgramCohort;
 import org.openmrs.module.cohortprograms.api.CohortProgramsService;
-import org.openmrs.module.cohortprograms.web.ProgramModel;
+import org.openmrs.module.cohortprograms.web.CohortEditor;
+import org.openmrs.module.cohortprograms.web.ProgramDTO;
 import org.openmrs.propertyeditor.ConceptEditor;
 import org.openmrs.propertyeditor.WorkflowCollectionEditor;
 import org.openmrs.web.WebConstants;
-import org.openmrs.web.controller.program.ProgramFormController;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.ServletRequestDataBinder;
 import org.springframework.web.servlet.ModelAndView;
@@ -24,7 +25,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 4/1/21.
@@ -43,11 +45,11 @@ public class CohortProgramProgramFormController extends SimpleFormController {
 		super.initBinder(request, binder);
 		
 		// this depends on this form being a "session-form" (defined in openrms-servlet.xml)
-		ProgramModel programModel = (ProgramModel) binder.getTarget();
+		ProgramDTO programDTO = (ProgramDTO) binder.getTarget();
 		
 		binder.registerCustomEditor(Concept.class, new ConceptEditor());
-		binder.registerCustomEditor(java.util.Collection.class, "allWorkflows",
-		    new WorkflowCollectionEditor(programModel.getProgram()));
+		binder.registerCustomEditor(Cohort.class, new CohortEditor());
+		binder.registerCustomEditor(java.util.Collection.class, "allWorkflows", new WorkflowCollectionEditor(programDTO));
 	}
 	
 	/**
@@ -59,23 +61,23 @@ public class CohortProgramProgramFormController extends SimpleFormController {
 	protected Object formBackingObject(HttpServletRequest request) throws ServletException {
 		log.debug("called formBackingObject");
 		System.out.println("******++++++++++===== formBackingObject good ol sout at work here ========+++++++++*********");
-		ProgramModel programModel = new ProgramModel();
+		ProgramDTO progromDTO = new ProgramDTO();
 		
 		if (Context.isAuthenticated()) {
 			ProgramWorkflowService ps = Context.getProgramWorkflowService();
 			String programId = request.getParameter("programId");
 			if (programId != null) {
 				Program program = ps.getProgram(Integer.valueOf(programId));
-				programModel.setProgram(program);
-				programModel.setCohorts(cpService.getCohortsForProgram(program));
+				progromDTO = new ProgramDTO(program);
+				progromDTO.setCohorts(new HashSet<Cohort>(cpService.getCohortsForProgram(program)));
 			}
 		}
 		
-		if (programModel.getProgram() == null) {
-			programModel.setProgram(new Program());
+		if (progromDTO == null) {
+			progromDTO = new ProgramDTO(new Program());
 		}
 		
-		return programModel;
+		return progromDTO;
 	}
 	
 	/**
@@ -97,11 +99,14 @@ public class CohortProgramProgramFormController extends SimpleFormController {
 		String view = getFormView();
 		
 		if (Context.isAuthenticated()) {
-			ProgramModel p = (ProgramModel) obj;
+			ProgramDTO p = (ProgramDTO) obj;
 			try {
 				Program program = Context.getProgramWorkflowService().saveProgram(p.getProgram());
-				List<Cohort> existingCohorts = cpService.getCohortsForProgram(program);
-				List<Cohort> updatedCohortsList = p.getCohorts();
+				Set<Cohort> existingCohorts = new HashSet<Cohort>(cpService.getCohortsForProgram(program));
+				Set<Cohort> updatedCohortsList = p.getCohorts();
+				for (Cohort c : updatedCohortsList) {
+					System.out.println("Cohort no: " + c.getCohortId() + ", mzigo wote: " + c);
+				}
 				if (!updatedCohortsList.isEmpty()) {
 					for (Cohort cohort : updatedCohortsList) {
 						if (!cpService.isCohortAssociatedWithProgram(program, cohort)) {
@@ -117,12 +122,18 @@ public class CohortProgramProgramFormController extends SimpleFormController {
 						}
 					}
 				}
+				httpSession.setAttribute(WebConstants.OPENMRS_MSG_ATTR, "cohortprograms.program.saved");
 			}
 			catch (Exception e) {
 				log.warn("Error saving Program", e);
 				httpSession.setAttribute(WebConstants.OPENMRS_ERROR_ATTR, e.getMessage());
 			}
-			view = getSuccessView();
+			String contextPath = request.getContextPath();
+			if (StringUtils.hasText(contextPath)) {
+				view = contextPath + getSuccessView();
+			} else {
+				view = getSuccessView();
+			}
 		}
 		
 		return new ModelAndView(new RedirectView(view));

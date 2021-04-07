@@ -131,12 +131,11 @@
 </script>
 
 <h2><openmrs:message code="Program.addEdit.title"/></h2>
-<spring:hasBindErrors name="programModel">
+<spring:hasBindErrors name="program">
     <openmrs:message htmlEscape="false" code="fix.error"/>
     <br />
 </spring:hasBindErrors>
 
-<spring:nestedPath path="programModel">
 <form method="post" id="theForm">
     <table>
         <tr>
@@ -240,12 +239,12 @@
             <td valign="top">
                 <table id="associatedCohortsDisplay">
                 </table>
-                <spring:bind path="cohorts">
+                <spring:bind path="program.cohorts">
                     <c:choose>
                         <c:when test="${not empty cohorts}">
                             <select id="associatedCohortsDropdown" multiple="multiple" name="${status.expression}" onchange="associatedCohortsDropdownChanged(event)">
                                 <c:forEach items="${cohorts}" var="cohort">
-                                    <option value="${cohort.cohortId}">${cohort.name}</option>
+                                    <option value="${cohort.cohortId}" <c:if test="${fn:contains(program.cohorts, cohort)}">selected</c:if>>${cohort.name}</option>
                                 </c:forEach>
                             </select>
                         </c:when>
@@ -264,11 +263,10 @@
     <br />
     <input type="submit" value='<openmrs:message code="Program.save"/>' onClick="jQuery('#theForm').submit()" />
 </form>
-</spring:nestedPath>
 
 <script type="text/javascript">
     cleanupWorkflowsValue();
-    <c:forEach var="workflow" items="${programModel.program.allWorkflows}">
+    <c:forEach var="workflow" items="${program.allWorkflows}">
     <c:choose>
     <c:when test="${!workflow.retired}">
     idToNameMap[${workflow.concept.conceptId}] = '<openmrs:concept conceptId="${workflow.concept.conceptId}" nameVar="n" var="v" numericVar="nv"><c:out value="${n.name}"/></openmrs:concept>';

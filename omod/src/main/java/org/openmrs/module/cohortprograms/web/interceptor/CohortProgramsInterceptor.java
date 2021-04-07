@@ -74,9 +74,6 @@ public class CohortProgramsInterceptor extends HandlerInterceptorAdapter {
 	@Override
 	public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
 	        ModelAndView modelAndView) throws Exception {
-		//		LOG.warn("It is being called");
-		//		System.out.println("++++++++++++++++++++++++++++++++++Interceptor is being called");
-		//		System.out.println("View Name: " + (modelAndView != null ? modelAndView.getViewName() : "nothing"));
 		String currentViewName = modelAndView != null ? modelAndView.getViewName() : null;
 		
 		if (currentViewName != null) {
@@ -98,9 +95,6 @@ public class CohortProgramsInterceptor extends HandlerInterceptorAdapter {
 				} else {
 					modelAndView.setViewName("module/cohortprograms/admin/programs/programForm2x");
 				}
-				//				System.out.println("Final view name: " + modelAndView.getViewName());
-				//				System.out.println("Model: " + modelAndView.getModel());
-				//				System.out.println("ModelMap: " + modelAndView.getModelMap());
 			} else if (currentViewName.endsWith("portlets/patientPrograms")) {
 				// Allow programs for which the patient is a member.
 				
@@ -129,10 +123,7 @@ public class CohortProgramsInterceptor extends HandlerInterceptorAdapter {
 				} else {
 					modelAndView.setViewName("module/cohortprograms/portlets/patientPrograms2x");
 				}
-				//				System.out.println("Final view name: " + modelAndView.getViewName());
 			}
 		}
-		
-		//		System.out.println("-------------------------MWISHO------------------------------");
 	}
 }
