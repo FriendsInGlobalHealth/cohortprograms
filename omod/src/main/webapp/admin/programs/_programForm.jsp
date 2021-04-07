@@ -192,9 +192,6 @@
         <tr>
             <th valign="top"><openmrs:message code="cohortprograms.program.cohorts"/></th>
             <td valign="top">
-                <table id="associatedCohortsDisplay">
-                </table>
-
                 <c:choose>
                     <c:when test="${not empty cohorts}">
                         <c:forEach items="${cohorts}" var="cohort" varStatus="cohortStatus">
@@ -208,7 +205,6 @@
                         <span><openmrs:message code="cohortprograms.no.cohorts"/> </span>
                     </c:otherwise>
                 </c:choose>
-
             </td>
         </tr>
         <tr>
