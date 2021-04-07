@@ -23,11 +23,11 @@ public class ProgramCohort {
 	@Column(name = "program_cohort_id")
 	private Integer id;
 	
-	@OneToOne(orphanRemoval = true)
+	@OneToOne
 	@JoinColumn(name = "program_id", referencedColumnName = "program_id")
 	private Program program;
 	
-	@OneToOne(orphanRemoval = true)
+	@OneToOne
 	@JoinColumn(name = "cohort_id", referencedColumnName = "cohort_id")
 	private Cohort cohort;
 	

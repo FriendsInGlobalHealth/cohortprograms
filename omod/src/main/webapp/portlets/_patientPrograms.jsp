@@ -624,8 +624,13 @@
     </form>
 </div>
 
-<c:if test="${model.allowEdits == 'true' && fn:length(model.programs) > 0}">
-    <openmrs:hasPrivilege privilege="Edit Patient Programs">
-        <a href="#" id="addProgramLink"><openmrs:message code="Program.add"/></a>
-    </openmrs:hasPrivilege>
-</c:if>
+<c:choose>
+    <c:when test="${model.allowEdits == 'true' && fn:length(model.programs) > 0}">
+        <openmrs:hasPrivilege privilege="Edit Patient Programs">
+            <a href="#" id="addProgramLink"><openmrs:message code="Program.add"/></a>
+        </openmrs:hasPrivilege>
+    </c:when>
+    <c:otherwise>
+        <span style="font-size: small"><openmrs:message code="cohortprograms.program.no.programs.for.patient"/></span>
+    </c:otherwise>
+</c:choose>

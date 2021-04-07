@@ -78,7 +78,7 @@ public class CohortProgramsServiceImpl extends BaseOpenmrsService implements Coh
 			for (ProgramCohort programCohort : list) {
 				Program program = programCohort.getProgram();
 				if (!mappedList.containsKey(program)) {
-					mappedList.put(program, Arrays.asList(programCohort.getCohort()));
+					mappedList.put(program, new ArrayList<Cohort>(Arrays.asList(programCohort.getCohort())));
 				} else {
 					mappedList.get(program).add(programCohort.getCohort());
 				}

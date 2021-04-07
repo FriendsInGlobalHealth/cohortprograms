@@ -7,7 +7,6 @@ import org.openmrs.api.CohortService;
 import org.openmrs.api.context.Context;
 import org.springframework.util.StringUtils;
 
-import java.beans.PropertyEditor;
 import java.beans.PropertyEditorSupport;
 
 /**

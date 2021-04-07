@@ -60,7 +60,6 @@ public class CohortProgramProgramFormController extends SimpleFormController {
 	 */
 	protected Object formBackingObject(HttpServletRequest request) throws ServletException {
 		log.debug("called formBackingObject");
-		System.out.println("******++++++++++===== formBackingObject good ol sout at work here ========+++++++++*********");
 		ProgramDTO progromDTO = new ProgramDTO();
 		
 		if (Context.isAuthenticated()) {
@@ -69,7 +68,9 @@ public class CohortProgramProgramFormController extends SimpleFormController {
 			if (programId != null) {
 				Program program = ps.getProgram(Integer.valueOf(programId));
 				progromDTO = new ProgramDTO(program);
-				progromDTO.setCohorts(new HashSet<Cohort>(cpService.getCohortsForProgram(program)));
+				if (request.getMethod().equalsIgnoreCase("get")) {
+					progromDTO.setCohorts(new HashSet<Cohort>(cpService.getCohortsForProgram(program)));
+				}
 			}
 		}
 		
@@ -93,7 +94,6 @@ public class CohortProgramProgramFormController extends SimpleFormController {
 	protected ModelAndView onSubmit(HttpServletRequest request, HttpServletResponse response, Object obj,
 	        BindException errors) throws Exception {
 		log.debug("about to save " + obj);
-		System.out.println("Submitted obj: " + obj);
 		HttpSession httpSession = request.getSession();
 		
 		String view = getFormView();
@@ -104,9 +104,6 @@ public class CohortProgramProgramFormController extends SimpleFormController {
 				Program program = Context.getProgramWorkflowService().saveProgram(p.getProgram());
 				Set<Cohort> existingCohorts = new HashSet<Cohort>(cpService.getCohortsForProgram(program));
 				Set<Cohort> updatedCohortsList = p.getCohorts();
-				for (Cohort c : updatedCohortsList) {
-					System.out.println("Cohort no: " + c.getCohortId() + ", mzigo wote: " + c);
-				}
 				if (!updatedCohortsList.isEmpty()) {
 					for (Cohort cohort : updatedCohortsList) {
 						if (!cpService.isCohortAssociatedWithProgram(program, cohort)) {

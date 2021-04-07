@@ -7,7 +7,6 @@ import org.openmrs.Patient;
 import org.openmrs.Program;
 import org.openmrs.api.CohortService;
 import org.openmrs.module.cohortprograms.api.CohortProgramsService;
-import org.openmrs.module.cohortprograms.web.ProgramModel;
 import org.openmrs.util.OpenmrsConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -17,7 +16,7 @@ import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Enumeration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -42,23 +41,6 @@ public class CohortProgramsInterceptor extends HandlerInterceptorAdapter {
 	
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-		boolean p = request.getServletPath() != null ? request.getServletPath().contains("program") : (request
-		        .getRequestURI() != null ? request.getRequestURI().contains("program") : false);
-		
-		if (p) {
-			System.out.println("Handler class: " + handler.getClass().getName());
-			System.out.println("Request URI: " + request.getRequestURI());
-			System.out.println("Servlet Path: " + request.getServletPath());
-			System.out.println("Context Path: " + request.getContextPath());
-			System.out.println("Query String: " + request.getQueryString());
-			System.out.println("Attribute names: [");
-			System.out.println("Parameters: [");
-			Enumeration<String> params = request.getParameterNames();
-			while (params.hasMoreElements()) {
-				System.out.print(params.nextElement() + ", ");
-			}
-			System.out.println("]");
-		}
 		String servletPath = request.getServletPath();
 		
 		if (ORIGINAL_PROGRAM_SERVLET_PATH.equalsIgnoreCase(servletPath)) {
@@ -82,14 +64,6 @@ public class CohortProgramsInterceptor extends HandlerInterceptorAdapter {
 				List<Cohort> cohorts = cohortService.getAllCohorts(false);
 				modelAndView.getModelMap().addAttribute("cohorts", cohorts);
 				
-				// Get cohorts already associated with a program if it is an edit.
-				if (modelAndView.getModel().containsKey("programModel")) {
-					ProgramModel programModel = ((ProgramModel) modelAndView.getModel().get("programModel"));
-					
-					// Leave only those which are not yet associated with the program
-					cohorts.removeAll(programModel.getCohorts());
-				}
-				
 				if (OpenmrsConstants.OPENMRS_VERSION_SHORT.startsWith("1")) {
 					modelAndView.setViewName("module/cohortprograms/admin/programs/programForm1x");
 				} else {
@@ -99,8 +73,13 @@ public class CohortProgramsInterceptor extends HandlerInterceptorAdapter {
 				// Allow programs for which the patient is a member.
 				
 				// Get patient
-				Patient patient = (Patient) modelAndView.getModel().get("patient");
-				List<Program> programsList = (List<Program>) modelAndView.getModel().get("programs");
+				final Map<String, Object> MODEL = (Map<String, Object>) modelAndView.getModel().get("model");
+				Patient patient = (Patient) MODEL.get("patient");
+				List<Program> programsList = (List<Program>) MODEL.get("programs");
+				
+				if (programsList == null) {
+					programsList = new ArrayList<Program>();
+				}
 				
 				Map<Program, List<Cohort>> programListMap = cpService.getCohortsForPrograms();
 				for (Map.Entry<Program, List<Cohort>> entry : programListMap.entrySet()) {

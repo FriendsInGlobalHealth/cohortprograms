@@ -83,51 +83,6 @@
             function(id) { return '<a href="javascript:removeWorkflow(' + id + ')">[x]</a>';},
         ], {escapeHtml: false});
     }
-
-    function cleanUpAssociatedCohortsValue() {
-        var value = $j('#associatedCohortsValue').val();
-        if (value == '' || value == 'null') value = ':';
-        $j('#associatedCohortsValue').val(value);
-    }
-
-    function addAssociatedCohort(cohortId) {
-        $j('#associatedCohortsValue').val($j('#associatedCohortsValue').val() + ' ' + cohortId);
-        refreshAssociatedCohortsDisplay();
-        alert($j('#associatedCohortsDropdown').val());
-
-    }
-
-    function removeAssociatedCohort(cohortId) {
-        var value = $j('#associatedCohortsValue').val();
-        if (value == '' || value == 'null') value = ':';
-        var progId = value.substring(0, value.indexOf(":"));
-        value = value.substring(value.indexOf(":") + 1);
-        var values = helper(value);
-        var ret = progId + ':';
-        for (var i = 0; i < values.length; ++i) {
-            if (values[i] != conceptId) {
-                ret += values[i] + ' ';
-            }
-        }
-        $j('#associatedCohortsValue').val(ret);
-        refreshAssociatedCohortsDisplay();
-    }
-
-    function refreshAssociatedCohortsDisplay() {
-        var tableId = 'associatedCohortsDisplay';
-        var value = $j('#associatedCohortsDropdown').val();
-        value = value !== undefined && value !== null ? value.substring(value.indexOf(":") + 1) : '';
-        values = helper(value);
-        dwr.util.removeAllRows(tableId);
-        dwr.util.addRows(tableId, values, [
-            function(id) { return idToNameMap[id]; },
-            function(id) { return '<a href="javascript:removeAssociatedCohort(' + id + ')">[x]</a>';},
-        ], {escapeHtml: false});
-    }
-
-    function associatedCohortsDropdownChanged(event) {
-        console.log($j(event.target).val());
-    }
 </script>
 
 <h2><openmrs:message code="Program.addEdit.title"/></h2>
@@ -239,20 +194,21 @@
             <td valign="top">
                 <table id="associatedCohortsDisplay">
                 </table>
-                <spring:bind path="program.cohorts">
-                    <c:choose>
-                        <c:when test="${not empty cohorts}">
-                            <select id="associatedCohortsDropdown" multiple="multiple" name="${status.expression}" onchange="associatedCohortsDropdownChanged(event)">
-                                <c:forEach items="${cohorts}" var="cohort">
-                                    <option value="${cohort.cohortId}" <c:if test="${fn:contains(program.cohorts, cohort)}">selected</c:if>>${cohort.name}</option>
-                                </c:forEach>
-                            </select>
-                        </c:when>
-                        <c:otherwise>
-                            <span><openmrs:message code="cohortprograms.no.cohorts"/> </span>
-                        </c:otherwise>
-                    </c:choose>
-                </spring:bind>
+
+                <c:choose>
+                    <c:when test="${not empty cohorts}">
+                        <c:forEach items="${cohorts}" var="cohort" varStatus="cohortStatus">
+                            <spring:bind path="program.cohorts">
+                                <input type="checkbox" name="${status.expression}" id="cohort-${cohortStatus.index}" value="${cohort.cohortId}"  <c:if test="${fn:contains(program.cohorts, cohort)}">checked</c:if> />
+                                <label for="${'cohort-'}${cohortStatus.index}">${cohort.name}</label></br>
+                            </spring:bind>
+                        </c:forEach>
+                    </c:when>
+                    <c:otherwise>
+                        <span><openmrs:message code="cohortprograms.no.cohorts"/> </span>
+                    </c:otherwise>
+                </c:choose>
+
             </td>
         </tr>
         <tr>

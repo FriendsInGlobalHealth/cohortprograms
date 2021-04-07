@@ -10,7 +10,7 @@ import org.springframework.validation.Validator;
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 4/1/21.
  */
 @Handler(supports = ProgramDTO.class, order = 60)
-public class ProgramModelValidator implements Validator {
+public class ProgramDTOValidator implements Validator {
 	
 	private ProgramValidator programValidator = new ProgramValidator();
 	
