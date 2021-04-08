@@ -1,0 +1,12 @@
+<dataset>
+    <cohort cohort_id="1" name="Example Cohort" description="First cohort that is now voided" creator="1" date_created="2005-01-01 00:00:00.0" voided="true" voided_by="1" date_voided="2005-01-01 00:00:00.0" void_reason="This is voided" uuid="h9a9m0i6-15e6-467c-9d4b-mbi7teu9lf0f"/>
+    <cohort cohort_id="2" name="Example Cohort" description="Second cohort that has not been voided" creator="1" date_created="2005-01-01 00:00:00.0" voided="false"/>
+
+    <program program_id="1" concept_id="9" creator="1" date_created="2008-08-15 16:07:11.0" changed_by="1" date_changed="2008-08-15 17:04:50.0" retired="false" name="HIV Program" description="hiv program" uuid="da4a0391-ba62-4fad-ad66-1e3722d16380"/>
+    <program program_id="2" concept_id="10" creator="1" date_created="2008-08-15 16:07:34.0" retired="false" name="MDR program" description="MDR-TB program" uuid="71779c39-d289-4dfe-91b5-e7cfaa27c78b"/>
+    <program program_id="3" concept_id="11" creator="1" date_created="2008-08-15 16:08:51.0" changed_by="1" date_changed="2008-08-15 16:09:00.0" retired="true" name="Malaria program" description="Malaria program" uuid="f386c3d2-dd75-441f-a582-2237824edfb0"/>
+
+    <cohortprograms_program_cohort program_cohort_id="11" program_id="1" cohort_id="1"/>
+    <cohortprograms_program_cohort program_cohort_id="12" program_id="1" cohort_id="2"/>
+    <cohortprograms_program_cohort program_cohort_id="13" program_id="2" cohort_id="2"/>
+</dataset>

@@ -37,11 +37,11 @@ public class ProgramCohortDao {
 		return (ProgramCohort) criteria.uniqueResult();
 	}
 	
-	public List<ProgramCohort> getProgramCohortsByProgram(Program program) {
+	public List<ProgramCohort> getProgramCohortsByProgram(@NotNull final Program program) {
 		return (List) getSession().createCriteria(ProgramCohort.class).add(Restrictions.eq("program", program)).list();
 	}
 	
-	public List<ProgramCohort> getProgramCohortsByCohort(final Cohort cohort) {
+	public List<ProgramCohort> getProgramCohortsByCohort(@NotNull final Cohort cohort) {
 		return (List) getSession().createCriteria(ProgramCohort.class).add(Restrictions.eq("cohort", cohort)).list();
 	}
 	
