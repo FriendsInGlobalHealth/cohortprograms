@@ -5,6 +5,7 @@ import org.apache.commons.logging.LogFactory;
 import org.openmrs.Cohort;
 import org.openmrs.Concept;
 import org.openmrs.Program;
+import org.openmrs.ProgramWorkflow;
 import org.openmrs.api.ProgramWorkflowService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.cohortprograms.ProgramCohort;
@@ -75,7 +76,7 @@ public class CohortProgramProgramFormController extends SimpleFormController {
 		}
 		
 		if (progromDTO == null) {
-			progromDTO = new ProgramDTO(new Program());
+			progromDTO = new ProgramDTO();
 		}
 		
 		return progromDTO;

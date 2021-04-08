@@ -2,6 +2,7 @@ package org.openmrs.module.cohortprograms.web;
 
 import org.openmrs.Cohort;
 import org.openmrs.Program;
+import org.openmrs.ProgramWorkflow;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -38,6 +39,7 @@ public class ProgramDTO extends Program {
 		this.setDescription(program.getDescription());
 		this.setConcept(program.getConcept());
 		this.setAllWorkflows(program.getAllWorkflows());
+		this.setOutcomesConcept(program.getOutcomesConcept());
 		this.setDateCreated(program.getDateCreated());
 		this.setCreator(program.getCreator());
 		this.setChangedBy(program.getChangedBy());
@@ -56,12 +58,17 @@ public class ProgramDTO extends Program {
 	
 	public Program getProgram() {
 		if (program == null) {
-			program = new Program(this.getProgramId());
+			if (this.getProgramId() != null) {
+				program = new Program(this.getProgramId());
+			} else {
+				program = new Program();
+			}
 		}
 		program.setName(this.getName());
 		program.setDescription(this.getDescription());
 		program.setConcept(this.getConcept());
 		program.setAllWorkflows(this.getAllWorkflows());
+		program.setOutcomesConcept(this.getOutcomesConcept());
 		program.setDateCreated(this.getDateCreated());
 		program.setCreator(this.getCreator());
 		program.setChangedBy(this.getChangedBy());
@@ -70,6 +77,12 @@ public class ProgramDTO extends Program {
 		program.setRetireReason(this.getRetireReason());
 		program.setDateRetired(this.getDateRetired());
 		program.setUuid(this.getUuid());
+		
+		if (this.getAllWorkflows() != null && !this.getAllWorkflows().isEmpty()) {
+			for (ProgramWorkflow workflow : program.getAllWorkflows()) {
+				workflow.setProgram(program);
+			}
+		}
 		return program;
 	}
 	

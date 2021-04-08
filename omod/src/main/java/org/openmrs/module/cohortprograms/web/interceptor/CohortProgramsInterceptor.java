@@ -11,6 +11,7 @@ import org.openmrs.util.OpenmrsConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
@@ -45,8 +46,11 @@ public class CohortProgramsInterceptor extends HandlerInterceptorAdapter {
 		
 		if (ORIGINAL_PROGRAM_SERVLET_PATH.equalsIgnoreCase(servletPath)) {
 			LOG.info("Redirecting user to custom cohortPrograms program form: " + REDIRECT_PROGRAM_SERVLET_PATH);
-			String redirectLocation = request.getContextPath().concat(REDIRECT_PROGRAM_SERVLET_PATH).concat("?")
-			        .concat(request.getQueryString());
+			String redirectLocation = request.getContextPath().concat(REDIRECT_PROGRAM_SERVLET_PATH);
+			final String QUERY_STRING = request.getQueryString();
+			if (StringUtils.hasText(QUERY_STRING)) {
+				redirectLocation = redirectLocation.concat("?").concat(QUERY_STRING);
+			}
 			response.sendRedirect(redirectLocation);
 			return false;
 		}
