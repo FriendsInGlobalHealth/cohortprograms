@@ -27,8 +27,6 @@ import java.util.Map;
 
 public class CohortProgramsServiceImpl extends BaseOpenmrsService implements CohortProgramsService {
 	
-	UserService userService;
-	
 	protected ProgramCohortDao dao;
 	
 	/**
@@ -36,13 +34,6 @@ public class CohortProgramsServiceImpl extends BaseOpenmrsService implements Coh
 	 */
 	public void setDao(ProgramCohortDao dao) {
 		this.dao = dao;
-	}
-	
-	/**
-	 * Injected in moduleApplicationContext.xml
-	 */
-	public void setUserService(UserService userService) {
-		this.userService = userService;
 	}
 	
 	@Override
@@ -53,7 +44,7 @@ public class CohortProgramsServiceImpl extends BaseOpenmrsService implements Coh
 	}
 	
 	@Override
-	public ProgramCohort saveProgramCohort(ProgramCohort programCohort) throws APIException {
+	public ProgramCohort saveProgramCohort(@NotNull final ProgramCohort programCohort) throws APIException {
 		return dao.saveProgramCohort(programCohort);
 	}
 	
@@ -128,7 +119,6 @@ public class CohortProgramsServiceImpl extends BaseOpenmrsService implements Coh
 	
 	@Override
 	public boolean isCohortAssociatedWithProgram(@NotNull final Program program, @NotNull final Cohort cohort) {
-		ProgramCohort result = dao.getProgramCohortByProgramAndCohort(program, cohort);
-		return result != null;
+		return dao.isCohortAssociatedWithProgram(program, cohort);
 	}
 }
