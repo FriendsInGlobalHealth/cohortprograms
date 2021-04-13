@@ -22,6 +22,6 @@ public class ProgramDTOValidator implements Validator {
 	@Override
 	public void validate(Object target, Errors errors) {
 		ProgramDTO programDTO = (ProgramDTO) target;
-		programValidator.validate(programDTO, errors);
+		programValidator.validate(programDTO.getProgram(), errors);
 	}
 }

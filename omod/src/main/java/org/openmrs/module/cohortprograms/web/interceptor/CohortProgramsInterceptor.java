@@ -4,10 +4,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.Cohort;
 import org.openmrs.Patient;
+import org.openmrs.PatientProgram;
 import org.openmrs.Program;
 import org.openmrs.api.CohortService;
+import org.openmrs.api.ProgramWorkflowService;
 import org.openmrs.module.cohortprograms.api.CohortProgramsService;
-import org.openmrs.util.OpenmrsConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -20,6 +21,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import static org.openmrs.util.OpenmrsConstants.OPENMRS_VERSION_SHORT;
 
 /**
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 3/29/21.
@@ -35,10 +38,13 @@ public class CohortProgramsInterceptor extends HandlerInterceptorAdapter {
 	
 	@Autowired
 	@Qualifier("cohortprograms.CohortProgramsService")
-	private CohortProgramsService cpService;
+	CohortProgramsService cpService;
 	
 	@Autowired
-	private CohortService cohortService;
+	CohortService cohortService;
+	
+	@Autowired
+	ProgramWorkflowService programWorkflowService;
 	
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -68,7 +74,7 @@ public class CohortProgramsInterceptor extends HandlerInterceptorAdapter {
 				List<Cohort> cohorts = cohortService.getAllCohorts(false);
 				modelAndView.getModelMap().addAttribute("cohorts", cohorts);
 				
-				if (OpenmrsConstants.OPENMRS_VERSION_SHORT.startsWith("1")) {
+				if (OPENMRS_VERSION_SHORT.startsWith("1")) {
 					modelAndView.setViewName("module/cohortprograms/admin/programs/programForm1x");
 				} else {
 					modelAndView.setViewName("module/cohortprograms/admin/programs/programForm2x");
@@ -81,6 +87,9 @@ public class CohortProgramsInterceptor extends HandlerInterceptorAdapter {
 				Patient patient = (Patient) MODEL.get("patient");
 				List<Program> programsList = (List<Program>) MODEL.get("programs");
 				
+				// Get patient programs (already enrolled in)
+				List<PatientProgram> patientPrograms = programWorkflowService.getPatientPrograms(patient, null, null, null,
+				    null, null, true);
 				if (programsList == null) {
 					programsList = new ArrayList<Program>();
 				}
@@ -93,7 +102,7 @@ public class CohortProgramsInterceptor extends HandlerInterceptorAdapter {
 					}
 					
 					for (Cohort cohort : entry.getValue()) {
-						if (cohort.contains(patient)) {
+						if (cohort.contains(patient) || isPatientEnrolled(patientPrograms, patient, program)) {
 							programsList.add(program);
 							break;
 						}
@@ -101,12 +110,28 @@ public class CohortProgramsInterceptor extends HandlerInterceptorAdapter {
 				}
 				
 				// Get OpenMRS Version
-				if (OpenmrsConstants.OPENMRS_VERSION_SHORT.startsWith("1")) {
-					modelAndView.setViewName("module/cohortprograms/portlets/patientPrograms1x");
-				} else {
+				int firstDotIndex = OPENMRS_VERSION_SHORT.indexOf(".");
+				int lastDotIndex = OPENMRS_VERSION_SHORT.indexOf(".", firstDotIndex + 1);
+				String majorMinor = OPENMRS_VERSION_SHORT.substring(0, lastDotIndex);
+				float floatizedVersion = Float.parseFloat(majorMinor);
+				if (floatizedVersion >= 2.2f) {
 					modelAndView.setViewName("module/cohortprograms/portlets/patientPrograms2x");
+				} else {
+					modelAndView.setViewName("module/cohortprograms/portlets/patientPrograms1x");
 				}
 			}
 		}
+	}
+	
+	private static boolean isPatientEnrolled(final List<PatientProgram> patientPrograms, Patient patient,
+	        final Program program) {
+		assert patientPrograms != null && patient != null && program != null;
+		for (PatientProgram patientProgram : patientPrograms) {
+			if (program.equals(patientProgram.getProgram()) && patient.equals(patientProgram.getPatient())
+			        && !patientProgram.getVoided()) {
+				return true;
+			}
+		}
+		return false;
 	}
 }
