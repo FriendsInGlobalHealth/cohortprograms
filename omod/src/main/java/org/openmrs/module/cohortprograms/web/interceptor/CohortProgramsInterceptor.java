@@ -9,18 +9,24 @@ import org.openmrs.Program;
 import org.openmrs.api.CohortService;
 import org.openmrs.api.ProgramWorkflowService;
 import org.openmrs.module.cohortprograms.api.CohortProgramsService;
+import org.openmrs.util.OpenmrsClassLoader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+import sun.reflect.Reflection;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import static org.openmrs.util.OpenmrsConstants.OPENMRS_VERSION_SHORT;
 
@@ -35,6 +41,15 @@ public class CohortProgramsInterceptor extends HandlerInterceptorAdapter {
 	private final static String ORIGINAL_PROGRAM_SERVLET_PATH = "/admin/programs/program.form";
 	
 	private final static String REDIRECT_PROGRAM_SERVLET_PATH = "/module/cohortprograms/admin/programs/program.form";
+	
+	private static float floatizedVersion;
+	
+	static {
+		int firstDotIndex = OPENMRS_VERSION_SHORT.indexOf(".");
+		int lastDotIndex = OPENMRS_VERSION_SHORT.indexOf(".", firstDotIndex + 1);
+		String majorMinor = OPENMRS_VERSION_SHORT.substring(0, lastDotIndex);
+		floatizedVersion = Float.parseFloat(majorMinor);
+	}
 	
 	@Autowired
 	@Qualifier("cohortprograms.CohortProgramsService")
@@ -102,7 +117,7 @@ public class CohortProgramsInterceptor extends HandlerInterceptorAdapter {
 					}
 					
 					for (Cohort cohort : entry.getValue()) {
-						if (cohort.contains(patient) || isPatientEnrolled(patientPrograms, patient, program)) {
+						if (cohort.contains(patient.getPatientId()) || isPatientEnrolled(patientPrograms, patient, program)) {
 							programsList.add(program);
 							break;
 						}
@@ -110,10 +125,6 @@ public class CohortProgramsInterceptor extends HandlerInterceptorAdapter {
 				}
 				
 				// Get OpenMRS Version
-				int firstDotIndex = OPENMRS_VERSION_SHORT.indexOf(".");
-				int lastDotIndex = OPENMRS_VERSION_SHORT.indexOf(".", firstDotIndex + 1);
-				String majorMinor = OPENMRS_VERSION_SHORT.substring(0, lastDotIndex);
-				float floatizedVersion = Float.parseFloat(majorMinor);
 				if (floatizedVersion >= 2.2f) {
 					modelAndView.setViewName("module/cohortprograms/portlets/patientPrograms2x");
 				} else {
