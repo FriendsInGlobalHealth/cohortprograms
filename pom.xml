@@ -9,7 +9,7 @@
 
 	<groupId>org.openmrs.module</groupId>
 	<artifactId>cohortprograms</artifactId>
-	<version>1.0.0-alpha</version>
+	<version>1.0.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>Cohort Programs</name>
 	<description>Cohort Based Programs</description>
