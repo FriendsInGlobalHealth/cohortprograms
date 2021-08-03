@@ -1,4 +1,4 @@
-package org.openmrs.module.cohortprograms.web;
+package org.openmrs.module.esaudefeatures.web;
 
 import org.openmrs.Cohort;
 import org.openmrs.Program;
@@ -8,7 +8,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * @uthor Willa Mhawila<a.mhawila@gmail.com> on 4/6/21.
+ * @uthor Willa Mhawila<mmhawila@juutech.co.tz> on 4/6/21.
  */
 public class ProgramDTO extends Program {
 	

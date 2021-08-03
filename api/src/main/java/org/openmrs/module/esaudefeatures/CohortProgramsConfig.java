@@ -7,14 +7,14 @@
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
  */
-package org.openmrs.module.cohortprograms;
+package org.openmrs.module.esaudefeatures;
 
 import org.springframework.stereotype.Component;
 
 /**
  * Contains module's config.
  */
-@Component("cohortprograms.CohortProgramsConfig")
+@Component("esaudefeatures.cohortProgramsConfig")
 public class CohortProgramsConfig {
 	
 	public final static String MODULE_PRIVILEGE = "Cohort Programs Privilege";

@@ -8,18 +8,18 @@
     </parent>
 
 	<groupId>org.openmrs.module</groupId>
-	<artifactId>cohortprograms</artifactId>
+	<artifactId>esaudefeatures</artifactId>
 	<version>1.0.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
-	<name>Cohort Programs</name>
-	<description>Cohort Based Programs</description>
+	<name>eSaude Features</name>
+	<description>eSaude Custom Features</description>
 
 	<url>https://wiki.openmrs.org/x/FQ4z</url>
 
 	<scm>
-		<connection>scm:git:git@github.com:openmrs/openmrs-module-cohortprograms.git</connection>
-		<developerConnection>scm:git:git@github.com:openmrs/openmrs-module-cohortprograms.git</developerConnection>
-		<url>https://github.com/openmrs/openmrs-module-cohortprograms/</url>
+		<connection>scm:git:git@github.com:openmrs/openmrs-module-esaudefeatures.git</connection>
+		<developerConnection>scm:git:git@github.com:openmrs/openmrs-module-esaudefeatures.git</developerConnection>
+		<url>https://github.com/openmrs/openmrs-module-esaudefeatures/</url>
 	  <tag>1.0.0-alpha</tag>
   </scm>
 

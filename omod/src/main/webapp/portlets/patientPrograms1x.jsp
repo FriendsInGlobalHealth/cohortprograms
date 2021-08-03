@@ -618,6 +618,6 @@
         </openmrs:hasPrivilege>
     </c:when>
     <c:otherwise>
-        <span style="font-size: small"><openmrs:message code="cohortprograms.program.no.programs.for.patient"/></span>
+        <span style="font-size: small"><openmrs:message code="esaudefeatures.program.no.programs.for.patient"/></span>
     </c:otherwise>
 </c:choose>

@@ -1,4 +1,4 @@
-package org.openmrs.module.cohortprograms.web;
+package org.openmrs.module.esaudefeatures.web;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -10,7 +10,7 @@ import org.springframework.util.StringUtils;
 import java.beans.PropertyEditorSupport;
 
 /**
- * @uthor Willa Mhawila<a.mhawila@gmail.com> on 4/7/21.
+ * @uthor Willa Mhawila<mmhawila@juutech.co.tz> on 4/7/21.
  */
 public class CohortEditor extends PropertyEditorSupport {
 	

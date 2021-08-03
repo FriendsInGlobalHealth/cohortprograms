@@ -1,17 +1,16 @@
-package org.openmrs.module.cohortprograms.web.controller;
+package org.openmrs.module.esaudefeatures.web.controller;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.Cohort;
 import org.openmrs.Concept;
 import org.openmrs.Program;
-import org.openmrs.ProgramWorkflow;
 import org.openmrs.api.ProgramWorkflowService;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.cohortprograms.ProgramCohort;
-import org.openmrs.module.cohortprograms.api.CohortProgramsService;
-import org.openmrs.module.cohortprograms.web.CohortEditor;
-import org.openmrs.module.cohortprograms.web.ProgramDTO;
+import org.openmrs.module.esaudefeatures.ProgramCohort;
+import org.openmrs.module.esaudefeatures.api.CohortProgramsService;
+import org.openmrs.module.esaudefeatures.web.CohortEditor;
+import org.openmrs.module.esaudefeatures.web.ProgramDTO;
 import org.openmrs.propertyeditor.ConceptEditor;
 import org.openmrs.propertyeditor.WorkflowCollectionEditor;
 import org.openmrs.web.WebConstants;
@@ -30,9 +29,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * @uthor Willa Mhawila<a.mhawila@gmail.com> on 4/1/21.
+ * @uthor Willa Mhawila<mmhawila@juutech.co.tz> on 4/1/21.
  */
-public class CohortProgramProgramFormController extends SimpleFormController {
+public class EsaudeFeaturesProgramFormController extends SimpleFormController {
 	
 	protected CohortProgramsService cpService;
 	
@@ -120,7 +119,7 @@ public class CohortProgramProgramFormController extends SimpleFormController {
 						}
 					}
 				}
-				httpSession.setAttribute(WebConstants.OPENMRS_MSG_ATTR, "cohortprograms.program.saved");
+				httpSession.setAttribute(WebConstants.OPENMRS_MSG_ATTR, "esaudefeatures.program.saved");
 			}
 			catch (Exception e) {
 				log.warn("Error saving Program", e);

@@ -2,19 +2,19 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.openmrs.module</groupId>
-		<artifactId>cohortprograms</artifactId>
+		<artifactId>esaudefeatures</artifactId>
 		<version>1.0.1-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>cohortprograms-omod</artifactId>
+	<artifactId>esaudefeatures-omod</artifactId>
 	<packaging>jar</packaging>
-	<name>Cohort Programs OMOD</name>
-	<description>Omod submodule for Cohort Programs</description>
+	<name>eSaude Features OMOD</name>
+	<description>Omod submodule for eSaude Features</description>
 
 	<dependencies>
         <dependency>
             <groupId>org.openmrs.module</groupId>
-            <artifactId>cohortprograms-api</artifactId>
+            <artifactId>esaudefeatures-api</artifactId>
             <version>1.0.1-SNAPSHOT</version>
         </dependency>
 		<dependency>

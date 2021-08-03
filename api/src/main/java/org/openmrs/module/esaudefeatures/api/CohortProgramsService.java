@@ -7,15 +7,15 @@
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
  */
-package org.openmrs.module.cohortprograms.api;
+package org.openmrs.module.esaudefeatures.api;
 
 import org.openmrs.Cohort;
 import org.openmrs.Program;
 import org.openmrs.annotation.Authorized;
 import org.openmrs.api.APIException;
 import org.openmrs.api.OpenmrsService;
-import org.openmrs.module.cohortprograms.CohortProgramsConfig;
-import org.openmrs.module.cohortprograms.ProgramCohort;
+import org.openmrs.module.esaudefeatures.CohortProgramsConfig;
+import org.openmrs.module.esaudefeatures.ProgramCohort;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;

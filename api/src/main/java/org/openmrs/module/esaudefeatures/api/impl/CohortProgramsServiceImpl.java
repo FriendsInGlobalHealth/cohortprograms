@@ -7,16 +7,15 @@
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
  */
-package org.openmrs.module.cohortprograms.api.impl;
+package org.openmrs.module.esaudefeatures.api.impl;
 
 import org.openmrs.Cohort;
 import org.openmrs.Program;
 import org.openmrs.api.APIException;
-import org.openmrs.api.UserService;
 import org.openmrs.api.impl.BaseOpenmrsService;
-import org.openmrs.module.cohortprograms.ProgramCohort;
-import org.openmrs.module.cohortprograms.api.CohortProgramsService;
-import org.openmrs.module.cohortprograms.api.dao.ProgramCohortDao;
+import org.openmrs.module.esaudefeatures.ProgramCohort;
+import org.openmrs.module.esaudefeatures.api.CohortProgramsService;
+import org.openmrs.module.esaudefeatures.api.dao.ProgramCohortDao;
 
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;

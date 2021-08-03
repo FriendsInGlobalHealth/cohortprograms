@@ -1,10 +1,10 @@
-package org.openmrs.module.cohortprograms.api.dao;
+package org.openmrs.module.esaudefeatures.api.dao;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.openmrs.Cohort;
 import org.openmrs.Program;
-import org.openmrs.module.cohortprograms.ProgramCohort;
+import org.openmrs.module.esaudefeatures.ProgramCohort;
 import org.openmrs.test.BaseModuleContextSensitiveTest;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -17,7 +17,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @uthor Willa Mhawila<a.mhawila@gmail.com> on 4/8/21.
+ * @uthor Willa Mhawila<mmhawila@juutech.co.tz> on 4/8/21.
  */
 public class ProgramCohortDaoTest extends BaseModuleContextSensitiveTest {
 	

@@ -1,4 +1,4 @@
-Cohort Based Programs Module
+eSaude Features Module
 ============================
 
 Description
@@ -7,7 +7,7 @@ This module enhances the program management by allowing association of a program
 
 Implementation
 --------------
-The features in the module are achieved by introducing a new table named `cohortprograms\_program\_cohort` which links program with its associated cohorts. The module works by redirecting the program creation/editing page to a custom version which includes the ability to associate a program with cohorts. See the difference between the pages displayed with & without the module running.
+The features in the module are achieved by introducing a new table named `esaudefeatures\_program\_cohort` which links program with its associated cohorts. The module works by redirecting the program creation/editing page to a custom version which includes the ability to associate a program with cohorts. See the difference between the pages displayed with & without the module running.
 
 **Note:** The cohort should already be configured. The cohorts can be created using the *Reporting compatibility module*
 
@@ -17,7 +17,7 @@ The features in the module are achieved by introducing a new table named `cohort
 
 ### Program Creation/Editing page while the module is running.
 
-![Program page while module is running](images/cohortprograms.edit.program.png)
+![Program page while module is running](images/esaudefeatures.edit.program.png)
 
 ### Program enrollment for a patient belonging to cohort associated with the program.
 The program *Stay Fit* is associated with a cohort of young people of 14-21 years of age, while the program *Aproveite a vida* is free for any patient to enroll.

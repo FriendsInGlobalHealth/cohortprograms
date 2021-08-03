@@ -1,4 +1,4 @@
-package org.openmrs.module.cohortprograms.web.interceptor;
+package org.openmrs.module.esaudefeatures.web.interceptor;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -8,30 +8,24 @@ import org.openmrs.PatientProgram;
 import org.openmrs.Program;
 import org.openmrs.api.CohortService;
 import org.openmrs.api.ProgramWorkflowService;
-import org.openmrs.module.cohortprograms.api.CohortProgramsService;
-import org.openmrs.util.OpenmrsClassLoader;
+import org.openmrs.module.esaudefeatures.api.CohortProgramsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
-import sun.reflect.Reflection;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 
 import static org.openmrs.util.OpenmrsConstants.OPENMRS_VERSION_SHORT;
 
 /**
- * @uthor Willa Mhawila<a.mhawila@gmail.com> on 3/29/21.
+ * @uthor Willa Mhawila<mmhawila@juutech.co.tz> on 3/29/21.
  */
 @Component
 public class CohortProgramsInterceptor extends HandlerInterceptorAdapter {
@@ -40,7 +34,7 @@ public class CohortProgramsInterceptor extends HandlerInterceptorAdapter {
 	
 	private final static String ORIGINAL_PROGRAM_SERVLET_PATH = "/admin/programs/program.form";
 	
-	private final static String REDIRECT_PROGRAM_SERVLET_PATH = "/module/cohortprograms/admin/programs/program.form";
+	private final static String REDIRECT_PROGRAM_SERVLET_PATH = "/module/esaudefeatures/admin/programs/program.form";
 	
 	private static float floatizedVersion;
 	
@@ -52,7 +46,7 @@ public class CohortProgramsInterceptor extends HandlerInterceptorAdapter {
 	}
 	
 	@Autowired
-	@Qualifier("cohortprograms.CohortProgramsService")
+	@Qualifier("esaudefeatures.CohortProgramsService")
 	CohortProgramsService cpService;
 	
 	@Autowired
@@ -66,7 +60,7 @@ public class CohortProgramsInterceptor extends HandlerInterceptorAdapter {
 		String servletPath = request.getServletPath();
 		
 		if (ORIGINAL_PROGRAM_SERVLET_PATH.equalsIgnoreCase(servletPath)) {
-			LOG.info("Redirecting user to custom cohortPrograms program form: " + REDIRECT_PROGRAM_SERVLET_PATH);
+			LOG.info("Redirecting user to custom esaudefeatures program form: " + REDIRECT_PROGRAM_SERVLET_PATH);
 			String redirectLocation = request.getContextPath().concat(REDIRECT_PROGRAM_SERVLET_PATH);
 			final String QUERY_STRING = request.getQueryString();
 			if (StringUtils.hasText(QUERY_STRING)) {
@@ -90,9 +84,9 @@ public class CohortProgramsInterceptor extends HandlerInterceptorAdapter {
 				modelAndView.getModelMap().addAttribute("cohorts", cohorts);
 				
 				if (OPENMRS_VERSION_SHORT.startsWith("1")) {
-					modelAndView.setViewName("module/cohortprograms/admin/programs/programForm1x");
+					modelAndView.setViewName("module/esaudefeatures/admin/programs/programForm1x");
 				} else {
-					modelAndView.setViewName("module/cohortprograms/admin/programs/programForm2x");
+					modelAndView.setViewName("module/esaudefeatures/admin/programs/programForm2x");
 				}
 			} else if (currentViewName.endsWith("portlets/patientPrograms")) {
 				// Allow programs for which the patient is a member.
@@ -126,9 +120,9 @@ public class CohortProgramsInterceptor extends HandlerInterceptorAdapter {
 				
 				// Get OpenMRS Version
 				if (floatizedVersion >= 2.2f) {
-					modelAndView.setViewName("module/cohortprograms/portlets/patientPrograms2x");
+					modelAndView.setViewName("module/esaudefeatures/portlets/patientPrograms2x");
 				} else {
-					modelAndView.setViewName("module/cohortprograms/portlets/patientPrograms1x");
+					modelAndView.setViewName("module/esaudefeatures/portlets/patientPrograms1x");
 				}
 			}
 		}

@@ -1,4 +1,4 @@
-package org.openmrs.module.cohortprograms.api.dao;
+package org.openmrs.module.esaudefeatures.api.dao;
 
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
@@ -6,7 +6,7 @@ import org.openmrs.Cohort;
 import org.openmrs.Program;
 import org.openmrs.api.db.hibernate.DbSession;
 import org.openmrs.api.db.hibernate.DbSessionFactory;
-import org.openmrs.module.cohortprograms.ProgramCohort;
+import org.openmrs.module.esaudefeatures.ProgramCohort;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -14,9 +14,9 @@ import javax.validation.constraints.NotNull;
 import java.util.List;
 
 /**
- * @uthor Willa Mhawila<a.mhawila@gmail.com> on 3/29/21.
+ * @uthor Willa Mhawila<mmhawila@juutech.co.tz> on 3/29/21.
  */
-@Repository("cohortprograms.programCohortDao")
+@Repository("esaudefeatures.programCohortDao")
 public class ProgramCohortDao {
 	
 	@Autowired

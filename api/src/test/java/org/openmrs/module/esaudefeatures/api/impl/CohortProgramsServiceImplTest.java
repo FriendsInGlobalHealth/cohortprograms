@@ -7,7 +7,7 @@
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
  */
-package org.openmrs.module.cohortprograms.api.impl;
+package org.openmrs.module.esaudefeatures.api.impl;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -17,8 +17,8 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.openmrs.Cohort;
 import org.openmrs.Program;
-import org.openmrs.module.cohortprograms.ProgramCohort;
-import org.openmrs.module.cohortprograms.api.dao.ProgramCohortDao;
+import org.openmrs.module.esaudefeatures.ProgramCohort;
+import org.openmrs.module.esaudefeatures.api.dao.ProgramCohortDao;
 
 import java.util.Arrays;
 import java.util.List;

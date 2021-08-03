@@ -1,13 +1,13 @@
-package org.openmrs.module.cohortprograms.web.validator;
+package org.openmrs.module.esaudefeatures.web.validator;
 
 import org.openmrs.annotation.Handler;
-import org.openmrs.module.cohortprograms.web.ProgramDTO;
+import org.openmrs.module.esaudefeatures.web.ProgramDTO;
 import org.openmrs.validator.ProgramValidator;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
 /**
- * @uthor Willa Mhawila<a.mhawila@gmail.com> on 4/1/21.
+ * @uthor Willa Mhawila<mmhawila@juutech.co.tz> on 4/1/21.
  */
 @Handler(supports = ProgramDTO.class, order = 60)
 public class ProgramDTOValidator implements Validator {

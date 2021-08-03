@@ -1,4 +1,4 @@
-package org.openmrs.module.cohortprograms;
+package org.openmrs.module.esaudefeatures;
 
 import org.openmrs.Cohort;
 import org.openmrs.Program;
@@ -12,10 +12,10 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 /**
- * @uthor Willa Mhawila<a.mhawila@gmail.com> on 3/29/21.
+ * @uthor Willa Mhawila<mmhawila@juutech.co.tz> on 3/29/21.
  */
-@Entity(name = "cohortprograms.ProgramCohort")
-@Table(name = "cohortprograms_program_cohort")
+@Entity(name = "esaudefeatures.ProgramCohort")
+@Table(name = "esaudefeatures_program_cohort")
 public class ProgramCohort {
 	
 	@Id

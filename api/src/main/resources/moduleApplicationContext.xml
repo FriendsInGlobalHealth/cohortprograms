@@ -10,18 +10,18 @@
   		    http://www.springframework.org/schema/context
   		    http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
-    <context:component-scan base-package="org.openmrs.module.cohortprograms" />
+    <context:component-scan base-package="org.openmrs.module.esaudefeatures" />
 
-    <!-- Wraps CohortProgramsService methods in DB transactions and OpenMRS interceptors,
+    <!-- Wraps esaudefeaturesService methods in DB transactions and OpenMRS interceptors,
     which set audit info like dateCreated, changedBy, etc.-->
-    <bean id="cohortprograms.CohortProgramsService"
+    <bean id="esaudefeatures.CohortProgramsService"
             class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
         <property name="transactionManager">
             <ref bean="transactionManager" />
         </property>
         <property name="target">
-            <bean class="org.openmrs.module.cohortprograms.api.impl.CohortProgramsServiceImpl">
-                <property name="dao" ref="cohortprograms.programCohortDao" />
+            <bean class="org.openmrs.module.esaudefeatures.api.impl.CohortProgramsServiceImpl">
+                <property name="dao" ref="esaudefeatures.programCohortDao" />
             </bean>
         </property>
         <property name="preInterceptors">
@@ -37,8 +37,8 @@
     <bean parent="serviceContext">
         <property name="moduleService">
             <list>
-                <value>org.openmrs.module.cohortprograms.api.CohortProgramsService</value>
-                <ref bean="cohortprograms.CohortProgramsService" />
+                <value>org.openmrs.module.esaudefeatures.api.CohortProgramsService</value>
+                <ref bean="esaudefeatures.CohortProgramsService" />
             </list>
         </property>
     </bean>

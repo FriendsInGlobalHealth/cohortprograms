@@ -190,7 +190,7 @@
             </c:if>
         </tr>
         <tr>
-            <th valign="top"><openmrs:message code="cohortprograms.program.cohorts"/></th>
+            <th valign="top"><openmrs:message code="esaudefeatures.program.cohorts"/></th>
             <td valign="top">
                 <c:choose>
                     <c:when test="${not empty cohorts}">
@@ -202,14 +202,14 @@
                         </c:forEach>
                     </c:when>
                     <c:otherwise>
-                        <span><openmrs:message code="cohortprograms.no.cohorts"/> </span>
+                        <span><openmrs:message code="esaudefeatures.no.cohorts"/> </span>
                     </c:otherwise>
                 </c:choose>
             </td>
         </tr>
         <tr>
             <td></td>
-            <td><span style="font-size: small"> <openmrs:message code="cohortprograms.program.cohortHint" /> </span></td>
+            <td><span style="font-size: small"> <openmrs:message code="esaudefeatures.program.cohortHint" /> </span></td>
         </tr>
     </table>
     <br />

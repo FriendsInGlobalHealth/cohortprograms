@@ -4,5 +4,5 @@
 
 <%@ include file="/WEB-INF/template/header.jsp" %>
 <%@ include file="/WEB-INF/view/admin/programs/localHeader.jsp" %>
-<%@ include file="/WEB-INF/view/module/cohortprograms/admin/programs/_programForm.jsp" %>
+<%@ include file="/WEB-INF/view/module/esaudefeatures/admin/programs/_programForm.jsp" %>
 <%@ include file="/WEB-INF/template/footer.jsp" %>
