@@ -18,16 +18,16 @@
 	<!-- /Base Module Properties -->
 	
 	<require_version>1.11.6</require_version>
-	
-	<!-- Extensions -->
-	<extension>
-		<point>org.openmrs.admin.list</point>
-		<class>org.openmrs.module.esaudefeatures.extension.html.AdminList</class>
-	</extension>
 
 	<aware_of_modules>
 		<aware_of_module>org.openmrs.module.legacyui</aware_of_module>
 	</aware_of_modules>
+
+	<!-- Extensions -->
+	<extension>
+		<point>org.openmrs.gutter.tools</point>
+		<class>@MODULE_PACKAGE@.web.extension.GutterListExt</class>
+	</extension>
 	
 	
 	<!-- AOP
