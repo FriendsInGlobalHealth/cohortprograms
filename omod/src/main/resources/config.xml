@@ -46,18 +46,29 @@
 	 /Required Privileges -->
 
 
-	<!-- Required Global Properties 
 	<globalProperty>
-		<property>@MODULE_ID@.someProperty</property>
+		<property>@MODULE_ID@.remote.server.url</property>
 		<defaultValue></defaultValue>
 		<description>
-			A description of the global property goes here.  The description
-			should explain enough for administrators to understand the purpose
-			and possible values for the global property.
+			URL of the server from which to search the remote patients
 		</description>
 	</globalProperty>
-	/Required Global Properties -->
-	
+	<globalProperty>
+		<property>@MODULE_ID@.remote.server.username</property>
+		<defaultValue></defaultValue>
+		<description>
+			Username of the user who has privilege to view patients on
+			the remote server.
+		</description>
+	</globalProperty>
+	<globalProperty>
+		<property>@MODULE_ID@.remote.server.password</property>
+		<defaultValue></defaultValue>
+		<description>
+			The password for the user represented by the username property.
+		</description>
+	</globalProperty>
+
 	<!--
 	<dwr>
 		<allow>

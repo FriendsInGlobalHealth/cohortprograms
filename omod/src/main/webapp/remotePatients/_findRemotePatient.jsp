@@ -1,4 +1,3 @@
-<%@ include file="/WEB-INF/template/include.jsp" %>
 <c:if test="${not empty remoteServerUrl}">
     <h3><openmrs:message code="esaudefeatures.remote.server.url" scope="page"/>: ${remoteServerUrl}</h3>
 </c:if>

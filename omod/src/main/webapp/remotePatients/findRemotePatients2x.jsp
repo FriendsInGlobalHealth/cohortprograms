@@ -12,10 +12,4 @@
 <br />
 
 <%@ include file="/WEB-INF/view/module/esaudefeatures/remotePatients/_findRemotePatient.jsp" %>
-<%--<%@ include file="/WEB-INF/view/module/legacyui/template/footer.jsp" %>--%>
-
-<% if(OpenmrsConstants.OPENMRS_VERSION_SHORT.startsWith("1")) { %>
-    <%@ include file="/WEB-INF/template/footer.jsp" %>
-<% } else { %>
-    <%@ include file="/WEB-INF/view/module/legacyui/template/footer.jsp" %>
-<% } %>
+<%@ include file="/WEB-INF/view/module/legacyui/template/footer.jsp" %>
