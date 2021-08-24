@@ -156,10 +156,10 @@
 
                     fetch(localPatietSearchUrl, requestOptions)
                         .then(response => {
+                            var remotePatientDetailsTitle ='<openmrs:message code="esaudefeatures.remote.patients.remote.patient.details"/>';
+                            var details = createPatientDetailsHtmlTable(patient, remotePatientDetailsTitle, true, true);
                             if(response.status === 200) {
                                 response.json().then(localPatient => {
-                                    var remotepPatientDetailsTitle ='<openmrs:message code="esaudefeatures.remote.patients.remote.patient.details"/>';
-                                    var details = createPatientDetailsHtmlTable(patient, remotepPatientDetailsTitle, true, true);
                                     var detailsTitle = '<openmrs:message code="esaudefeatures.remote.patients.same.uuid.local"/>';
                                     var localPatientTable = '<div style="float:left; border:2.5px solid red; background-color: #FF9033">'
                                         + createPatientDetailsHtmlTable(localPatient, detailsTitle, false)
@@ -170,12 +170,41 @@
 
                             } else if(response.status === 404) {
                                 // TODO: Go for identifiers & names (After discussion with the team)
+                                var localPatientSearchUrlUsingIdentifier = localOpenmrsContextPath + '/ws/rest/v1/patient?v=full&identifier=';
+                                if(patient.identifiers.length > 0) {
+                                    localPatientSearchUrlUsingIdentifier += patient.identifiers[0].identifier;
+                                    fetch(localPatientSearchUrlUsingIdentifier, requestOptions)
+                                        .then(response => {
+                                            if(response.status === 200) {
+                                                response.json().then(localPatient => {
+                                                    var detailsTitle = '<openmrs:message code="esaudefeatures.remote.patients.same.uuid.local"/>';
+                                                    var localPatientTable = '<div style="float:left; border:2.5px solid red; background-color: #FF9033">'
+                                                        + createPatientDetailsHtmlTable(localPatient, detailsTitle, false)
+                                                        + '</div>'
+                                                    details += localPatientTable;
+                                                    oTable.fnOpen(nTr, details, 'details' );
+                                                })
+                                            } else {
+                                                var details = createPatientDetailsHtmlTable(patient, remotepPatientDetailsTitle);
+                                                oTable.fnOpen(nTr, details, 'details' );
+                                            }
+                                        })
+                                        .catch(error => {
+                                            console.log('error', error);
+                                            var details = createPatientDetailsHtmlTable(patient, remotepPatientDetailsTitle);
+                                            oTable.fnOpen(nTr, details, 'details' );
+                                        });
+                                }
                             } else {
                                 var details = createPatientDetailsHtmlTable(patient, remotepPatientDetailsTitle);
                                 oTable.fnOpen(nTr, details, 'details' );
                             }
                         })
-                        .catch(error => console.log('error', error));
+                        .catch(error => {
+                            console.log('error', error)
+                            var details = createPatientDetailsHtmlTable(patient, remotepPatientDetailsTitle);
+                            oTable.fnOpen(nTr, details, 'details' );
+                        });
                 }
             });
         }
@@ -293,7 +322,7 @@
         function createPatientDetailsHtmlTable(patient, title, addImportButton, disableImportButton) {
 
             var patientDetailsTable = '<table cellpadding="5" cellspacing="0" border="0" style="display: inline; padding-left:10px; border-spacing: 5px;">';
-            var patientName = "mama"; //patient.person.names[0];
+            var patientName = patient.person.names[0];
             if(patient.person.preferredName) {
                 patientName = patient.person.preferredName;
             }

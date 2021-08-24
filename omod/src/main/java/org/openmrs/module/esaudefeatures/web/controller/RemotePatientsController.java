@@ -74,6 +74,11 @@ public class RemotePatientsController {
 		return modelAndView;
 	}
 	
+	@RequestMapping(value = "module/esaudefeatures/findRemotePatients.htm")
+	public ModelAndView searchRemoteFormAlternativePath(ModelAndView modelAndView) {
+		return searchRemoteForm(modelAndView);
+	}
+	
 	@Autowired
 	public void setAdminService(AdministrationService adminService) {
 		this.adminService = adminService;
