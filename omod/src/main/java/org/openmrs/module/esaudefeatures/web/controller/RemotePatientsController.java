@@ -3,7 +3,6 @@ package org.openmrs.module.esaudefeatures.web.controller;
 import org.apache.solr.common.util.Base64;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

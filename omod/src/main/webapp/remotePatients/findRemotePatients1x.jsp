@@ -231,6 +231,7 @@
                     if(identifier.location && typeof identifier.location === 'object') {
                         identifierPayload.location = identifier.location.uuid
                     }
+                    return identifierPayload;
                 })
             };
         }
@@ -275,7 +276,7 @@
                 var addressesToSend = restPersonPayload.addresses.filter(address => !address.voided);
                 if(addressesToSend.length > 0) {
                     personPayload.addresses = [];
-                    addressesToSend.addresses.filter(address => !address.voided).forEach(address => {
+                    addressesToSend.forEach(address => {
 
                         var addressPayload = {
                             uuid: address.uuid,
@@ -339,12 +340,13 @@
             if(title) {
                 patientDetailsTable += '<tr><td colspan="2">' + title + '</td></tr>';
             }
-            patientDetailsTable += '<tr><td colspan="2" style="border-bottom: solid; border-top: solid;"><openmrs:message code="esaudefeatures.remote.patients.names"/></td></tr>';
+            patientDetailsTable += '<tr><td colspan="2" style="border-bottom: solid; border-top: solid;">;'
+            patientDetailsTable += '<openmrs:message code="esaudefeatures.remote.patients.names"/></td></tr>';
             patientDetailsTable += '<tr><td><openmrs:message code="esaudefeatures.remote.patients.givenName"/><td>' + patientName.givenName + '</td></tr>';
             patientDetailsTable += '<tr><td><openmrs:message code="esaudefeatures.remote.patients.middleName"/><td>' + patientName.middleName + '</td></tr>';
             patientDetailsTable += '<tr><td><openmrs:message code="esaudefeatures.remote.patients.familyName"/><td>' + patientName.familyName + '</td></tr>';
-
-            patientDetailsTable += '<tr><td colspan="2" style="border-bottom: solid; border-top: solid; margin-top:15px;"><openmrs:message code="esaudefeatures.remote.patients.identifiers"/></td></tr>';
+            patientDetailsTable += '<tr><td colspan="2" style="border-bottom: solid; border-top: solid; margin-top:15px;">';
+            patientDetailsTable += '<openmrs:message code="esaudefeatures.remote.patients.identifiers"/></td></tr>';
             if(Array.isArray(patient.identifiers) && patient.identifiers.length > 0) {
                 for(let identifier of patient.identifiers) {
                     patientDetailsTable += '<tr><td>' + identifier.identifierType.display + ':</td><td>' + identifier.identifier + '</td>';
@@ -365,11 +367,13 @@
 
             if(addImportButton) {
                 if(disableImportButton) {
-                    patientDetailsTable += '<tr><td colspan="2"><input type="button" disabled value="' + '<openmrs:message code="esaudefeatures.remote.patients.remote.import.patient"/>' +
-                        '" onclick="importPatient(\'' + patient + '\')"/></td></tr>';
+                    patientDetailsTable += '<tr><td colspan="2"><input type="button" disabled value="' +
+                        '<openmrs:message code="esaudefeatures.remote.patients.remote.import.patient"/>' +
+                        '" onclick="importPatient(\'' + patient.uuid + '\')"/></td></tr>';
                 } else {
-                    patientDetailsTable += '<tr><td colspan="2"><input type="button" value="' + '<openmrs:message code="esaudefeatures.remote.patients.remote.import.patient"/>' +
-                    '" onclick="importPatient(\'' + patient + '\')"/></td></tr>';
+                    patientDetailsTable += '<tr><td colspan="2"><input type="button" value="' +
+                        '<openmrs:message code="esaudefeatures.remote.patients.remote.import.patient"/>' +
+                    '" onclick="importPatient(\'' + patient.uuid + '\')"/></td></tr>';
                 }
             }
 
@@ -378,9 +382,9 @@
             return patientDetailsTable;
         }
 
-        function importPatient(patient) {
-            console.log("Importing patient with uuid: " + patient.uuid);
-
+        function importPatient(patientUuid) {
+            console.log("Importing patient with uuid: " + patientUuid);
+            var patient = foundPatientList.find(patient => patient.uuid === patientUuid);
             var localPersonRestUrl = localOpenmrsContextPath + '/ws/rest/v1/person';
             var localPatientRestUrl = localOpenmrsContextPath + '/ws/rest/v1/patient';
 
@@ -388,7 +392,7 @@
             requestHeaders.append("Content-Type", "application/json");
 
             var rawPerson = JSON.stringify(createPersonPayload(patient.person));
-            var rawPatient = JSON.stringfy(createPatientPayload(patient));
+            var rawPatient = JSON.stringify(createPatientPayload(patient));
 
             var requestOptions = {
                 method: 'POST',
