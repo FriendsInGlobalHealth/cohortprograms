@@ -7,6 +7,8 @@
 <%@ include file="/WEB-INF/template/header.jsp" %>
 
 <h2><openmrs:message code="esaudefeatures.remote.patients.search"/></h2>
+<div id="openmrs_msg" style="visibility:hidden;"><openmrs:message code="esaudefeatures.remote.patients.imported"/></div>
+<div id="openmrs_dwr_error_msg" style="visibility:hidden;"><openmrs:message code="esaudefeatures.remote.patients.import.error"/></div>
 
 <br />
 <c:if test="${not empty remoteServerUrl}">
@@ -39,7 +41,6 @@
         const MIN_SEARCH_LENGTH = 3;
         const EMPTY_COLUMN_HEADER_ID = 'empty-header-column';
         const DATE_DISPLAY_OPTIONS = { year: 'numeric', month: 'short', day: 'numeric' };
-        const JSESSIONID_COOKIE = 'JSESSIONID';
 
         var searchController = null;
         function searchPatientFromRemoteServer(searchText) {
@@ -131,7 +132,7 @@
              * Note that the indicator for showing which row is open is not controlled by DataTables,
              * rather it is done here
              */
-            $j('#found-patients tbody td img').live('click', function () {
+            $j('#found-patients tbody td img').on('click', function () {
                 var nTr = this.parentNode.parentNode;
                 if ( this.src.match('details_close') ) {
                     /* This row is already open - close it */
@@ -165,10 +166,9 @@
                         .then(response => {
                             if(response.status === 200) {
                                 response.json().then(localPatient => {
-                                    localPatient = mapResults([localPatient]);
                                     var detailsTitle = '<openmrs:message code="esaudefeatures.remote.patients.same.uuid.local"/>';
                                     var localPatientTable = '<div style="float:left; border:2.5px solid red; background-color: #FF9033">'
-                                        + createPatientDetailsHtmlTable(localPatient[0], detailsTitle, false)
+                                        + createPatientDetailsHtmlTable(localPatient, detailsTitle, false)
                                         + '</div>'
                                     detailsWithButtonDisabled += localPatientTable;
                                     oTable.fnOpen(nTr, detailsWithButtonDisabled, 'details' );
@@ -186,10 +186,9 @@
                                                     if(data.results.length > 0) {
                                                         // Only get the first one
                                                         // TODO: Accommodate all found patients later (this is a very rare case)
-                                                        var localPatients = mapResults(data.results);
                                                         var detailsTitle = '<openmrs:message code="esaudefeatures.remote.patients.same.uuid.local"/>';
                                                         var localPatientTable = '<div style="float:left; border:2.5px solid red; background-color: #FF9033">'
-                                                            + createPatientDetailsHtmlTable(localPatients[0], detailsTitle, false)
+                                                            + createPatientDetailsHtmlTable(data.results[0], detailsTitle, false)
                                                             + '</div>'
                                                         detailsWithButtonDisabled += localPatientTable;
                                                         oTable.fnOpen(nTr, detailsWithButtonDisabled, 'details' );
@@ -340,7 +339,7 @@
             if(title) {
                 patientDetailsTable += '<tr><td colspan="2">' + title + '</td></tr>';
             }
-            patientDetailsTable += '<tr><td colspan="2" style="border-bottom: solid; border-top: solid;">;'
+            patientDetailsTable += '<tr><td colspan="2" style="border-bottom: solid; border-top: solid;">';
             patientDetailsTable += '<openmrs:message code="esaudefeatures.remote.patients.names"/></td></tr>';
             patientDetailsTable += '<tr><td><openmrs:message code="esaudefeatures.remote.patients.givenName"/><td>' + patientName.givenName + '</td></tr>';
             patientDetailsTable += '<tr><td><openmrs:message code="esaudefeatures.remote.patients.middleName"/><td>' + patientName.middleName + '</td></tr>';
@@ -373,7 +372,8 @@
                 } else {
                     patientDetailsTable += '<tr><td colspan="2"><input type="button" value="' +
                         '<openmrs:message code="esaudefeatures.remote.patients.remote.import.patient"/>' +
-                    '" onclick="importPatient(\'' + patient.uuid + '\')"/></td></tr>';
+                        '" onclick="importPatient(\'' + patient.uuid + '\')"/>' +
+                        '<img class="import-busy-gif" src="${pageContext.request.contextPath}/moduleResources/esaudefeatures/images/loading.gif" style="visibility:hidden;"/></td></tr>';
                 }
             }
 
@@ -384,6 +384,7 @@
 
         function importPatient(patientUuid) {
             console.log("Importing patient with uuid: " + patientUuid);
+            $j('.import-busy-gif').css('visibility', 'visible');
             var patient = foundPatientList.find(patient => patient.uuid === patientUuid);
             var localPersonRestUrl = localOpenmrsContextPath + '/ws/rest/v1/person';
             var localPatientRestUrl = localOpenmrsContextPath + '/ws/rest/v1/patient';
@@ -400,19 +401,62 @@
                 body: rawPerson,
             };
 
+            var createPersonStatus = -1;
             fetch(localPersonRestUrl, requestOptions)
-                .then(response => response.json())
-                .then(result => {
-                    // Now push the patient.
-                    requestOptions.body = rawPatient;
-                    fetch(localPatientRestUrl, requestOptions)
-                        .then(response => response.json())
-                        .then(result => {
-                            // At this point shit is good.
-                        })
-                        .catch(trouble => console.log('Error while importing patient record: ', trouble));
+                .then(response => {
+                    createPersonStatus = response.status;
+                    return response.json()
                 })
-                .catch(error => console.log('error', error));
+                .then(personResult => {
+                    if (createPersonStatus === 201) {
+                        // Now push the patient.
+                        requestOptions.body = rawPatient;
+                        var createPatientStatus = -1;
+                        fetch(localPatientRestUrl, requestOptions)
+                            .then(response => {
+                                createPatientStatus = response.status;
+                                return response.json()
+                            })
+                            .then(patientResult => {
+                                if(createPatientStatus !== 201) {
+                                    // Didn't work delete created person.
+                                    var deletePersonUrl = localPersonRestUrl + '/' + patient.person.uuid + '?purge=true';
+                                    fetch(deletePersonUrl, { method: 'DELETE', headers: requestHeaders })
+                                        .then(response => response.json())
+                                        .then(deleteResult => {
+                                            if (patientResult.error && patientResult.error.message) {
+                                                $j('#openmrs_dwr_error_msg').append(patientResult.error.message);
+                                            }
+                                            $j('#openmrs_dwr_error_msg').css('visibility', 'visible');
+                                        })
+                                        .catch(trouble => {
+                                            $j('#openmrs_dwr_error_msg').css('visibility', 'visible');
+                                            $j('.import-busy-gif').css('visibility', 'hidden');
+                                            console.log('Could not delete person with uuid ' + patient.person.uuid, trouble)
+                                        });
+                                } else {
+                                    // TODO: Maybe Remove the remote patient from the list.
+                                    $j('#openmrs_msg').css('visibility', 'visible');
+                                    $j('.import-busy-gif').css('visibility', 'hidden');
+                                    refreshTable(patientTable, mapResults(foundPatientList));
+                                }
+                            })
+                            .catch(trouble => {
+                                $j('#openmrs_dwr_error_msg').css('visibility', 'visible');
+                                $j('.import-busy-gif').css('visibility', 'hidden');
+                                console.log('Error while importing patient record: ', trouble)
+                            });
+                    } else {
+                        if(personResult.error && personResult.error.message) $j('#openmrs_dwr_error_msg').append(personResult.error.message);
+                        $j('#openmrs_dwr_error_msg').css('visibility', 'visible');
+                        $j('.import-busy-gif').css('visibility', 'hidden');
+                    }
+                })
+                .catch(error => {
+                    $j('#openmrs_dwr_error_msg').css('visibility', 'visible');
+                    $j('.import-busy-gif').css('visibility', 'visible');
+                    console.log('error', error)
+                });
         }
 
         $j(document).ready(function() {
