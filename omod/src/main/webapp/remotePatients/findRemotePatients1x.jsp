@@ -341,11 +341,14 @@
             if(title) {
                 patientDetailsTable += '<tr><td colspan="2">' + title + '</td></tr>';
             }
+            var givenName = patientName.givenName === null ? "" : patientName.givenName;
+            var middleName = patientName.middleName === null ? "" : patientName.middleName;
+            var familyName = patientName.familyName === null ? "" : patientName.familyName;
             patientDetailsTable += '<tr><td colspan="2" style="border-bottom: solid; border-top: solid;">';
             patientDetailsTable += '<openmrs:message code="esaudefeatures.remote.patients.names"/></td></tr>';
-            patientDetailsTable += '<tr><td><openmrs:message code="esaudefeatures.remote.patients.givenName"/><td>' + patientName.givenName + '</td></tr>';
-            patientDetailsTable += '<tr><td><openmrs:message code="esaudefeatures.remote.patients.middleName"/><td>' + patientName.middleName + '</td></tr>';
-            patientDetailsTable += '<tr><td><openmrs:message code="esaudefeatures.remote.patients.familyName"/><td>' + patientName.familyName + '</td></tr>';
+            patientDetailsTable += '<tr><td><openmrs:message code="esaudefeatures.remote.patients.givenName"/><td>' + givenName + '</td></tr>';
+            patientDetailsTable += '<tr><td><openmrs:message code="esaudefeatures.remote.patients.middleName"/><td>' + middleName + '</td></tr>';
+            patientDetailsTable += '<tr><td><openmrs:message code="esaudefeatures.remote.patients.familyName"/><td>' + familyName + '</td></tr>';
             patientDetailsTable += '<tr><td colspan="2" style="border-bottom: solid; border-top: solid; margin-top:15px;">';
             patientDetailsTable += '<openmrs:message code="esaudefeatures.remote.patients.identifiers"/></td></tr>';
             if(Array.isArray(patient.identifiers) && patient.identifiers.length > 0) {

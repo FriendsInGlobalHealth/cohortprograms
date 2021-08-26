@@ -13,7 +13,7 @@ public class GutterListExt extends LinkExt {
 	}
 	
 	public String getUrl() {
-		return RemotePatientsController.ROOT_PATH;
+		return RemotePatientsController.ALT_ROOT_PATH;
 	}
 	
 	/**
