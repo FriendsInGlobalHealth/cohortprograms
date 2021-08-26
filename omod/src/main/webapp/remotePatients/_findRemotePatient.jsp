@@ -1,241 +1,493 @@
+<h2><openmrs:message code="esaudefeatures.remote.patients.search"/></h2>
+<div id="openmrs_msg" style="visibility:hidden;"><openmrs:message code="esaudefeatures.remote.patients.imported"/></div>
+<div id="remote_patient_error_msg" class="error" style="visibility:hidden;">
+    <openmrs:message code="esaudefeatures.remote.patients.import.error"/>
+</div>
+
+<br />
 <c:if test="${not empty remoteServerUrl}">
     <h3><openmrs:message code="esaudefeatures.remote.server.url" scope="page"/>: ${remoteServerUrl}</h3>
 </c:if>
-<c:if test="${model.authenticatedUser != null}">
-    <c:choose>
-        <c:when test="${model.size == 'compact'}">
-            <form method=get action="${model.postURL}">
-                <openmrs:message code="Navigation.findPatient" />
-                <input type="text" name="phrase" value="<request:parameter name="phrase"/>"/>
-                <input type="submit" value="<openmrs:message code="general.searchButton" />" />
-            </form>
-        </c:when>
-        <c:when test="${model.size == 'slowConnection'}">
+<c:if test="${authenticatedUser == null}">
+    <h2>Auth is null, but why?</h2>
+</c:if>
+<c:if test="${authenticatedUser != null}">
+    <openmrs:require privilege="View Patients" otherwise="/login.htm" redirect="/index.htm" />
+    <style>
+        #found-patients_wrapper{
+            /* Removes the empty space after datatable if the table is short */
+            /* Over ride the value set by datatables */
+            min-height: 150px; height: auto !important;
+        }
+    </style>
+    <openmrs:htmlInclude file="/scripts/jquery/dataTables/css/dataTables_jui.css"/>
+    <openmrs:htmlInclude file="/scripts/jquery/dataTables/js/jquery.dataTables.min.js"/>
 
-            <openmrs:require privilege="View Patients" otherwise="/login.htm" redirect="/index.htm" />
+    <openmrs:globalProperty key="patient.listingAttributeTypes" var="attributesToList"/>
 
-            <openmrs:htmlInclude file="/dwr/interface/DWRPatientService.js" ></openmrs:htmlInclude>
-            <openmrs:htmlInclude file="/dwr/engine.js" ></openmrs:htmlInclude>
-            <openmrs:htmlInclude file="/dwr/util.js" ></openmrs:htmlInclude>
+    <script type="text/javascript">
+        var localOpenmrsContextPath = '${pageContext.request.contextPath}';
+        var remoteServerUrl = "${remoteServerUrl}";
+        var base64encodedCredos = "${remoteServerAuth}";
+        var patientTable = null;
+        var lastSearchedText = null;
+        var foundPatientList = null;
+        const MIN_SEARCH_LENGTH = 3;
+        const EMPTY_COLUMN_HEADER_ID = 'empty-header-column';
+        const DATE_DISPLAY_OPTIONS = { year: 'numeric', month: 'short', day: 'numeric' };
+        const IMPORT_SUCCESS_MSG_PREFIX = $j('#openmrs_msg').html();
+        const IMPORT_ERROR_MSG_PREFIX = $j('#remote_patient_error_msg').html();
+        const IMPORT_CONFIRM_MSG_PREFIX = '<openmrs:message code="esaudefeatures.remote.patients.import.confirmation"/> ';
 
-            <div id="findPatient">
-                <b class="boxHeader"><openmrs:message code="esaudefeatures.remote.patients.search"/></b>
-                <div class="box">
-                    <form>
-						<span style="white-space: nowrap">
-							<span><openmrs:message code="PatientSearch.searchOnName"/></span>
-							<input type="text" value="" id="pSearch" name="pSearch" autocomplete="off" />
-							<input type="button" id="searchButton" value="Search" />
-						</span>
-                        <span class="openmrsSearchDiv">
-							<table class="openmrsSearchTable" cellpadding="2" cellspacing="0" style="width: 100%">
-								<thead id="openmrsSearchTableHead">
-									<tr></tr>
-								</thead>
-								<tbody id="objHitsTableBody" style="vertical-align: top">
-									<tr>
-										<td class="searchIndex"></td>
-										<td></td>
-									</tr>
-								</tbody>
-							</table>
-						</span>
-                    </form>
-                </div>
-            </div>
+        var searchController = null;
+        function searchPatientFromRemoteServer(searchText) {
+            var requestHeaders = new Headers({
+                'Content-Type': 'application/json',
+                'Authorization': 'Basic ' + base64encodedCredos
+            });
 
-            <script>
+            var requestOptions = {
+                method: 'GET',
+                headers: requestHeaders,
+                redirect: 'follow'
+            };
 
-                var patient;
-                var autoJump = true;
-                <request:existsParameter name="autoJump">
-                autoJump = <request:parameter name="autoJump"/>;
-                </request:existsParameter>
-
-                // Mambo ya remote server
-                var remoteServerUrl = ${remoteServerUrl};
-
-                function showSearch() {
-                    findPatient.style.display = "";
-                    patientListing.style.display = "none";
-                    savedText = "";
-                    searchBox.focus();
-                }
-
-                function onSelect(arr) {
-                    if (arr[0].patientId != null) {
-                        document.location = "${model.postURL}?patientId=" + arr[0].patientId + "&phrase=" + savedText;
+            var searchUrl = patientSearchUrl() + "&q=" + searchText;
+            if(searchController !== null) {
+                searchController.abort();
+            }
+            searchController = new AbortController();
+            requestOptions.signal = searchController.signal;
+            fetch(searchUrl, requestOptions)
+                .then(response => response.json())
+                .then(data => {
+                    // Generate table.
+                    console.log("Here and data ni: ", data);
+                    var results = [];
+                    if(Array.isArray(data.results) && data.results.length > 0) {
+                        foundPatientList = data.results;
+                        results = mapResults(data.results);
                     }
-                    else if (arr[0].href != null) {
-                        document.location = arr[0].href;
-                    }
+                    $j('#search-busy-gif').css("visibility", "hidden");
+                    refreshTable(patientTable, results);
+                }).catch(error => {
+                console.log('error', error)
+                $j('#search-busy-gif').css("visibility", "hidden");
+            });
+        }
+
+        function patientSearchUrl() {
+            var patientSearchUrl = remoteServerUrl;
+            if(remoteServerUrl !== null && !remoteServerUrl.endsWith("/")) {
+                patientSearchUrl += "/"
+            }
+            if(patientSearchUrl == null || patientSearchUrl == undefined) {
+                console.log("Remote Server URL is not set");
+                return;
+            }
+
+            return patientSearchUrl += "ws/rest/v1/patient?v=full"
+        }
+
+        function mapResults(results) {
+            return results.map(result => {
+                var mapped = [ result.uuid, result.identifiers[0].identifier, result.person.display, result.person.gender ];
+                var birthDate = new Date(result.person.birthdate);
+                mapped.push(birthDate.toLocaleDateString(undefined, DATE_DISPLAY_OPTIONS));
+                mapped.push(result.person.age);
+                if(result.person.preferredAddress) {
+                    mapped.push(result.person.preferredAddress.cityVillage);
+                } else if(Array.isArray(result.person.addresses && result.person.addresses.length > 0)) {
+                    mapped.push(result.person.addresses[0].cityVillage);
+                } else {
+                    mapped.push('<openmrs:message code="esaudefeatures.remote.patients.no.address.found"/>');
                 }
+                return mapped;
+            });
+        }
 
-                function findObjects(text) {
-                    if (text.length > 0) {
-                        savedText = text;
-                        DWRPatientService.findPatients(text, includeRetired, preFillTable);
-                    }
-                    else {
-                        var msg = new Array();
-                        msg.push(<openmrs:message code="error.patientSearchNoChars" />);
-                        fillTable(msg, [getNumber, getString]);
-                    }
-                    patientListing.style.display = "";
-                    return false;
+        function insertDetailsColumnInResultsTable(oTable) {
+            /*
+             * Insert a 'details' column to the table
+             */
+            var nCloneTh = document.createElement('th');
+            nCloneTh.setAttribute("id", EMPTY_COLUMN_HEADER_ID);
+
+            var nCloneTd = document.createElement('td');
+            nCloneTd.innerHTML = '<img src="${pageContext.request.contextPath}/moduleResources/esaudefeatures/images/details_open.png" />';
+            nCloneTd.className = "center";
+
+            $j('#found-patients thead tr').each(function () {
+                this.insertBefore(nCloneTh, this.childNodes[1]);
+            });
+
+            $j('#found-patients tbody tr').each( function () {
+                this.insertBefore(nCloneTd.cloneNode(true), this.childNodes[1] );
+            });
+
+            /* Add event listener for opening and closing details
+             * Note that the indicator for showing which row is open is not controlled by DataTables,
+             * rather it is done here
+             */
+            $j('#found-patients tbody td img').on('click', function () {
+                var nTr = this.parentNode.parentNode;
+                if ( this.src.match('details_close') ) {
+                    /* This row is already open - close it */
+                    this.src = "${pageContext.request.contextPath}/moduleResources/esaudefeatures/images/details_open.png";
+                    oTable.fnClose(nTr);
                 }
+                else {
+                    /* Open this row */
+                    this.src = "${pageContext.request.contextPath}/moduleResources/esaudefeatures/images/details_close.png";
 
-                function allowAutoJump() {
-                    if (autoJump == false) {
-                        autoJump = true;
-                        return false;
-                    }
-                    //	only allow the first item to be automatically selected if:
-                    //		the entered text is a string or the entered text is a valid identifier
-                    //return (savedText.match(/\d/) == false || isValidCheckDigit(savedText));
+                    // Fetch Similar records first.
+                    // 1. First try by uuid.
+                    var rowData = oTable.fnGetData(nTr);
+                    var patientUuid = rowData[0];
+                    var patient = foundPatientList.find(patient => patient.uuid === patientUuid);
+                    var remotePatientDetailsTitle ='<openmrs:message code="esaudefeatures.remote.patients.remote.patient.details"/>';
+                    var detailsWithButtonEnabled = createPatientDetailsHtmlTable(patient, remotePatientDetailsTitle, true, false);
+                    var detailsWithButtonDisabled = createPatientDetailsHtmlTable(patient, remotePatientDetailsTitle, true, true);
+                    var localPatietSearchUrl = localOpenmrsContextPath + '/ws/rest/v1/patient/' + patientUuid + '?v=full';
+                    var requestHeaders = new Headers({
+                        'Content-Type': 'application/json',
+                    });
 
-                    //don't autojump anymore.  keeping the above functionality
-                    //would require adding a field to PatientListItem, and this inelegant solution
-                    //doesn't seem worth the minimal functionality conferred above.
-                    return false;
-                }
+                    var requestOptions = {
+                        method: 'GET',
+                        headers: requestHeaders,
+                        redirect: 'follow'
+                    };
 
-            </script>
+                    fetch(localPatietSearchUrl, requestOptions)
+                        .then(response => {
+                            if(response.status === 200) {
+                                response.json().then(localPatient => {
+                                    var detailsTitle = '<openmrs:message code="esaudefeatures.remote.patients.same.uuid.local"/>';
+                                    var localPatientTable = '<div style="float:left; border:2.5px solid red; background-color: #FF9033">'
+                                        + createPatientDetailsHtmlTable(localPatient, detailsTitle, false)
+                                        + '</div>'
+                                    detailsWithButtonDisabled += localPatientTable;
+                                    oTable.fnOpen(nTr, detailsWithButtonDisabled, 'details' );
+                                });
 
-            <script>
-
-                var patientListing= document.getElementById("patientListing");
-                var findPatient   = document.getElementById("findPatient");
-                var searchBox		= document.getElementById("searchBox");
-                var findPatientForm = document.getElementById("findPatientForm");
-
-                function init() {
-                    dwr.util.useLoadingMessage();
-
-                    <request:existsParameter name="patientId">
-                    <!-- User has 'patientId' in the request params -- selecting that patient -->
-                    var pats = new Array();
-                    pats.push(new Object());
-                    pats[0].patientId = '<request:parameter name="patientId"/>';
-                    onSelect(pats);
-                    </request:existsParameter>
-
-                    <request:existsParameter name="phrase">
-                    <!-- User has 'phrase' in the request params -- searching on that -->
-                    searchBox.value = '<request:parameter name="phrase"/>';
-                    </request:existsParameter>
-
-                    showSearch();
-
-                    // creates back button functionality
-                    if (searchBox.value != "")
-                        search(searchBox, null, false, 0);
-
-                    changeClassProperty("description", "display", "none");
-                }
-
-                window.onload=init;
-            </script>
-
-        </c:when>
-        <c:when test="${model.size == 'full'}">
-
-            <openmrs:require privilege="View Patients" otherwise="/login.htm" redirect="/index.htm" />
-            <style>
-                #openmrsSearchTable_wrapper{
-                    /* Removes the empty space between the widget and the Create New Patient section if the table is short */
-                    /* Over ride the value set by datatables */
-                    min-height: 0px; height: auto !important;
-                }
-            </style>
-            <openmrs:htmlInclude file="/dwr/interface/DWRPatientService.js"/>
-            <openmrs:htmlInclude file="/scripts/jquery/dataTables/css/dataTables_jui.css"/>
-            <openmrs:htmlInclude file="/scripts/jquery/dataTables/js/jquery.dataTables.min.js"/>
-            <openmrs:htmlInclude file="/scripts/jquery-ui/js/openmrsSearch.js" />
-
-            <openmrs:globalProperty key="patient.listingAttributeTypes" var="attributesToList"/>
-
-            <script type="text/javascript">
-                var lastSearch;
-
-                // Get relevant parameter value, in current URL
-                function getURLParameter(name) {
-                    return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20')) || null;
-                }
-
-                $j(document).ready(function() {
-                    new OpenmrsSearch("findPatients", false, doPatientSearch, doSelectionHandler,
-                        [	{fieldName:"identifier", header:omsgs.identifier},
-                            {fieldName:"givenName", header:omsgs.givenName},
-                            {fieldName:"middleName", header:omsgs.middleName},
-                            {fieldName:"familyName", header:omsgs.familyName},
-                            {fieldName:"age", header:omsgs.age},
-                            {fieldName:"gender", header:omsgs.gender},
-                            {fieldName:"birthdateString", header:omsgs.birthdate},
-                            {fieldName:"deathDateString", header:omsgs.deathdate}
-                        ],
-                        {
-                            searchLabel: '<openmrs:message code="Patient.searchBox" javaScriptEscape="true"/>',
-                            searchPlaceholder:'<openmrs:message code="Patient.searchBox.placeholder" javaScriptEscape="true"/>',
-                            lastSearchParams : getURLParameter('lastSearchText') ? {'lastSearchText' : getURLParameter('lastSearchText')} : null,
-                            attributes: [
-                                <c:forEach var="attribute" items="${fn:split(attributesToList, ',')}" varStatus="varStatus">
-                                <c:if test="${fn:trim(attribute) != ''}">
-                                <c:set var="attributeName" value="${fn:trim(attribute)}" />
-                                <c:choose>
-                                <c:when test="${varStatus.index == 0}">
-                                {name:"${attributeName}", header:"<openmrs:message code="PersonAttributeType.${fn:replace(attributeName, ' ', '')}" text="${attributeName}"/>"}
-                                </c:when>
-                                <c:otherwise>
-                                ,{name:"${attributeName}", header:"<openmrs:message code="PersonAttributeType.${fn:replace(attributeName, ' ', '')}" text="${attributeName}"/>"}
-                                </c:otherwise>
-                                </c:choose>
-                                </c:if>
-                                </c:forEach>
-                            ]
-                            <c:if test="${not empty param.phrase}">
-                            , searchPhrase: '<openmrs:message text="${ param.phrase }" javaScriptEscape="true"/>'
-                            </c:if>
+                            } else if(response.status === 404) {
+                                // TODO: Go for identifiers & names (After discussion with the team)
+                                var localPatientSearchUrlUsingIdentifier = localOpenmrsContextPath + '/ws/rest/v1/patient?v=full&identifier=';
+                                if(patient.identifiers.length > 0) {
+                                    localPatientSearchUrlUsingIdentifier += patient.identifiers[0].identifier;
+                                    fetch(localPatientSearchUrlUsingIdentifier, requestOptions)
+                                        .then(response => {
+                                            if(response.status === 200) {
+                                                response.json().then(data => {
+                                                    if(data.results.length > 0) {
+                                                        // Only get the first one
+                                                        // TODO: Accommodate all found patients later (this is a very rare case)
+                                                        var detailsTitle = '<openmrs:message code="esaudefeatures.remote.patients.same.uuid.local"/>';
+                                                        var localPatientTable = '<div style="float:left; border:2.5px solid red; background-color: #FF9033">'
+                                                            + createPatientDetailsHtmlTable(data.results[0], detailsTitle, false)
+                                                            + '</div>'
+                                                        detailsWithButtonDisabled += localPatientTable;
+                                                        oTable.fnOpen(nTr, detailsWithButtonDisabled, 'details' );
+                                                    } else {
+                                                        oTable.fnOpen(nTr, detailsWithButtonEnabled, 'details' );
+                                                    }
+                                                })
+                                            } else {
+                                                oTable.fnOpen(nTr, detailsWithButtonEnabled, 'details' );
+                                            }
+                                        })
+                                        .catch(error => {
+                                            console.log('error', error);
+                                            oTable.fnOpen(nTr, detailsWithButtonEnabled, 'details' );
+                                        });
+                                }
+                            } else {
+                                oTable.fnOpen(nTr, detailsWithButtonEnabled, 'details' );
+                            }
+                        })
+                        .catch(error => {
+                            console.log('error', error);
+                            oTable.fnOpen(nTr, detailsWithButtonEnabled, 'details' );
                         });
+                }
+            });
+        }
 
-                    //set the focus to the first input box on the page(in this case the text box for the search widget)
-                    var inputs = document.getElementsByTagName("input");
-                    if(inputs[0])
-                        inputs[0].focus();
+        function createPatientPayload(restPatientPayload) {
+            var restPersonPayload = restPatientPayload.person;
+            var personPayload = {
+                uuid: restPersonPayload.uuid,
+                gender: restPersonPayload.gender,
+                birthdate: restPersonPayload.birthdate,
+                birthdateEstimated: restPersonPayload.birthdateEstimated
+            };
 
+            if(restPersonPayload.dead) {
+                Object.assign(personPayload, {
+                    dead: true,
+                    deathDate: restPersonPayload.deathDate,
+                    causeOfDeath: restPersonPayload.causeOfDeath
+                })
+            }
 
+            if(Array.isArray(restPersonPayload.names) && restPersonPayload.names.length > 0) {
+
+                personPayload.names = restPersonPayload.names.filter(name => !name.voided).map(name => {
+                    return {
+                        uuid: name.uuid,
+                        givenName: name.givenName,
+                        middleName: name.middleName,
+                        familyName: name.familyName,
+                    };
+                });
+            }
+
+            if(Array.isArray(restPersonPayload.addresses) && restPersonPayload.addresses.length > 0) {
+                var allKeys = Object.keys(restPersonPayload.addresses[0]);
+                var ignoredKeys = [ "uuid", "preferred", "voided", "display", "links", "resourceVersion" ];
+
+                ignoredKeys.forEach(ignored => {
+                    var index = allKeys.indexOf(ignored);
+                    allKeys.splice(index, 1);
                 });
 
-                function doSelectionHandler(index, data) {
-                    // Check the browser compatibility and, add an entry to history
-                    if (window.history.pushState) {
-                        window.history.pushState(
-                            {}, "",
-                            document.location.pathname + "?lastSearchText=" + document.getElementById('inputNode').value
-                        );
+                var addressesToSend = restPersonPayload.addresses.filter(address => !address.voided);
+                if(addressesToSend.length > 0) {
+                    personPayload.addresses = [];
+                    addressesToSend.forEach(address => {
+
+                        var addressPayload = {
+                            uuid: address.uuid,
+                            preferred: address.preferred,
+                            voided: address.voided
+                        };
+
+
+                        allKeys.forEach(key => {
+                            if (address[key] !== null) {
+                                addressPayload[key] = address[key];
+                            }
+                        });
+
+                        personPayload.addresses.push(addressPayload);
+                    });
+                }
+            }
+
+            if(Array.isArray(restPersonPayload.attributes) && restPersonPayload.attributes.length > 0) {
+                var attributesToSend = restPersonPayload.attributes.filter(attribute => !attribute.voided);
+                if(attributesToSend.length > 0) {
+                    personPayload.attributes = attributesToSend.map(attribute => {
+                        return {
+                            "attributeType": attribute.attributeType.uuid,
+                            "value": attribute.value
+                        }
+                    });
+                }
+            }
+
+            return {
+                person: personPayload,
+                identifiers: restPatientPayload.identifiers.filter(identifier => !identifier.voided).map(identifier => {
+                    var identifierPayload = {
+                        identifier: identifier.identifier,
+                        identifierType: identifier.identifierType.uuid,
+                        preferred: identifier.preferred
+                    };
+
+                    if(identifier.location && typeof identifier.location === 'object') {
+                        identifierPayload.location = identifier.location.uuid
                     }
-                    document.location = "${model.postURL}?patientId=" + data.patientId + "&phrase=" + lastSearch;
+                    return identifierPayload;
+                })
+            };
+        }
+
+        function refreshTable(oTable, data) {
+            oTable.fnClearTable();
+            oTable.fnAddData(data);
+
+            oTable.fnDraw();
+
+            if(Array.isArray(data) && data.length > 0) {
+                insertDetailsColumnInResultsTable(oTable);
+                oTable.fnSetColumnVis(0, false);
+            } else {
+                // Remove the added column in the header row if it already added.
+                var emptyColumnHeader = document.getElementById(EMPTY_COLUMN_HEADER_ID);
+                if(emptyColumnHeader !== null) {
+                    emptyColumnHeader.parentNode.removeChild(emptyColumnHeader);
                 }
+            }
+        }
 
-                //searchHandler for the Search widget
-                function doPatientSearch(text, resultHandler, getMatchCount, opts) {
-                    lastSearch = text;
-                    DWRPatientService.findCountAndPatients(text, opts.start, opts.length, getMatchCount, resultHandler);
+        function createPatientDetailsHtmlTable(patient, title, addImportButton, disableImportButton) {
+
+            var patientDetailsTable = '<table cellpadding="5" cellspacing="0" border="0" style="display: inline; padding-left:10px; border-spacing: 5px;">';
+            var patientName = patient.person.names[0];
+            if(patient.person.preferredName) {
+                patientName = patient.person.preferredName;
+            }
+
+            if(title) {
+                patientDetailsTable += '<tr><td colspan="2">' + title + '</td></tr>';
+            }
+            var givenName = patientName.givenName === null ? "" : patientName.givenName;
+            var middleName = patientName.middleName === null ? "" : patientName.middleName;
+            var familyName = patientName.familyName === null ? "" : patientName.familyName;
+            patientDetailsTable += '<tr><td colspan="2" style="border-bottom: solid; border-top: solid;">';
+            patientDetailsTable += '<openmrs:message code="esaudefeatures.remote.patients.names"/></td></tr>';
+            patientDetailsTable += '<tr><td><openmrs:message code="esaudefeatures.remote.patients.givenName"/><td>' + givenName + '</td></tr>';
+            patientDetailsTable += '<tr><td><openmrs:message code="esaudefeatures.remote.patients.middleName"/><td>' + middleName + '</td></tr>';
+            patientDetailsTable += '<tr><td><openmrs:message code="esaudefeatures.remote.patients.familyName"/><td>' + familyName + '</td></tr>';
+            patientDetailsTable += '<tr><td colspan="2" style="border-bottom: solid; border-top: solid; margin-top:15px;">';
+            patientDetailsTable += '<openmrs:message code="esaudefeatures.remote.patients.identifiers"/></td></tr>';
+            if(Array.isArray(patient.identifiers) && patient.identifiers.length > 0) {
+                for(let identifier of patient.identifiers) {
+                    patientDetailsTable += '<tr><td>' + identifier.identifierType.display + ':</td><td>' + identifier.identifier + '</td>';
                 }
+            } else {
+                patientDetailsTable += '<tr><td colspan="2"><openmrs:message code="esaudefeatures.remote.patients.no.identifiers"/> </td></tr>';
+            }
 
-            </script>
+            patientDetailsTable += '<tr><td colspan="2" style="border-bottom: solid; border-top:solid;"><openmrs:message code="esaudefeatures.remote.patients.attributes"/></td></tr>';
+            if(Array.isArray(patient.person.attributes) && patient.person.attributes.length > 0) {
+                for(let personAttribute of patient.person.attributes) {
+                    patientDetailsTable += '<tr><td>' + personAttribute.attributeType.display + ':</td><td>' + personAttribute.value + '</td>';
+                }
+            } else {
+                patientDetailsTable += '<tr><td colspan="2"><openmrs:message code="esaudefeatures.remote.patients.no.attributes"/></td></tr>';
+            }
+            patientDetailsTable += '<tr><td>uuid:<td>' + patient.uuid + '</td></tr>';
 
-            <div>
-                <b class="boxHeader"><openmrs:message code="esaudefeatures.remote.patients.search"/></b>
-                <div class="box">
-                    <div class="searchWidgetContainer" id="findPatients"></div>
-                </div>
-            </div>
+            if(addImportButton) {
+                if(disableImportButton) {
+                    patientDetailsTable += '<tr><td colspan="2"><input type="button" name="import-button-' + patient.uuid + '" disabled value="' +
+                        '<openmrs:message code="esaudefeatures.remote.patients.remote.import.patient"/>' +
+                        '" onclick="importPatient(\'' + patient.uuid + '\')"/></td></tr>';
+                } else {
+                    patientDetailsTable += '<tr><td colspan="2"><input type="button" id="import-button-' + patient.uuid + '" value="' +
+                        '<openmrs:message code="esaudefeatures.remote.patients.remote.import.patient"/>' +
+                        '" onclick="importPatient(\'' + patient.uuid + '\', this.id)"/>' +
+                        '<img class="import-busy-gif" src="${pageContext.request.contextPath}/moduleResources/esaudefeatures/images/loading.gif" style="visibility:hidden;"/></td></tr>';
+                }
+            }
 
-        </c:when>
-        <c:otherwise>
-            <openmrs:message code="Portlet.findPatient.error" arguments="${model.size}"/>
-        </c:otherwise>
-    </c:choose>
+            patientDetailsTable += '</table>';
 
+            return patientDetailsTable;
+        }
+
+        function importPatient(patientUuid, pressedButtonId) {
+            var patient = foundPatientList.find(patient => patient.uuid === patientUuid);
+            var confirmationMessage = IMPORT_CONFIRM_MSG_PREFIX + "Patient: " + patient.display;
+            var confirmed = window.confirm(confirmationMessage);
+
+            if(confirmed) {
+                console.log("Importing patient with uuid: " + patientUuid);
+                var pressedButton = document.getElementById(pressedButtonId);
+                var busyGifImgs = document.getElementsByClassName('import-busy-gif');
+                $j(busyGifImgs).css('visibility', 'visible');
+                $j(pressedButton).prop('disabled', true);
+
+                $j('#openmrs_msg').css('visibility', 'hidden');
+                $j('#openmrs_msg').html(IMPORT_SUCCESS_MSG_PREFIX + '(' + patient.display + ')');
+                $j('#remote_patient_error_msg').css('visibility', 'hidden');
+                $j('#remote_patient_error_msg').html(IMPORT_ERROR_MSG_PREFIX);
+
+                var patient = foundPatientList.find(patient => patient.uuid === patientUuid);
+                var localPatientRestUrl = localOpenmrsContextPath + '/ws/rest/v1/patient';
+
+                var requestHeaders = new Headers();
+                requestHeaders.append("Content-Type", "application/json");
+
+                var rawPatient = JSON.stringify(createPatientPayload(patient));
+
+                var requestOptions = {
+                    method: 'POST',
+                    headers: requestHeaders,
+                    body: rawPatient,
+                };
+
+                var createPatientStatus = -1;
+                fetch(localPatientRestUrl, requestOptions)
+                    .then(response => {
+                        createPatientStatus = response.status;
+                        return response.json()
+                    })
+                    .then(patientResult => {
+                        if (createPatientStatus !== 201) {
+                            if (patientResult.error) {
+                                $j('#remote_patient_error_msg').append("<br/>" + JSON.stringify(patientResult, null, 2));
+                            }
+                            $j('#remote_patient_error_msg').css('visibility', 'visible');
+                            $j(busyGifImgs).css('visibility', 'hidden');
+                            $j(pressedButton).prop('disabled', false);
+                        } else {
+                            // TODO: Maybe Remove the remote patient from the list.
+                            $j('#openmrs_msg').css('visibility', 'visible');
+                            $j(busyGifImgs).css('visibility', 'hidden');
+                            refreshTable(patientTable, mapResults(foundPatientList));
+                        }
+                    })
+                    .catch(trouble => {
+                        $j('#remote_patient_error_msg').css('visibility', 'visible');
+                        $j('.import-busy-gif').css('visibility', 'hidden');
+                        console.log('Error while importing patient record: ', trouble)
+                    });
+            }
+        }
+
+        $j(document).ready(function() {
+            patientTable = $j('#found-patients').dataTable({
+                aaData: [],
+                bFilter: false,
+                aaSorting: [[2, 'asc']]
+            });
+
+            $j("#find-remote-patients").on('change keyup cut paste', function(e) {
+                var searchText = $j(this).val();
+                if(searchText !== null) searchText.trim();
+                if(lastSearchedText === null || searchText !== lastSearchedText) {
+                    $j('#remote_patient_error_msg').css('visibility', 'hidden');
+                    $j('#openmrs_msg').css('visibility', 'hidden');
+                    if(searchText.length >= MIN_SEARCH_LENGTH) {
+                        $j('#search-busy-gif').css("visibility", "visible");
+                        searchPatientFromRemoteServer(searchText);
+                    } else if(lastSearchedText !== null) {
+                        // Subsequent searches with text less than minimum length.
+                        foundPatientList = null;
+                        refreshTable(patientTable, []);
+                    }
+                    lastSearchedText = searchText;
+                }
+            });
+        });
+
+    </script>
+
+    <div>
+        <b class="boxHeader"><openmrs:message code="esaudefeatures.remote.patients.search"/></b>
+        <div class="box">
+            <openmrs:message code="esaudefeatures.remote.patients.search" javaScriptEscape="true"/>
+            <input type="text" id="find-remote-patients"
+                   placeholder="<openmrs:message code="esaudefeatures.remote.patients.search.placeholder" javaScriptEscape="true"/>"/>
+            <img id="search-busy-gif" src="${pageContext.request.contextPath}/moduleResources/esaudefeatures/images/loading.gif" style="visibility:hidden;"/>
+            <table id="found-patients" class="display nowrap" style="width:100%">
+                <thead>
+                <tr>
+                    <th></th>
+                    <th>Identifier</th>
+                    <th>Full name</th>
+                    <th>Gender</th>
+                    <th>Birth date</th>
+                    <th>Age</th>
+                    <th>Address</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
 </c:if>
