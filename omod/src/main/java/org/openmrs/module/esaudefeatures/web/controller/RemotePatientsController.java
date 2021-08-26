@@ -21,7 +21,7 @@ import static org.openmrs.util.OpenmrsConstants.OPENMRS_VERSION_SHORT;
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 8/5/21.
  */
 @Controller("esaudefeatures.remotePatientsController")
-@RequestMapping(RemotePatientsController.ROOT_PATH)
+@RequestMapping({ RemotePatientsController.ROOT_PATH, RemotePatientsController.ALT_ROOT_PATH })
 public class RemotePatientsController {
 	
 	private AdministrationService adminService;
@@ -29,6 +29,8 @@ public class RemotePatientsController {
 	private static final Logger LOGGER = LoggerFactory.getLogger(RemotePatientsController.class);
 	
 	public static final String ROOT_PATH = "module/esaudefeatures/findRemotePatients.form";
+	
+	public static final String ALT_ROOT_PATH = "module/esaudefeatures/findRemotePatients.htm";
 	
 	@RequestMapping(method = RequestMethod.GET)
 	public ModelAndView searchRemoteForm(ModelAndView modelAndView) {
@@ -71,11 +73,6 @@ public class RemotePatientsController {
 			modelAndView.setViewName("module/esaudefeatures/remotePatients/findRemotePatients2x");
 		}
 		return modelAndView;
-	}
-	
-	@RequestMapping(value = "module/esaudefeatures/findRemotePatients.htm")
-	public ModelAndView searchRemoteFormAlternativePath(ModelAndView modelAndView) {
-		return searchRemoteForm(modelAndView);
 	}
 	
 	@Autowired

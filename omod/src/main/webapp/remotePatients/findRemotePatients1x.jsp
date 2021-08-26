@@ -43,6 +43,7 @@
         const MIN_SEARCH_LENGTH = 3;
         const EMPTY_COLUMN_HEADER_ID = 'empty-header-column';
         const DATE_DISPLAY_OPTIONS = { year: 'numeric', month: 'short', day: 'numeric' };
+        const IMPORT_ERROR_MSG_PREFIX = $j('#remote_patient_error_msg').html();
 
         var searchController = null;
         function searchPatientFromRemoteServer(searchText) {
@@ -220,24 +221,7 @@
         }
 
         function createPatientPayload(restPatientPayload) {
-            return {
-                person: restPatientPayload.uuid,
-                identifiers: restPatientPayload.identifiers.filter(identifier => !identifier.voided).map(identifier => {
-                    var identifierPayload = {
-                        identifier: identifier.identifier,
-                        identifierType: identifier.identifierType.uuid,
-                        preferred: identifier.preferred
-                    };
-
-                    if(identifier.location && typeof identifier.location === 'object') {
-                        identifierPayload.location = identifier.location.uuid
-                    }
-                    return identifierPayload;
-                })
-            };
-        }
-
-        function createPersonPayload(restPersonPayload) {
+            var restPersonPayload = restPatientPayload.person;
             var personPayload = {
                 uuid: restPersonPayload.uuid,
                 gender: restPersonPayload.gender,
@@ -309,7 +293,21 @@
                 }
             }
 
-            return personPayload;
+            return {
+                person: personPayload,
+                identifiers: restPatientPayload.identifiers.filter(identifier => !identifier.voided).map(identifier => {
+                    var identifierPayload = {
+                        identifier: identifier.identifier,
+                        identifierType: identifier.identifierType.uuid,
+                        preferred: identifier.preferred
+                    };
+
+                    if(identifier.location && typeof identifier.location === 'object') {
+                        identifierPayload.location = identifier.location.uuid
+                    }
+                    return identifierPayload;
+                })
+            };
         }
 
         function refreshTable(oTable, data) {
@@ -391,80 +389,49 @@
             $j(busyGifImgs).css('visibility', 'visible');
             $j(pressedButton).prop('disabled', true);
 
+            $j('#openmrs_msg').css('visibility', 'hidden');
+            $j('#remote_patient_error_msg').css('visibility', 'hidden');
+            $j('#remote_patient_error_msg').html(IMPORT_ERROR_MSG_PREFIX);
+
             var patient = foundPatientList.find(patient => patient.uuid === patientUuid);
-            var localPersonRestUrl = localOpenmrsContextPath + '/ws/rest/v1/person';
             var localPatientRestUrl = localOpenmrsContextPath + '/ws/rest/v1/patient';
 
             var requestHeaders = new Headers();
             requestHeaders.append("Content-Type", "application/json");
 
-            var rawPerson = JSON.stringify(createPersonPayload(patient.person));
             var rawPatient = JSON.stringify(createPatientPayload(patient));
 
             var requestOptions = {
                 method: 'POST',
                 headers: requestHeaders,
-                body: rawPerson,
+                body: rawPatient,
             };
 
-            var createPersonStatus = -1;
-            fetch(localPersonRestUrl, requestOptions)
+            var createPatientStatus = -1;
+            fetch(localPatientRestUrl, requestOptions)
                 .then(response => {
-                    createPersonStatus = response.status;
+                    createPatientStatus = response.status;
                     return response.json()
                 })
-                .then(personResult => {
-                    if (createPersonStatus === 201) {
-                        // Now push the patient.
-                        requestOptions.body = rawPatient;
-                        var createPatientStatus = -1;
-                        fetch(localPatientRestUrl, requestOptions)
-                            .then(response => {
-                                createPatientStatus = response.status;
-                                return response.json()
-                            })
-                            .then(patientResult => {
-                                if(createPatientStatus !== 201) {
-                                    // Didn't work delete created person.
-                                    var deletePersonUrl = localPersonRestUrl + '/' + patient.person.uuid + '?purge=true';
-                                    fetch(deletePersonUrl, { method: 'DELETE', headers: requestHeaders })
-                                        .then(response => response.json())
-                                        .then(deleteResult => {
-                                            if (patientResult.error && patientResult.error.message) {
-                                                $j('#remote_patient_error_msg').append(patientResult.error.message);
-                                            }
-                                            $j('#remote_patient_error_msg').css('visibility', 'visible');
-                                        })
-                                        .catch(trouble => {
-                                            $j('#remote_patient_error_msg').css('visibility', 'visible');
-                                            $j(busyGifImgs).css('visibility', 'hidden');
-                                            $j(pressedButton).prop('disabled', false);
-                                            console.log('Could not delete person with uuid ' + patient.person.uuid, trouble)
-                                        });
-                                } else {
-                                    // TODO: Maybe Remove the remote patient from the list.
-                                    $j('#openmrs_msg').css('visibility', 'visible');
-                                    $j(busyGifImgs).css('visibility', 'hidden');
-                                    refreshTable(patientTable, mapResults(foundPatientList));
-                                }
-                            })
-                            .catch(trouble => {
-                                $j('#remote_patient_error_msg').css('visibility', 'visible');
-                                $j('.import-busy-gif').css('visibility', 'hidden');
-                                console.log('Error while importing patient record: ', trouble)
-                            });
-                    } else {
-                        if(personResult.error && personResult.error.message) $j('#remote_patient_error_msg').append(personResult.error.message);
+                .then(patientResult => {
+                    if(createPatientStatus !== 201) {
+                        if (patientResult.error) {
+                            $j('#remote_patient_error_msg').append("<br/>" + JSON.stringify(patientResult, null, 2));
+                        }
                         $j('#remote_patient_error_msg').css('visibility', 'visible');
                         $j(busyGifImgs).css('visibility', 'hidden');
                         $j(pressedButton).prop('disabled', false);
+                    } else {
+                        // TODO: Maybe Remove the remote patient from the list.
+                        $j('#openmrs_msg').css('visibility', 'visible');
+                        $j(busyGifImgs).css('visibility', 'hidden');
+                        refreshTable(patientTable, mapResults(foundPatientList));
                     }
                 })
-                .catch(error => {
+                .catch(trouble => {
                     $j('#remote_patient_error_msg').css('visibility', 'visible');
-                    $j(busyGifImgs).css('visibility', 'hidden');
-                    $j(pressedButton).prop('disabled', false);
-                    console.log('error', error)
+                    $j('.import-busy-gif').css('visibility', 'hidden');
+                    console.log('Error while importing patient record: ', trouble)
                 });
         }
 
@@ -479,6 +446,8 @@
                 var searchText = $j(this).val();
                 if(searchText !== null) searchText.trim();
                 if(lastSearchedText === null || searchText !== lastSearchedText) {
+                    $j('#remote_patient_error_msg').css('visibility', 'hidden');
+                    $j('#openmrs_msg').css('visibility', 'hidden');
                     if(searchText.length >= MIN_SEARCH_LENGTH) {
                         $j('#search-busy-gif').css("visibility", "visible");
                         searchPatientFromRemoteServer(searchText);
