@@ -43,7 +43,9 @@
         const MIN_SEARCH_LENGTH = 3;
         const EMPTY_COLUMN_HEADER_ID = 'empty-header-column';
         const DATE_DISPLAY_OPTIONS = { year: 'numeric', month: 'short', day: 'numeric' };
+        const IMPORT_SUCCESS_MSG_PREFIX = $j('#openmrs_msg').html();
         const IMPORT_ERROR_MSG_PREFIX = $j('#remote_patient_error_msg').html();
+        const IMPORT_CONFIRM_MSG_PREFIX = '<openmrs:message code="esaudefeatures.remote.patients.import.confirmation"/> ';
 
         var searchController = null;
         function searchPatientFromRemoteServer(searchText) {
@@ -383,56 +385,63 @@
         }
 
         function importPatient(patientUuid, pressedButtonId) {
-            console.log("Importing patient with uuid: " + patientUuid);
-            var pressedButton = document.getElementById(pressedButtonId);
-            var busyGifImgs = document.getElementsByClassName('import-busy-gif');
-            $j(busyGifImgs).css('visibility', 'visible');
-            $j(pressedButton).prop('disabled', true);
-
-            $j('#openmrs_msg').css('visibility', 'hidden');
-            $j('#remote_patient_error_msg').css('visibility', 'hidden');
-            $j('#remote_patient_error_msg').html(IMPORT_ERROR_MSG_PREFIX);
-
             var patient = foundPatientList.find(patient => patient.uuid === patientUuid);
-            var localPatientRestUrl = localOpenmrsContextPath + '/ws/rest/v1/patient';
+            var confirmationMessage = IMPORT_CONFIRM_MSG_PREFIX + "Patient: " + patient.display;
+            var confirmed = window.confirm(confirmationMessage);
 
-            var requestHeaders = new Headers();
-            requestHeaders.append("Content-Type", "application/json");
+            if(confirmed) {
+                console.log("Importing patient with uuid: " + patientUuid);
+                var pressedButton = document.getElementById(pressedButtonId);
+                var busyGifImgs = document.getElementsByClassName('import-busy-gif');
+                $j(busyGifImgs).css('visibility', 'visible');
+                $j(pressedButton).prop('disabled', true);
 
-            var rawPatient = JSON.stringify(createPatientPayload(patient));
+                $j('#openmrs_msg').css('visibility', 'hidden');
+                $j('#openmrs_msg').html(IMPORT_SUCCESS_MSG_PREFIX + '(' + patient.display + ')');
+                $j('#remote_patient_error_msg').css('visibility', 'hidden');
+                $j('#remote_patient_error_msg').html(IMPORT_ERROR_MSG_PREFIX);
 
-            var requestOptions = {
-                method: 'POST',
-                headers: requestHeaders,
-                body: rawPatient,
-            };
+                var patient = foundPatientList.find(patient => patient.uuid === patientUuid);
+                var localPatientRestUrl = localOpenmrsContextPath + '/ws/rest/v1/patient';
 
-            var createPatientStatus = -1;
-            fetch(localPatientRestUrl, requestOptions)
-                .then(response => {
-                    createPatientStatus = response.status;
-                    return response.json()
-                })
-                .then(patientResult => {
-                    if(createPatientStatus !== 201) {
-                        if (patientResult.error) {
-                            $j('#remote_patient_error_msg').append("<br/>" + JSON.stringify(patientResult, null, 2));
+                var requestHeaders = new Headers();
+                requestHeaders.append("Content-Type", "application/json");
+
+                var rawPatient = JSON.stringify(createPatientPayload(patient));
+
+                var requestOptions = {
+                    method: 'POST',
+                    headers: requestHeaders,
+                    body: rawPatient,
+                };
+
+                var createPatientStatus = -1;
+                fetch(localPatientRestUrl, requestOptions)
+                    .then(response => {
+                        createPatientStatus = response.status;
+                        return response.json()
+                    })
+                    .then(patientResult => {
+                        if (createPatientStatus !== 201) {
+                            if (patientResult.error) {
+                                $j('#remote_patient_error_msg').append("<br/>" + JSON.stringify(patientResult, null, 2));
+                            }
+                            $j('#remote_patient_error_msg').css('visibility', 'visible');
+                            $j(busyGifImgs).css('visibility', 'hidden');
+                            $j(pressedButton).prop('disabled', false);
+                        } else {
+                            // TODO: Maybe Remove the remote patient from the list.
+                            $j('#openmrs_msg').css('visibility', 'visible');
+                            $j(busyGifImgs).css('visibility', 'hidden');
+                            refreshTable(patientTable, mapResults(foundPatientList));
                         }
+                    })
+                    .catch(trouble => {
                         $j('#remote_patient_error_msg').css('visibility', 'visible');
-                        $j(busyGifImgs).css('visibility', 'hidden');
-                        $j(pressedButton).prop('disabled', false);
-                    } else {
-                        // TODO: Maybe Remove the remote patient from the list.
-                        $j('#openmrs_msg').css('visibility', 'visible');
-                        $j(busyGifImgs).css('visibility', 'hidden');
-                        refreshTable(patientTable, mapResults(foundPatientList));
-                    }
-                })
-                .catch(trouble => {
-                    $j('#remote_patient_error_msg').css('visibility', 'visible');
-                    $j('.import-busy-gif').css('visibility', 'hidden');
-                    console.log('Error while importing patient record: ', trouble)
-                });
+                        $j('.import-busy-gif').css('visibility', 'hidden');
+                        console.log('Error while importing patient record: ', trouble)
+                    });
+            }
         }
 
         $j(document).ready(function() {
