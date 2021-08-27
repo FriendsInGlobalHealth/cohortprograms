@@ -80,8 +80,8 @@ public class RemotePatientsController {
 	}
 	
 	/**
-	 * Copied from org.apache.solr.common.util.Base64 class to avoid dependency issues between 1.x instances as
-	 * opposed to 2.x instances.
+	 * Copied from org.apache.solr.common.util.Base64 class to avoid dependency issues between 1.x
+	 * instances as opposed to 2.x instances.
 	 * 
 	 * @param a
 	 * @param offset
