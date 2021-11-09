@@ -62,7 +62,6 @@
                 .then(response => response.json())
                 .then(data => {
                     // Generate table.
-                    console.log("Here and data ni: ", data);
                     var results = [];
                     if(Array.isArray(data.results) && data.results.length > 0) {
                         foundPatientList = data.results;
@@ -90,15 +89,25 @@
         }
 
         function mapResults(results) {
+            var _determineAddressToDisplay = function(address) {
+                var displayedAddress = '<openmrs:message code="esaudefeatures.remote.patients.no.address.found"/>';
+                if(address.address1 && address.address5) {
+                    displayedAddress = address.address1 + ' - ' + address.address5;
+                } else if(address.display) {
+                    displayedAddress = address.display;
+                }
+                return displayedAddress;
+            };
+
             return results.map(result => {
                 var mapped = [ result.uuid, result.identifiers[0].identifier, result.person.display, result.person.gender ];
                 var birthDate = new Date(result.person.birthdate);
                 mapped.push(birthDate.toLocaleDateString(undefined, DATE_DISPLAY_OPTIONS));
                 mapped.push(result.person.age);
                 if(result.person.preferredAddress) {
-                    mapped.push(result.person.preferredAddress.cityVillage);
+                    mapped.push(_determineAddressToDisplay(result.person.preferredAddress));
                 } else if(Array.isArray(result.person.addresses && result.person.addresses.length > 0)) {
-                    mapped.push(result.person.addresses[0].cityVillage);
+                    mapped.push(_determineAddressToDisplay(result.person.addresses[0]));
                 } else {
                     mapped.push('<openmrs:message code="esaudefeatures.remote.patients.no.address.found"/>');
                 }
@@ -323,6 +332,12 @@
         }
 
         function createPatientDetailsHtmlTable(patient, title, addImportButton, disableImportButton) {
+            var __determineAttributeDisplayValue = function(attributeValue) {
+                if(typeof attributeValue !== 'string' && typeof attributeValue === 'object' && attributeValue.display) {
+                    return attributeValue.display;
+                }
+                return attributeValue;
+            }
 
             var patientDetailsTable = '<table cellpadding="5" cellspacing="0" border="0" style="display: inline; padding-left:10px; border-spacing: 5px;">';
             var patientName = patient.person.names[0];
@@ -354,7 +369,7 @@
             patientDetailsTable += '<tr><td colspan="2" style="border-bottom: solid; border-top:solid;"><openmrs:message code="esaudefeatures.remote.patients.attributes"/></td></tr>';
             if(Array.isArray(patient.person.attributes) && patient.person.attributes.length > 0) {
                 for(let personAttribute of patient.person.attributes) {
-                    patientDetailsTable += '<tr><td>' + personAttribute.attributeType.display + ':</td><td>' + personAttribute.value + '</td>';
+                    patientDetailsTable += '<tr><td>' + personAttribute.attributeType.display + ':</td><td>' + __determineAttributeDisplayValue(personAttribute.value) + '</td>';
                 }
             } else {
                 patientDetailsTable += '<tr><td colspan="2"><openmrs:message code="esaudefeatures.remote.patients.no.attributes"/></td></tr>';
@@ -443,7 +458,7 @@
             patientTable = $j('#found-patients').dataTable({
                 aaData: [],
                 bFilter: false,
-                aaSorting: [[2, 'asc']]
+                bSort: false
             });
 
             $j("#find-remote-patients").on('change keyup cut paste', function(e) {
