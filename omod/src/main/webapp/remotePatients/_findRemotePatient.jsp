@@ -38,6 +38,7 @@
         const IMPORT_SUCCESS_MSG_PREFIX = $j('#openmrs_msg').html();
         const IMPORT_ERROR_MSG_PREFIX = $j('#remote_patient_error_msg').html();
         const IMPORT_CONFIRM_MSG_PREFIX = '<openmrs:message code="esaudefeatures.remote.patients.import.confirmation"/> ';
+        const SKIPPED_PERSON_ATTRIBUTES_DURING_IMPORT = [ '8d87236c-c2cc-11de-8d13-0010c6dffd0f'];
 
         var searchController = null;
         function searchPatientFromRemoteServer(searchText) {
@@ -285,13 +286,18 @@
             }
 
             if(Array.isArray(restPersonPayload.attributes) && restPersonPayload.attributes.length > 0) {
-                var attributesToSend = restPersonPayload.attributes.filter(attribute => !attribute.voided);
+                var attributesToSend = restPersonPayload.attributes.filter(attribute => !attribute.voided &&
+                                            !SKIPPED_PERSON_ATTRIBUTES_DURING_IMPORT.includes(attribute.attributeType.uuid));
                 if(attributesToSend.length > 0) {
                     personPayload.attributes = attributesToSend.map(attribute => {
+                        var attrValue = attribute.value;
+                        if(typeof attribute.value === 'object' && attribute.value.uuid) {
+                            attrValue = attribute.value.uuid;
+                        }
                         return {
                             "attributeType": attribute.attributeType.uuid,
-                            "value": attribute.value
-                        }
+                            "value": attrValue
+                        };
                     });
                 }
             }
