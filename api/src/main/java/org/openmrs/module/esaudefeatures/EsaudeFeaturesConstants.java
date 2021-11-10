@@ -10,4 +10,6 @@ public class EsaudeFeaturesConstants {
 	public static final String REMOTE_SERVER_USERNAME_GP = "esaudefeatures.remote.server.username";
 	
 	public static final String REMOTE_SERVER_PASSWORD_GP = "esaudefeatures.remote.server.password";
+	
+	public static final String IMPORTED_PATIENT_LOCATION_UUID_GP = "esaudefeatures.imported.patient.location.uuid";
 }

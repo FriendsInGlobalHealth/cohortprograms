@@ -29,6 +29,7 @@
         var localOpenmrsContextPath = '${pageContext.request.contextPath}';
         var remoteServerUrl = "${remoteServerUrl}";
         var base64encodedCredos = "${remoteServerAuth}";
+        var importedPatientLocationUuid = "${importedPatientLocationUuid}";
         var patientTable = null;
         var lastSearchedText = null;
         var foundPatientList = null;
@@ -38,7 +39,13 @@
         const IMPORT_SUCCESS_MSG_PREFIX = $j('#openmrs_msg').html();
         const IMPORT_ERROR_MSG_PREFIX = $j('#remote_patient_error_msg').html();
         const IMPORT_CONFIRM_MSG_PREFIX = '<openmrs:message code="esaudefeatures.remote.patients.import.confirmation"/> ';
+
+        // Health Center Attribute which is to be skipped during import
         const SKIPPED_PERSON_ATTRIBUTES_DURING_IMPORT = [ '8d87236c-c2cc-11de-8d13-0010c6dffd0f'];
+
+        // Attribute type that will store the date of import for a patient record being imported
+        // Agreed to use the "Identificador definido localmente 10" whose uuid is below (i.e c649dae9-13b6-4c0d-9edc-6b1d304b13f4) for the purpose
+        const IMPORT_DATE_PATTRIB_UUID = 'c649dae9-13b6-4c0d-9edc-6b1d304b13f4';
 
         var searchController = null;
         function searchPatientFromRemoteServer(searchText) {
@@ -285,20 +292,24 @@
                 }
             }
 
+            personPayload.attributes = [{
+                attributeType: IMPORT_DATE_PATTRIB_UUID,
+                value: new Date().toISOString()
+            }];
             if(Array.isArray(restPersonPayload.attributes) && restPersonPayload.attributes.length > 0) {
                 var attributesToSend = restPersonPayload.attributes.filter(attribute => !attribute.voided &&
                                             !SKIPPED_PERSON_ATTRIBUTES_DURING_IMPORT.includes(attribute.attributeType.uuid));
                 if(attributesToSend.length > 0) {
-                    personPayload.attributes = attributesToSend.map(attribute => {
+                    personPayload.attributes = personPayload.attributes.concat(attributesToSend.map(attribute => {
                         var attrValue = attribute.value;
                         if(typeof attribute.value === 'object' && attribute.value.uuid) {
                             attrValue = attribute.value.uuid;
                         }
                         return {
-                            "attributeType": attribute.attributeType.uuid,
-                            "value": attrValue
+                            attributeType: attribute.attributeType.uuid,
+                            value: attrValue
                         };
-                    });
+                    }));
                 }
             }
 
@@ -312,7 +323,8 @@
                     };
 
                     if(identifier.location && typeof identifier.location === 'object') {
-                        identifierPayload.location = identifier.location.uuid
+                        // Replace with the local imported patient location uuid
+                        identifierPayload.location = importedPatientLocationUuid;
                     }
                     return identifierPayload;
                 })
@@ -402,61 +414,69 @@
 
         function importPatient(patientUuid, pressedButtonId) {
             var patient = foundPatientList.find(patient => patient.uuid === patientUuid);
-            var confirmationMessage = IMPORT_CONFIRM_MSG_PREFIX + "Patient: " + patient.display;
-            var confirmed = window.confirm(confirmationMessage);
+            var identifierWithLocationExists = patient.identifiers.filter(identifier => !identifier.voided).some(identifier => {
+                return identifier.location && typeof identifier.location === 'object'
+            });
+            if(identifierWithLocationExists && (importedPatientLocationUuid === null || importedPatientLocationUuid === undefined ||
+                importedPatientLocationUuid.length == 0)) {
+                window.alert("Please set the EsaudeFeatures imported patient location uuid global property");
+            } else {
+                var confirmationMessage = IMPORT_CONFIRM_MSG_PREFIX + "Patient: " + patient.display;
+                var confirmed = window.confirm(confirmationMessage);
 
-            if(confirmed) {
-                console.log("Importing patient with uuid: " + patientUuid);
-                var pressedButton = document.getElementById(pressedButtonId);
-                var busyGifImgs = document.getElementsByClassName('import-busy-gif');
-                $j(busyGifImgs).css('visibility', 'visible');
-                $j(pressedButton).prop('disabled', true);
+                if (confirmed) {
+                    console.log("Importing patient with uuid: " + patientUuid);
+                    var pressedButton = document.getElementById(pressedButtonId);
+                    var busyGifImgs = document.getElementsByClassName('import-busy-gif');
+                    $j(busyGifImgs).css('visibility', 'visible');
+                    $j(pressedButton).prop('disabled', true);
 
-                $j('#openmrs_msg').css('visibility', 'hidden');
-                $j('#openmrs_msg').html(IMPORT_SUCCESS_MSG_PREFIX + '(' + patient.display + ')');
-                $j('#remote_patient_error_msg').css('visibility', 'hidden');
-                $j('#remote_patient_error_msg').html(IMPORT_ERROR_MSG_PREFIX);
+                    $j('#openmrs_msg').css('visibility', 'hidden');
+                    $j('#openmrs_msg').html(IMPORT_SUCCESS_MSG_PREFIX + '(' + patient.display + ')');
+                    $j('#remote_patient_error_msg').css('visibility', 'hidden');
+                    $j('#remote_patient_error_msg').html(IMPORT_ERROR_MSG_PREFIX);
 
-                var patient = foundPatientList.find(patient => patient.uuid === patientUuid);
-                var localPatientRestUrl = localOpenmrsContextPath + '/ws/rest/v1/patient';
+                    var patient = foundPatientList.find(patient => patient.uuid === patientUuid);
+                    var localPatientRestUrl = localOpenmrsContextPath + '/ws/rest/v1/patient';
 
-                var requestHeaders = new Headers();
-                requestHeaders.append("Content-Type", "application/json");
+                    var requestHeaders = new Headers();
+                    requestHeaders.append("Content-Type", "application/json");
 
-                var rawPatient = JSON.stringify(createPatientPayload(patient));
+                    var rawPatient = JSON.stringify(createPatientPayload(patient));
 
-                var requestOptions = {
-                    method: 'POST',
-                    headers: requestHeaders,
-                    body: rawPatient,
-                };
+                    var requestOptions = {
+                        method: 'POST',
+                        headers: requestHeaders,
+                        body: rawPatient,
+                    };
 
-                var createPatientStatus = -1;
-                fetch(localPatientRestUrl, requestOptions)
-                    .then(response => {
-                        createPatientStatus = response.status;
-                        return response.json()
-                    })
-                    .then(patientResult => {
-                        if (createPatientStatus !== 201) {
-                            if (patientResult.error) {
-                                $j('#remote_patient_error_msg').append("<br/>" + JSON.stringify(patientResult, null, 2));
+                    var createPatientStatus = -1;
+                    fetch(localPatientRestUrl, requestOptions)
+                        .then(response => {
+                            createPatientStatus = response.status;
+                            return response.json()
+                        })
+                        .then(patientResult => {
+                            if (createPatientStatus !== 201) {
+                                if (patientResult.error) {
+                                    $j('#remote_patient_error_msg').append("<br/>" + JSON.stringify(patientResult, null, 2));
+                                }
+                                $j('#remote_patient_error_msg').css('visibility', 'visible');
+                                $j(busyGifImgs).css('visibility', 'hidden');
+                                $j(pressedButton).prop('disabled', false);
+                            } else {
+                                // TODO: Maybe Remove the remote patient from the list.
+                                $j('#openmrs_msg').css('visibility', 'visible');
+                                $j(busyGifImgs).css('visibility', 'hidden');
+                                refreshTable(patientTable, mapResults(foundPatientList));
                             }
+                        })
+                        .catch(trouble => {
                             $j('#remote_patient_error_msg').css('visibility', 'visible');
-                            $j(busyGifImgs).css('visibility', 'hidden');
-                            $j(pressedButton).prop('disabled', false);
-                        } else {
-                            // TODO: Maybe Remove the remote patient from the list.
-                            $j('#openmrs_msg').css('visibility', 'visible');
-                            $j(busyGifImgs).css('visibility', 'hidden');
-                            refreshTable(patientTable, mapResults(foundPatientList));
-                        }
-                    })
-                    .catch(trouble => {
-                        $j('#remote_patient_error_msg').css('visibility', 'visible');
-                        $j('.import-busy-gif').css('visibility', 'hidden');
-                        console.log('Error while importing patient record: ', trouble)
-                    });
+                            $j('.import-busy-gif').css('visibility', 'hidden');
+                            console.log('Error while importing patient record: ', trouble)
+                        });
+                }
             }
         }
 
