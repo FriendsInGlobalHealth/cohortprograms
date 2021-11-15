@@ -35,7 +35,7 @@
         var foundPatientList = null;
         const MIN_SEARCH_LENGTH = 3;
         const EMPTY_COLUMN_HEADER_ID = 'empty-header-column';
-        const DATE_DISPLAY_OPTIONS = { year: 'numeric', month: 'short', day: 'numeric' };
+        const DATE_DISPLAY_OPTIONS = '%d-%b-%Y';
         const IMPORT_SUCCESS_MSG_PREFIX = $j('#openmrs_msg').html();
         const IMPORT_ERROR_MSG_PREFIX = $j('#remote_patient_error_msg').html();
         const IMPORT_CONFIRM_MSG_PREFIX = '<openmrs:message code="esaudefeatures.remote.patients.import.confirmation"/> ';
@@ -110,7 +110,7 @@
             return results.map(result => {
                 var mapped = [ result.uuid, result.identifiers[0].identifier, result.person.display, result.person.gender ];
                 var birthDate = new Date(result.person.birthdate);
-                mapped.push(birthDate.toLocaleDateString(undefined, DATE_DISPLAY_OPTIONS));
+                mapped.push(birthDate.toLocaleDateString('pt', DATE_DISPLAY_OPTIONS));
                 mapped.push(result.person.age);
                 if(result.person.preferredAddress) {
                     mapped.push(_determineAddressToDisplay(result.person.preferredAddress));
@@ -294,7 +294,7 @@
 
             personPayload.attributes = [{
                 attributeType: IMPORT_DATE_PATTRIB_UUID,
-                value: new Date().toISOString()
+                value: new Date().toLocaleString('pt','%d-%b-%Y')
             }];
             if(Array.isArray(restPersonPayload.attributes) && restPersonPayload.attributes.length > 0) {
                 var attributesToSend = restPersonPayload.attributes.filter(attribute => !attribute.voided &&
