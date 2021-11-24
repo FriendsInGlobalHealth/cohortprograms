@@ -14,13 +14,13 @@
 	<name>eSaude Features</name>
 	<description>eSaude Custom Features</description>
 
-	<url>https://wiki.openmrs.org/x/FQ4z</url>
+	<url>http://github.com/FriendsInGlobalHealth/esaudefeatures</url>
 
 	<scm>
-		<connection>scm:git:git@github.com:openmrs/openmrs-module-esaudefeatures.git</connection>
-		<developerConnection>scm:git:git@github.com:openmrs/openmrs-module-esaudefeatures.git</developerConnection>
-		<url>https://github.com/openmrs/openmrs-module-esaudefeatures/</url>
-	  <tag>1.0.1-SNAPSHOT</tag>
+		<connection>scm:git:git@github.com:FriendsInGlobalHealth/openmrs-module-esaudefeatures.git</connection>
+		<developerConnection>scm:git:git@github.com:FriendsInGlobalHealth/openmrs-module-esaudefeatures.git</developerConnection>
+		<url>https://github.com/FriendsInGlobalHealth/openmrs-module-esaudefeatures/</url>
+	  <tag>1.1.0-SNAPSHOT</tag>
   </scm>
 
 	<modules>

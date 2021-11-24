@@ -1,0 +1,90 @@
+{
+  "resourceType": "Bundle",
+  "id": "0385bdf8-2efc-47ce-969f-3185ec20dfff",
+  "meta": {
+    "lastUpdated": "2021-12-02T14:26:37.254+00:00"
+  },
+  "type": "searchset",
+  "total": 1,
+  "link": [
+    {
+      "relation": "self",
+      "url": "http://hapi-fhir:8080/fhir/Patient?active=true&identifier=0104010601%2F2018%2F00527"
+    }
+  ],
+  "entry": [
+    {
+      "fullUrl": "http://hapi-fhir:8080/fhir/Patient/0644061a-17fc-4880-955a-6d46476f3da1",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "0644061a-17fc-4880-955a-6d46476f3da1",
+        "meta": {
+          "versionId": "2",
+          "lastUpdated": "2021-11-18T09:40:49.206+00:00",
+          "source": "#d8CGbNvEKG7fOZeP",
+          "tag": [
+            {
+              "system": "http://openclientregistry.org/fhir/clientid",
+              "code": "openmrs",
+              "display": "OpenMRS"
+            }
+          ]
+        },
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><div class=\"hapiHeaderText\">Mariana Lazao <b>NHAVANE </b></div><table class=\"hapiPropertyTable\"><tbody><tr><td>Identifier</td><td>7604fb50-ca96-40c3-89e5-0b7538202477</td></tr><tr><td>Address</td><td><span>Quelimane </span><br/><span>Gurue </span><br/><span>3 de fevereiro atras da mesquita </span><br/><span>conhecida por mae de Miro - Jojo </span><br/><span>null </span><br/><span>Zambézia </span><span>Moçambique </span></td></tr><tr><td>Date of birth</td><td><span>27 February 1973</span></td></tr></tbody></table></div>"
+        },
+        "identifier": [
+          {
+            "system": "http://fgh.org/openmrs/uuid",
+            "value": "7604fb50-ca96-40c3-89e5-0b7538202477"
+          },
+          {
+            "id": "25010680-3027-4f42-9ef2-ef988b4c0d48",
+            "system": "urn:uuid:e2b966d0-1d5f-11e0-b929-000c29ad1d07",
+            "value": "0104010601/2018/00527"
+          }
+        ],
+        "active": true,
+        "name": [
+          {
+            "id": "24ab0211-4b18-47db-a186-c909661ac4b0",
+            "use": "official",
+            "family": "Nhavane",
+            "given": [
+              "Mariana",
+              "Lazao"
+            ]
+          }
+        ],
+        "gender": "female",
+        "birthDate": "1973-02-27",
+        "address": [
+          {
+            "id": "877eaf9f-dee3-4354-92eb-8450772a61b5",
+            "line": [
+              "Quelimane",
+              "Gurue",
+              "3 de fevereiro atras da mesquita",
+              "conhecida por mae de Miro - Jojo"
+            ],
+            "district": "Quelimane",
+            "state": "Zambézia",
+            "country": "Moçambique"
+          }
+        ],
+        "link": [
+          {
+            "other": {
+              "reference": "Patient/2fb46577-ab3f-482d-b54b-21ca1474d100"
+            },
+            "type": "refer"
+          }
+        ]
+      },
+      "search": {
+        "mode": "match"
+      }
+    }
+  ]
+}

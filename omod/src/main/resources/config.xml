@@ -5,7 +5,7 @@
 	<!-- Base Module Properties -->
 	<id>${project.parent.artifactId}</id>
 	<name>${project.parent.name}</name>
-	<version>${project.parent.version}</version>
+	<version>${project.parent.version}.${revisionNumber}</version>
 	<package>org.openmrs.module.esaudefeatures</package>
 	<author>JuuTech</author>
 	<description>
@@ -73,6 +73,21 @@
 		<defaultValue></defaultValue>
 		<description>
 			The UUID of the location that will replace the location an imported patient demographic. Used for things like identifier location
+		</description>
+	</globalProperty>
+	<globalProperty>
+		<property>@MODULE_ID@.remote.server.type</property>
+		<defaultValue>OPENCR</defaultValue>
+		<description>
+			The remote server type. Can have one of the two values, either OPENMRS or OPENCR
+		</description>
+	</globalProperty>
+	<globalProperty>
+		<property>@MODULE_ID@.remote.server.skip.hostname.verification</property>
+		<defaultValue>FALSE</defaultValue>
+		<description>
+			This property tells the system whether to skip hostname verification during the SSL handshake. It can be for self signed
+			SSL certificates, otherwise this should never be set to true. Set to TRUE if you know what you are doing.
 		</description>
 	</globalProperty>
 

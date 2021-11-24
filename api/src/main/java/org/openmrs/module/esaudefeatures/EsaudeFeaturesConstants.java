@@ -7,7 +7,11 @@ public class EsaudeFeaturesConstants {
 	
 	public static final String REMOTE_SERVER_URL_GP = "esaudefeatures.remote.server.url";
 	
+	public static final String REMOTE_SERVER_TYPE_GP = "esaudefeatures.remote.server.type";
+	
 	public static final String REMOTE_SERVER_USERNAME_GP = "esaudefeatures.remote.server.username";
+	
+	public static final String REMOTE_SERVER_SKIP_HOSTNAME_VERIFICATION_GP = "esaudefeatures.remote.server.skip.hostname.verification";
 	
 	public static final String REMOTE_SERVER_PASSWORD_GP = "esaudefeatures.remote.server.password";
 	

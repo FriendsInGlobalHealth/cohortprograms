@@ -1,7 +1,7 @@
 package org.openmrs.module.esaudefeatures.web.validator;
 
 import org.openmrs.annotation.Handler;
-import org.openmrs.module.esaudefeatures.web.ProgramDTO;
+import org.openmrs.module.esaudefeatures.web.dto.ProgramDTO;
 import org.openmrs.validator.ProgramValidator;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;

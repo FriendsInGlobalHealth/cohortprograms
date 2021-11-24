@@ -1,0 +1,400 @@
+{
+  "resourceType": "Bundle",
+  "id": "6e2a11be-00ab-43d9-9dd3-967ca851170a",
+  "meta": {
+    "lastUpdated": "2021-11-25T15:35:37.493+00:00"
+  },
+  "type": "searchset",
+  "total": 29,
+  "link": [
+    {
+      "relation": "self",
+      "url": "http://hapi-fhir:8080/fhir/Patient?active=true&name=Atibo"
+    },
+    {
+      "relation": "next",
+      "url": "http://hapi-fhir:8080/fhir?_getpages=6e2a11be-00ab-43d9-9dd3-967ca851170a&_getpagesoffset=20&_count=20&_pretty=true&_bundletype=searchset"
+    }
+  ],
+  "entry": [
+    {
+      "fullUrl": "http://hapi-fhir:8080/fhir/Patient/78bbb019-9c71-4c51-96f8-8c12f58571fe",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "78bbb019-9c71-4c51-96f8-8c12f58571fe",
+        "meta": {
+          "versionId": "2",
+          "lastUpdated": "2021-11-18T07:51:44.829+00:00",
+          "source": "#Ag9HpFSWJ30HMK8E",
+          "tag": [
+            {
+              "system": "http://openclientregistry.org/fhir/clientid",
+              "code": "openmrs",
+              "display": "OpenMRS"
+            }
+          ]
+        },
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><div class=\"hapiHeaderText\">Isabel Lazara <b>ATIBO </b></div><table class=\"hapiPropertyTable\"><tbody><tr><td>Identifier</td><td>d05f14ba-e000-11e6-a91f-4485001ec084</td></tr><tr><td>Address</td><td><span>null </span><br/><span>null </span><br/><span>Acordo de Luzaca </span><br/><span>null </span><br/><span>null </span><br/><span>Zambezia </span><span>Mozambique </span></td></tr><tr><td>Date of birth</td><td><span>07 September 1987</span></td></tr></tbody></table></div>"
+        },
+        "identifier": [
+          {
+            "system": "http://fgh.org/openmrs/uuid",
+            "value": "d05f14ba-e000-11e6-a91f-4485001ec084"
+          },
+          {
+            "id": "d0609105-e000-11e6-a91f-4485001ec084",
+            "system": "urn:uuid:e2b966d0-1d5f-11e0-b929-000c29ad1d07",
+            "value": "0103010001/2009/02026"
+          }
+        ],
+        "active": true,
+        "name": [
+          {
+            "id": "d05fe92e-e000-11e6-a91f-4485001ec084",
+            "use": "official",
+            "family": "Atibo",
+            "given": [
+              "Isabel",
+              "Lazara "
+            ]
+          }
+        ],
+        "gender": "female",
+        "birthDate": "1987-09-07",
+        "address": [
+          {
+            "id": "d05f859b-e000-11e6-a91f-4485001ec084",
+            "line": [
+              "Acordo de Luzaca"
+            ],
+            "district": "Quelimane",
+            "state": "Zambezia",
+            "country": "Mozambique"
+          }
+        ],
+        "link": [
+          {
+            "other": {
+              "reference": "Patient/f2905318-756a-43e3-9bed-82472b01ae5b"
+            },
+            "type": "refer"
+          }
+        ]
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://hapi-fhir:8080/fhir/Patient/9972a392-1fbf-482c-99bd-354c4985fbf6",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "9972a392-1fbf-482c-99bd-354c4985fbf6",
+        "meta": {
+          "versionId": "2",
+          "lastUpdated": "2021-11-18T07:54:43.536+00:00",
+          "source": "#4OBQmNasdxrh03kX",
+          "tag": [
+            {
+              "system": "http://openclientregistry.org/fhir/clientid",
+              "code": "openmrs",
+              "display": "OpenMRS"
+            }
+          ]
+        },
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><div class=\"hapiHeaderText\">Atija Francisco <b>ATIBO </b></div><table class=\"hapiPropertyTable\"><tbody><tr><td>Identifier</td><td>d4f6575a-e000-11e6-a91f-4485001ec084</td></tr><tr><td>Address</td><td><span>null </span><br/><span>null </span><br/><span>Cansa </span><br/><span>null </span><br/><span>Vive perto do secretario </span><br/><span>Zambezia </span><span>Mozambique </span></td></tr><tr><td>Date of birth</td><td><span>05 May 1985</span></td></tr></tbody></table></div>"
+        },
+        "identifier": [
+          {
+            "system": "http://fgh.org/openmrs/uuid",
+            "value": "d4f6575a-e000-11e6-a91f-4485001ec084"
+          },
+          {
+            "id": "d4f88f12-e000-11e6-a91f-4485001ec084",
+            "system": "urn:uuid:e2b966d0-1d5f-11e0-b929-000c29ad1d07",
+            "value": "0104010001/2007/00793"
+          }
+        ],
+        "active": true,
+        "name": [
+          {
+            "id": "d4f7b94d-e000-11e6-a91f-4485001ec084",
+            "use": "official",
+            "family": "Atibo",
+            "given": [
+              "Atija",
+              "Francisco"
+            ]
+          }
+        ],
+        "telecom": [
+          {
+            "id": "1351da8d-4f48-4d34-8b54-5d6ec90b0dc6",
+            "system": "phone",
+            "value": "825178952  841700899",
+            "use": "mobile"
+          }
+        ],
+        "gender": "female",
+        "birthDate": "1985-05-05",
+        "address": [
+          {
+            "id": "d4f6e5af-e000-11e6-a91f-4485001ec084",
+            "line": [
+              "Cansa",
+              "Vive perto do secretario"
+            ],
+            "district": "Quelimane",
+            "state": "Zambezia",
+            "country": "Mozambique"
+          }
+        ],
+        "link": [
+          {
+            "other": {
+              "reference": "Patient/cc5069db-4157-47e5-a811-20f60a37e1ca"
+            },
+            "type": "refer"
+          }
+        ]
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://hapi-fhir:8080/fhir/Patient/07bd98a8-07ce-4522-b257-5411b32c1a31",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "07bd98a8-07ce-4522-b257-5411b32c1a31",
+        "meta": {
+          "versionId": "2",
+          "lastUpdated": "2021-11-18T07:56:26.191+00:00",
+          "source": "#UK0PRrc1Uk8fVwBr",
+          "tag": [
+            {
+              "system": "http://openclientregistry.org/fhir/clientid",
+              "code": "openmrs",
+              "display": "OpenMRS"
+            }
+          ]
+        },
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><div class=\"hapiHeaderText\">Pascoa Carlos <b>ATIBO </b></div><table class=\"hapiPropertyTable\"><tbody><tr><td>Identifier</td><td>d993c785-e000-11e6-a91f-4485001ec084</td></tr><tr><td>Address</td><td><span>null </span><br/><span>null </span><br/><span>Mapiasua </span><br/><span>B </span><br/><span>939 </span><br/><span>Zambezia </span><span>Mozambique </span></td></tr><tr><td>Date of birth</td><td><span>13 May 1985</span></td></tr></tbody></table></div>"
+        },
+        "identifier": [
+          {
+            "system": "http://fgh.org/openmrs/uuid",
+            "value": "d993c785-e000-11e6-a91f-4485001ec084"
+          },
+          {
+            "id": "d995a4ab-e000-11e6-a91f-4485001ec084",
+            "system": "urn:uuid:e2b966d0-1d5f-11e0-b929-000c29ad1d07",
+            "value": "0104010001/2008/01155"
+          }
+        ],
+        "active": true,
+        "name": [
+          {
+            "id": "d994d156-e000-11e6-a91f-4485001ec084",
+            "use": "official",
+            "family": "Atibo",
+            "given": [
+              "Pascoa",
+              "Carlos"
+            ]
+          }
+        ],
+        "telecom": [
+          {
+            "id": "a2577bac-509d-4a15-a5a8-cf397545a014",
+            "system": "phone",
+            "value": "846819698",
+            "use": "mobile"
+          }
+        ],
+        "gender": "female",
+        "birthDate": "1985-05-13",
+        "address": [
+          {
+            "id": "d99454c7-e000-11e6-a91f-4485001ec084",
+            "line": [
+              "Mapiasua",
+              "B",
+              "939"
+            ],
+            "district": "Quelimane",
+            "state": "Zambezia",
+            "country": "Mozambique"
+          }
+        ],
+        "link": [
+          {
+            "other": {
+              "reference": "Patient/bc607a64-be10-4b9b-80bd-4b316dc35b79"
+            },
+            "type": "refer"
+          }
+        ]
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://hapi-fhir:8080/fhir/Patient/0fe67aa3-372a-4064-b9af-734d326cf62c",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "0fe67aa3-372a-4064-b9af-734d326cf62c",
+        "meta": {
+          "versionId": "2",
+          "lastUpdated": "2021-11-18T07:56:57.105+00:00",
+          "source": "#sdn7GMRWKxeIq5bJ",
+          "tag": [
+            {
+              "system": "http://openclientregistry.org/fhir/clientid",
+              "code": "openmrs",
+              "display": "OpenMRS"
+            }
+          ]
+        },
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><div class=\"hapiHeaderText\">Tauzina Atibo <b>ATUMANE </b></div><table class=\"hapiPropertyTable\"><tbody><tr><td>Identifier</td><td>da5cff93-e000-11e6-a91f-4485001ec084</td></tr><tr><td>Address</td><td><span>null </span><br/><span>null </span><br/><span>3 de Fevereiro </span><br/><span>null </span><br/><span>Vive proximo do campo </span><br/><span>Zambezia </span><span>Mozambique </span></td></tr><tr><td>Date of birth</td><td><span>16 May 1971</span></td></tr></tbody></table></div>"
+        },
+        "identifier": [
+          {
+            "system": "http://fgh.org/openmrs/uuid",
+            "value": "da5cff93-e000-11e6-a91f-4485001ec084"
+          },
+          {
+            "id": "da5ecbd9-e000-11e6-a91f-4485001ec084",
+            "system": "urn:uuid:e2b966d0-1d5f-11e0-b929-000c29ad1d07",
+            "value": "0104010001/2008/01738"
+          }
+        ],
+        "active": true,
+        "name": [
+          {
+            "id": "da5dfb1c-e000-11e6-a91f-4485001ec084",
+            "use": "official",
+            "family": "Atumane",
+            "given": [
+              "Tauzina",
+              "Atibo "
+            ]
+          }
+        ],
+        "gender": "female",
+        "birthDate": "1971-05-16",
+        "address": [
+          {
+            "id": "da5d902e-e000-11e6-a91f-4485001ec084",
+            "line": [
+              "3 de Fevereiro",
+              "Vive proximo do campo"
+            ],
+            "district": "Quelimane",
+            "state": "Zambezia",
+            "country": "Mozambique"
+          }
+        ],
+        "link": [
+          {
+            "other": {
+              "reference": "Patient/55312433-cf21-43b3-a750-da3be53ef313"
+            },
+            "type": "refer"
+          }
+        ]
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://hapi-fhir:8080/fhir/Patient/22dfbe87-7b57-4ddd-b2f8-ae88a1f2c7ae",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "22dfbe87-7b57-4ddd-b2f8-ae88a1f2c7ae",
+        "meta": {
+          "versionId": "2",
+          "lastUpdated": "2021-11-18T08:08:23.541+00:00",
+          "source": "#8DMQavdaQntPwyxO",
+          "tag": [
+            {
+              "system": "http://openclientregistry.org/fhir/clientid",
+              "code": "openmrs",
+              "display": "OpenMRS"
+            }
+          ]
+        },
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><div class=\"hapiHeaderText\">Anita Albino <b>ATIBO </b></div><table class=\"hapiPropertyTable\"><tbody><tr><td>Identifier</td><td>f32b8f8d-e000-11e6-a91f-4485001ec084</td></tr><tr><td>Address</td><td><span>null </span><br/><span>null </span><br/><span>Aeroporto </span><br/><span>null </span><br/><span>Proximo do antigo Dubanengui </span><br/><span>Zambezia </span><span>Mozambique </span></td></tr><tr><td>Date of birth</td><td><span>25 June 1987</span></td></tr></tbody></table></div>"
+        },
+        "identifier": [
+          {
+            "system": "http://fgh.org/openmrs/uuid",
+            "value": "f32b8f8d-e000-11e6-a91f-4485001ec084"
+          },
+          {
+            "id": "f32e7d78-e000-11e6-a91f-4485001ec084",
+            "system": "urn:uuid:e2b966d0-1d5f-11e0-b929-000c29ad1d07",
+            "value": "0104010601/2009/01924"
+          }
+        ],
+        "active": true,
+        "name": [
+          {
+            "id": "f32da78a-e000-11e6-a91f-4485001ec084",
+            "use": "official",
+            "family": "Atibo",
+            "given": [
+              "Anita",
+              "Albino "
+            ]
+          }
+        ],
+        "telecom": [
+          {
+            "id": "f32d3049-e000-11e6-a91f-4485001ec084",
+            "system": "phone",
+            "value": "827271595",
+            "use": "mobile"
+          }
+        ],
+        "gender": "female",
+        "birthDate": "1987-06-25",
+        "address": [
+          {
+            "id": "f32cc471-e000-11e6-a91f-4485001ec084",
+            "line": [
+              "Aeroporto",
+              "Proximo do antigo Dubanengui"
+            ],
+            "district": "Quelimane",
+            "state": "Zambezia",
+            "country": "Mozambique"
+          }
+        ],
+        "link": [
+          {
+            "other": {
+              "reference": "Patient/9c227c75-4fe2-42cf-8c64-5fb9fccb86a0"
+            },
+            "type": "refer"
+          }
+        ]
+      },
+      "search": {
+        "mode": "match"
+      }
+    }
+  ]
+}

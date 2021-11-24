@@ -10,7 +10,7 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.esaudefeatures.ProgramCohort;
 import org.openmrs.module.esaudefeatures.api.CohortProgramsService;
 import org.openmrs.module.esaudefeatures.web.CohortEditor;
-import org.openmrs.module.esaudefeatures.web.ProgramDTO;
+import org.openmrs.module.esaudefeatures.web.dto.ProgramDTO;
 import org.openmrs.propertyeditor.ConceptEditor;
 import org.openmrs.propertyeditor.WorkflowCollectionEditor;
 import org.openmrs.web.WebConstants;

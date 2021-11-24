@@ -15,6 +15,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.IMPORTED_PATIENT_LOCATION_UUID_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.REMOTE_SERVER_PASSWORD_GP;
+import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.REMOTE_SERVER_TYPE_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.REMOTE_SERVER_URL_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.REMOTE_SERVER_USERNAME_GP;
 import static org.openmrs.util.OpenmrsConstants.OPENMRS_VERSION_SHORT;
@@ -58,6 +59,10 @@ public class RemotePatientsController {
 		} else {
 			LOGGER.warn("Global property {} not set", REMOTE_SERVER_URL_GP);
 		}
+		
+		modelAndView.getModelMap().addAttribute("remoteServerType",
+		    adminService.getGlobalProperty(REMOTE_SERVER_TYPE_GP, "OPENMRS"));
+		
 		String remoteServerUsername = adminService.getGlobalProperty(REMOTE_SERVER_USERNAME_GP);
 		String remoteServerPassword = adminService.getGlobalProperty(REMOTE_SERVER_PASSWORD_GP);
 		if (StringUtils.hasText(remoteServerUsername) && StringUtils.hasText(remoteServerPassword)) {
@@ -65,6 +70,8 @@ public class RemotePatientsController {
 			        .toString();
 			byte[] byteArray = remoteServerBasicAuth.getBytes();
 			String base64encoded = byteArrayToBase64(remoteServerBasicAuth.getBytes(), 0, byteArray.length);
+			modelAndView.getModelMap().addAttribute("remoteServerUsername", remoteServerUsername);
+			modelAndView.getModelMap().addAttribute("remoteServerPassword", remoteServerPassword);
 			modelAndView.getModelMap().addAttribute("remoteServerAuth", base64encoded);
 		}
 		

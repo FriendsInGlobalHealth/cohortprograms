@@ -1,4 +1,4 @@
-package org.openmrs.module.esaudefeatures.web;
+package org.openmrs.module.esaudefeatures.web.dto;
 
 import org.openmrs.Cohort;
 import org.openmrs.Program;

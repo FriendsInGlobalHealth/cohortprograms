@@ -2,6 +2,7 @@ package org.openmrs.module.esaudefeatures.web.extension;
 
 import org.openmrs.module.esaudefeatures.web.controller.RemotePatientsController;
 import org.openmrs.module.web.extension.LinkExt;
+import org.openmrs.util.OpenmrsUtil;
 
 /**
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 8/5/21.
@@ -9,7 +10,7 @@ import org.openmrs.module.web.extension.LinkExt;
 public class GutterListExt extends LinkExt {
 	
 	public String getLabel() {
-		return "esaudefeatures.remote.patients";
+		return OpenmrsUtil.getMessage("esaudefeatures.remote.patients");
 	}
 	
 	public String getUrl() {
