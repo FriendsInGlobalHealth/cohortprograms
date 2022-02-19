@@ -1,4 +1,4 @@
-package org.openmrs.module.esaudefeatures.web.controller.integration;
+package org.openmrs.module.esaudefeatures.web;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
@@ -23,11 +23,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants;
 import org.openmrs.module.esaudefeatures.web.controller.OpencrAuthenticationException;
-import org.openmrs.module.esaudefeatures.web.controller.OpencrResponseExceptionHandler;
-import org.openmrs.module.esaudefeatures.web.controller.OpencrSearchController;
 import org.openmrs.module.esaudefeatures.web.controller.OpencrSearchException;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
@@ -46,13 +42,13 @@ import static org.junit.Assert.assertTrue;
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 11/22/21.
  */
 @RunWith(MockitoJUnitRunner.class)
-public class OpencrSearchControllerIntegrationTest {
+public class OpencrSearchDelegateTest {
 	
 	private static final FhirContext FHIR_CONTEXT = FhirContext.forR4();
 	
-	private static final String MATCHED_PATIENT_LIST_FILE_NAME = "/matched_patient_list.json";
+	private static final String MATCHED_PATIENT_LIST_FILE_NAME = "/opencr_matched_patient_list.json";
 	
-	private static final String IDENTIFIER_MATCHED_PATIENT = "/identifier_matched_patient.json";
+	private static final String IDENTIFIER_MATCHED_PATIENT = "/opencr_identifier_matched_patient.json";
 	
 	private static final String EXPECTED_PATIENT_PATH = "/ocrux/fhir/Patient";
 	
@@ -68,17 +64,19 @@ public class OpencrSearchControllerIntegrationTest {
 	private AdministrationService adminService;
 	
 	@InjectMocks
-	private OpencrSearchController controller = new OpencrSearchController();
+	private OpencrSearchDelegate delegate = new OpencrSearchDelegate();
 	
 	@Before
 	public void setup() throws Exception {
 		mockWebServer = new MockWebServer();
 		mockWebServer.start();
 		baseRemoteServerUrl = mockWebServer.url("/").toString();
-		Mockito.when(adminService.getGlobalProperty(EsaudeFeaturesConstants.REMOTE_SERVER_URL_GP)).thenReturn(
+		Mockito.when(adminService.getGlobalProperty(EsaudeFeaturesConstants.OPENCR_REMOTE_SERVER_URL_GP)).thenReturn(
 		    baseRemoteServerUrl);
-		Mockito.when(adminService.getGlobalProperty(EsaudeFeaturesConstants.REMOTE_SERVER_USERNAME_GP)).thenReturn(USERNAME);
-		Mockito.when(adminService.getGlobalProperty(EsaudeFeaturesConstants.REMOTE_SERVER_PASSWORD_GP)).thenReturn(PASSWORD);
+		Mockito.when(adminService.getGlobalProperty(EsaudeFeaturesConstants.OPENCR_REMOTE_SERVER_USERNAME_GP)).thenReturn(
+		    USERNAME);
+		Mockito.when(adminService.getGlobalProperty(EsaudeFeaturesConstants.OPENCR_REMOTE_SERVER_PASSWORD_GP)).thenReturn(
+		    PASSWORD);
 	}
 	
 	public void test1() throws IOException {
@@ -116,8 +114,8 @@ public class OpencrSearchControllerIntegrationTest {
 		mockWebServer.enqueue(new MockResponse().setResponseCode(200).addHeader("Content-Type", "application/json")
 		        .setBody(EXPECTED_TOKEN));
 		
-		controller.clearServerJWTAuthenticationToken();
-		String token = controller.getServerJWTAuthenticationToken();
+		delegate.clearServerJWTAuthenticationToken();
+		String token = delegate.getServerJWTAuthenticationToken();
 		RecordedRequest request = mockWebServer.takeRequest();
 		HttpUrl requestUrl = request.getRequestUrl();
 		assertEquals("POST", request.getMethod().toUpperCase());
@@ -138,8 +136,8 @@ public class OpencrSearchControllerIntegrationTest {
 	public void getServerJWTAuthenticationTokenShouldThrowForWrongCredentials() throws Exception {
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_BAD_REQUEST)
 		        .addHeader("Content-Type", "application/json").setBody("{}"));
-		controller.clearServerJWTAuthenticationToken();
-		controller.getServerJWTAuthenticationToken();
+		delegate.clearServerJWTAuthenticationToken();
+		delegate.getServerJWTAuthenticationToken();
 		mockWebServer.takeRequest();
 	}
 	
@@ -153,9 +151,9 @@ public class OpencrSearchControllerIntegrationTest {
 		
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
 		        .addHeader("Content-Type", "application/json").setBody(EXPECTED_JSON_RESPONSE));
-		controller.setCachedToken("test-token");
+		delegate.setCachedToken("test-token");
 		
-		Bundle matchedEntries = controller.searchOpencrForPatient("Atibo");
+		Bundle matchedEntries = delegate.searchOpencrForPatients("Atibo");
 		
 		RecordedRequest request = mockWebServer.takeRequest();
 		HttpUrl requestUrl = request.getRequestUrl();
@@ -184,9 +182,9 @@ public class OpencrSearchControllerIntegrationTest {
 		
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
 		        .addHeader("Content-Type", "application/json").setBody(EXPECTED_JSON_RESPONSE));
-		controller.setCachedToken("test-token");
+		delegate.setCachedToken("test-token");
 		
-		controller.searchOpencrForPatient(IDENTIFIER_TO_SEARCH);
+		delegate.searchOpencrForPatients(IDENTIFIER_TO_SEARCH);
 		
 		RecordedRequest request = mockWebServer.takeRequest();
 		HttpUrl requestUrl = request.getRequestUrl();
@@ -209,9 +207,9 @@ public class OpencrSearchControllerIntegrationTest {
 		
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
 		        .addHeader("Content-Type", "application/json").setBody(EXPECTED_JSON_RESPONSE));
-		controller.setCachedToken("test-token");
+		delegate.setCachedToken("test-token");
 		
-		controller.searchOpencrForPatient(SEARCH_TEXT);
+		delegate.searchOpencrForPatients(SEARCH_TEXT);
 		
 		RecordedRequest request = mockWebServer.takeRequest();
 		HttpUrl requestUrl = request.getRequestUrl();
@@ -229,8 +227,8 @@ public class OpencrSearchControllerIntegrationTest {
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_BAD_REQUEST)
 		        .addHeader("Content-Type", "application/json").setBody("{}"));
 		
-		controller.clearServerJWTAuthenticationToken();
-		controller.searchOpencrForPatient("sometext");
+		delegate.clearServerJWTAuthenticationToken();
+		delegate.searchOpencrForPatients("sometext");
 	}
 	
 	@After

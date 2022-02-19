@@ -19,6 +19,10 @@
 	
 	<require_version>1.11.6</require_version>
 
+	<require_modules>
+		<require_module>org.openmrs.module.webservices.rest</require_module>
+	</require_modules>
+
 	<aware_of_modules>
 		<aware_of_module>org.openmrs.module.legacyui</aware_of_module>
 	</aware_of_modules>
@@ -47,25 +51,47 @@
 
 
 	<globalProperty>
-		<property>@MODULE_ID@.remote.server.url</property>
+		<property>@MODULE_ID@.openmrs.remote.server.url</property>
 		<defaultValue></defaultValue>
 		<description>
-			URL of the server from which to search the remote patients
+			The URL of the OpenMRS server from which to search for patients
 		</description>
 	</globalProperty>
 	<globalProperty>
-		<property>@MODULE_ID@.remote.server.username</property>
+		<property>@MODULE_ID@.opencr.remote.server.url</property>
+		<defaultValue></defaultValue>
+		<description>
+			The URL of the OpenCR MPI server from which to search for patients
+		</description>
+	</globalProperty>
+	<globalProperty>
+		<property>@MODULE_ID@.openmrs.remote.server.username</property>
 		<defaultValue></defaultValue>
 		<description>
 			Username of the user who has privilege to view patients on
-			the remote server.
+			the OpenMRS remote server.
 		</description>
 	</globalProperty>
 	<globalProperty>
-		<property>@MODULE_ID@.remote.server.password</property>
+		<property>@MODULE_ID@.opencr.remote.server.username</property>
 		<defaultValue></defaultValue>
 		<description>
-			The password for the user represented by the username property.
+			Username of the user who has privilege to view patients on
+			the OpenCR MPI server.
+		</description>
+	</globalProperty>
+	<globalProperty>
+		<property>@MODULE_ID@.openmrs.remote.server.password</property>
+		<defaultValue></defaultValue>
+		<description>
+			The password for the remote OpenMRS server username.
+		</description>
+	</globalProperty>
+	<globalProperty>
+		<property>@MODULE_ID@.opencr.remote.server.password</property>
+		<defaultValue></defaultValue>
+		<description>
+			The password for the OpenCR MPI server username.
 		</description>
 	</globalProperty>
 	<globalProperty>

@@ -58,6 +58,12 @@
 			<classifier>tests</classifier>
 		</dependency>
 		<dependency>
+			<groupId>org.openmrs.module</groupId>
+			<artifactId>webservices.rest-omod-common</artifactId>
+			<version>2.29.0</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>ca.uhn.hapi.fhir</groupId>
 			<artifactId>hapi-fhir-structures-r4</artifactId>
 			<version>${hapifhirVersion}</version>
