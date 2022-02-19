@@ -23,7 +23,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants;
 import org.openmrs.module.esaudefeatures.web.controller.OpencrAuthenticationException;
-import org.openmrs.module.esaudefeatures.web.controller.OpencrSearchException;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;

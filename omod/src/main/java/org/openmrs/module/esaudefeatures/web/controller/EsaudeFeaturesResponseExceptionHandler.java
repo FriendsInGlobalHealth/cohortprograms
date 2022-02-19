@@ -1,6 +1,8 @@
 package org.openmrs.module.esaudefeatures.web.controller;
 
 import org.openmrs.api.APIAuthenticationException;
+import org.openmrs.module.esaudefeatures.web.OpencrSearchException;
+import org.openmrs.module.esaudefeatures.web.RemoteOpenmrsSearchException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,14 +18,20 @@ import java.net.SocketException;
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 11/25/21.
  */
 @ControllerAdvice
-public class OpencrResponseExceptionHandler extends ResponseEntityExceptionHandler {
+public class EsaudeFeaturesResponseExceptionHandler extends ResponseEntityExceptionHandler {
 	
 	@ExceptionHandler({ OpencrSearchException.class })
 	public final ResponseEntity<Object> handleOpencrProblems(OpencrSearchException ex, WebRequest request) {
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.valueOf(ex.getStatusCode()),
 		    request);
 	}
-	
+
+	@ExceptionHandler({ RemoteOpenmrsSearchException.class })
+	public final ResponseEntity<Object> handleRemoteOpenmrsExceptions(RemoteOpenmrsSearchException ex, WebRequest request) {
+		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.valueOf(ex.getStatusCode()),
+		    request);
+	}
+
 	@ExceptionHandler({ SSLException.class, SocketException.class })
 	public final ResponseEntity<Object> sslExceptions(Exception ex, WebRequest request) {
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR, request);

@@ -8,13 +8,13 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.apache.commons.lang.NotImplementedException;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.module.esaudefeatures.web.controller.OpencrAuthenticationException;
-import org.openmrs.module.esaudefeatures.web.controller.OpencrSearchException;
 import org.openmrs.module.esaudefeatures.web.dto.TokenDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +61,11 @@ public class OpencrSearchDelegate {
 	public void setAdminService(AdministrationService adminService) {
 		this.adminService = adminService;
 	}
-	
+
+	public Patient getPatientByFhirId(final String id) {
+		throw new NotImplementedException("not yet");
+	}
+
 	public Bundle searchOpencrForPatients(final String searchText) throws Exception {
 		IParser parser = FHIR_CONTEXT.newJsonParser();
 		String remoteServerUrl = adminService.getGlobalProperty(OPENCR_REMOTE_SERVER_URL_GP);
@@ -146,7 +150,7 @@ public class OpencrSearchDelegate {
 		}
 		throw new OpencrSearchException(opencrResponse.body().string(), opencrResponse.code());
 	}
-	
+
 	public boolean importOpencrPatient(final String fhirPatientId) {
 		//Check if patient is in cache.
 		Bundle.BundleEntryComponent patientEntry = PATIENTS_CACHE.get(fhirPatientId);

@@ -1,0 +1,259 @@
+{
+  "uuid": "6d24f374-8125-11e0-a437-00242122a7a8",
+  "display": "0104120901/2006/00042 - PCT Madrid Family",
+  "identifiers": [
+    {
+      "display": "NID (SERVICO TARV) = 0104120901/2006/00042",
+      "uuid": "a164090f-fe4e-4159-a1c1-d3eb9f3ced08",
+      "identifier": "0104120901/2006/00042",
+      "identifierType": {
+        "uuid": "e2b966d0-1d5f-11e0-b929-000c29ad1d07",
+        "display": "NID (SERVICO TARV)",
+        "links": [
+          {
+            "rel": "self",
+            "uri": "http://localhost:8083/openmrs/ws/rest/v1/patientidentifiertype/e2b966d0-1d5f-11e0-b929-000c29ad1d07",
+            "resourceAlias": "patientidentifiertype"
+          }
+        ]
+      },
+      "location": {
+        "uuid": "2fad5905-351b-41d5-ad83-3e6114c7c16d",
+        "display": "Gurue",
+        "links": [
+          {
+            "rel": "self",
+            "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/2fad5905-351b-41d5-ad83-3e6114c7c16d",
+            "resourceAlias": "location"
+          }
+        ]
+      },
+      "preferred": true,
+      "voided": false,
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/patient/6d24f374-8125-11e0-a437-00242122a7a8/identifier/a164090f-fe4e-4159-a1c1-d3eb9f3ced08",
+          "resourceAlias": "identifier"
+        },
+        {
+          "rel": "full",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/patient/6d24f374-8125-11e0-a437-00242122a7a8/identifier/a164090f-fe4e-4159-a1c1-d3eb9f3ced08?v=full",
+          "resourceAlias": "identifier"
+        }
+      ],
+      "resourceVersion": "1.8"
+    }
+  ],
+  "person": {
+    "uuid": "6d24f374-8125-11e0-a437-00242122a7a8",
+    "display": "PCT Madrid Family",
+    "gender": "F",
+    "age": 55,
+    "birthdate": "1966-06-08T00:00:00.000+0300",
+    "birthdateEstimated": false,
+    "dead": false,
+    "deathDate": null,
+    "causeOfDeath": null,
+    "preferredName": {
+      "display": "PCT Madrid Family",
+      "uuid": "6d8982e4-8125-11e0-a437-00242122a7a8",
+      "givenName": "PCT",
+      "middleName": "Madrid",
+      "familyName": "Family",
+      "familyName2": null,
+      "voided": false,
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/6d24f374-8125-11e0-a437-00242122a7a8/name/6d8982e4-8125-11e0-a437-00242122a7a8",
+          "resourceAlias": "name"
+        },
+        {
+          "rel": "full",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/6d24f374-8125-11e0-a437-00242122a7a8/name/6d8982e4-8125-11e0-a437-00242122a7a8?v=full",
+          "resourceAlias": "name"
+        }
+      ],
+      "resourceVersion": "1.8"
+    },
+    "preferredAddress": {
+      "display": "Conselho Cristão de Moçambique",
+      "uuid": "6d42118e-8125-11e0-a437-00242122a7a8",
+      "preferred": true,
+      "address1": "Conselho Cristão de Moçambique",
+      "address2": "Mopeia-sede",
+      "cityVillage": null,
+      "stateProvince": "Zambezia",
+      "country": "Moçambique",
+      "postalCode": null,
+      "countyDistrict": "Mopeia",
+      "address3": null,
+      "address4": null,
+      "address5": "Eduardo Mondlane",
+      "address6": null,
+      "startDate": null,
+      "endDate": null,
+      "latitude": null,
+      "longitude": null,
+      "voided": false,
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/6d24f374-8125-11e0-a437-00242122a7a8/address/6d42118e-8125-11e0-a437-00242122a7a8",
+          "resourceAlias": "address"
+        },
+        {
+          "rel": "full",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/6d24f374-8125-11e0-a437-00242122a7a8/address/6d42118e-8125-11e0-a437-00242122a7a8?v=full",
+          "resourceAlias": "address"
+        }
+      ],
+      "resourceVersion": "1.8"
+    },
+    "names": [
+      {
+        "display": "PCT Madrid Family",
+        "uuid": "6d8982e4-8125-11e0-a437-00242122a7a8",
+        "givenName": "PCT",
+        "middleName": "Madrid",
+        "familyName": "Family",
+        "familyName2": null,
+        "voided": false,
+        "links": [
+          {
+            "rel": "self",
+            "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/6d24f374-8125-11e0-a437-00242122a7a8/name/6d8982e4-8125-11e0-a437-00242122a7a8",
+            "resourceAlias": "name"
+          },
+          {
+            "rel": "full",
+            "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/6d24f374-8125-11e0-a437-00242122a7a8/name/6d8982e4-8125-11e0-a437-00242122a7a8?v=full",
+            "resourceAlias": "name"
+          }
+        ],
+        "resourceVersion": "1.8"
+      }
+    ],
+    "addresses": [
+      {
+        "display": "Conselho Cristão de Moçambique",
+        "uuid": "6d42118e-8125-11e0-a437-00242122a7a8",
+        "preferred": true,
+        "address1": "Conselho Cristão de Moçambique",
+        "address2": "Mopeia-sede",
+        "cityVillage": null,
+        "stateProvince": "Zambezia",
+        "country": "Moçambique",
+        "postalCode": null,
+        "countyDistrict": "Mopeia",
+        "address3": null,
+        "address4": null,
+        "address5": "Eduardo Mondlane",
+        "address6": null,
+        "startDate": null,
+        "endDate": null,
+        "latitude": null,
+        "longitude": null,
+        "voided": false,
+        "links": [
+          {
+            "rel": "self",
+            "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/6d24f374-8125-11e0-a437-00242122a7a8/address/6d42118e-8125-11e0-a437-00242122a7a8",
+            "resourceAlias": "address"
+          },
+          {
+            "rel": "full",
+            "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/6d24f374-8125-11e0-a437-00242122a7a8/address/6d42118e-8125-11e0-a437-00242122a7a8?v=full",
+            "resourceAlias": "address"
+          }
+        ],
+        "resourceVersion": "1.8"
+      }
+    ],
+    "attributes": [
+      {
+        "display": "Identificador definido localmente 10 = 2021-11-10T17:22:38.362Z",
+        "uuid": "7d09b927-cd1b-4707-8fd9-37b632b1a858",
+        "value": "2021-11-10T17:22:38.362Z",
+        "attributeType": {
+          "uuid": "c649dae9-13b6-4c0d-9edc-6b1d304b13f4",
+          "display": "Identificador definido localmente 10",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://localhost:8083/openmrs/ws/rest/v1/personattributetype/c649dae9-13b6-4c0d-9edc-6b1d304b13f4",
+              "resourceAlias": "personattributetype"
+            }
+          ]
+        },
+        "voided": false,
+        "links": [
+          {
+            "rel": "self",
+            "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/6d24f374-8125-11e0-a437-00242122a7a8/attribute/7d09b927-cd1b-4707-8fd9-37b632b1a858",
+            "resourceAlias": "attribute"
+          },
+          {
+            "rel": "full",
+            "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/6d24f374-8125-11e0-a437-00242122a7a8/attribute/7d09b927-cd1b-4707-8fd9-37b632b1a858?v=full",
+            "resourceAlias": "attribute"
+          }
+        ],
+        "resourceVersion": "1.8"
+      }
+    ],
+    "voided": false,
+    "auditInfo": {
+      "creator": {
+        "uuid": "85a05c5e-1e3d-11e0-acca-000c29d83bf2",
+        "display": "admin",
+        "links": [
+          {
+            "rel": "self",
+            "uri": "http://localhost:8083/openmrs/ws/rest/v1/user/85a05c5e-1e3d-11e0-acca-000c29d83bf2",
+            "resourceAlias": "user"
+          }
+        ]
+      },
+      "dateCreated": "2021-11-10T20:22:39.000+0300",
+      "changedBy": null,
+      "dateChanged": null
+    },
+    "birthtime": null,
+    "deathdateEstimated": false,
+    "links": [
+      {
+        "rel": "self",
+        "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/6d24f374-8125-11e0-a437-00242122a7a8",
+        "resourceAlias": "person"
+      }
+    ],
+    "resourceVersion": "1.11"
+  },
+  "voided": false,
+  "auditInfo": {
+    "creator": {
+      "uuid": "85a05c5e-1e3d-11e0-acca-000c29d83bf2",
+      "display": "admin",
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/user/85a05c5e-1e3d-11e0-acca-000c29d83bf2",
+          "resourceAlias": "user"
+        }
+      ]
+    },
+    "dateCreated": "2021-11-10T20:22:39.000+0300",
+    "changedBy": null,
+    "dateChanged": null
+  },
+  "links": [
+    {
+      "rel": "self",
+      "uri": "http://localhost:8083/openmrs/ws/rest/v1/patient/6d24f374-8125-11e0-a437-00242122a7a8",
+      "resourceAlias": "patient"
+    }
+  ],
+  "resourceVersion": "1.8"
+}
