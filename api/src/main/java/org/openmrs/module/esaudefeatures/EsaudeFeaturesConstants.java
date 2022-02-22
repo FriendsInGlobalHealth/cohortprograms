@@ -1,5 +1,7 @@
 package org.openmrs.module.esaudefeatures;
 
+import static org.openmrs.util.OpenmrsConstants.OPENMRS_VERSION_SHORT;
+
 /**
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 8/6/21.
  */

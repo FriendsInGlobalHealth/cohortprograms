@@ -14,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.openmrs.Patient;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants;
 import org.openmrs.module.webservices.rest.SimpleObject;
@@ -23,6 +24,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -83,7 +85,7 @@ public class RemoteOpenmrsSearchDelegateTest {
 
 		RecordedRequest request = mockWebServer.takeRequest();
 		HttpUrl requestUrl = request.getRequestUrl();
-		assertEquals(Credentials.basic(USERNAME, PASSWORD), request.getHeader("Authorization"));
+		assertEquals("Basic ".concat(Credentials.basic(USERNAME, PASSWORD)), request.getHeader("Authorization"));
 		assertEquals("GET", request.getMethod());
 		assertTrue(request.getPath().startsWith(expectedFetchPath));
 		assertFalse(requestUrl.isHttps());
@@ -153,7 +155,7 @@ public class RemoteOpenmrsSearchDelegateTest {
 //
 //		delegate.searchPatients("sometext");
 //	}
-	
+
 	@After
 	public void teardown() throws IOException {
 		mockWebServer.close();
