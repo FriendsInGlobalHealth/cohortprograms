@@ -1,11 +1,14 @@
 package org.openmrs.module.esaudefeatures.web;
 
+import okhttp3.Credentials;
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
-
-import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.REMOTE_SERVER_SKIP_HOSTNAME_VERIFICATION_GP;
+import java.util.Map;
 
 /**
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 2/17/22.
@@ -61,11 +64,11 @@ public class Utils {
 		}
 		return result.toString();
 	}
-
+	
 	public static OkHttpClient createOkHttpClient(final boolean skipHostnameVerification) throws Exception {
 		if (skipHostnameVerification) {
 			return new OkHttpClient.Builder().hostnameVerifier(new HostnameVerifier() {
-
+				
 				@Override
 				public boolean verify(String hostname, SSLSession session) {
 					return true;
@@ -74,4 +77,34 @@ public class Utils {
 		}
 		return new OkHttpClient();
 	}
+	
+	public static Request createBasicAuthGetRequest(final String url, final String username, final String password,
+	        final String[] pathSegments, final Map<String, String> queryParameters) {
+		assert url != null && username != null && password != null;
+		HttpUrl.Builder urlBuilder = HttpUrl.parse(url).newBuilder();
+		if (pathSegments != null) {
+			for (String pathSegment : pathSegments) {
+				if (StringUtils.isNotEmpty(pathSegment)) {
+					if (pathSegment.contains("/")) {
+						// segments
+						urlBuilder.addPathSegments(pathSegment);
+					} else {
+						urlBuilder.addPathSegment(pathSegment);
+					}
+				}
+			}
+		}
+		
+		if (queryParameters != null && queryParameters.size() > 0) {
+			for (Map.Entry<String, String> queryParameter : queryParameters.entrySet()) {
+				urlBuilder.addQueryParameter(queryParameter.getKey(), queryParameter.getValue());
+			}
+		}
+		
+		String credentials = Credentials.basic(username, password);
+		return new Request.Builder().url(urlBuilder.build()).get().header("Content-Length", "0")
+		        .header("Authorization", "Basic ".concat(credentials)).header("Accept", "application/json")
+				.header("Content-Type", "application/json").build();
+	}
+
 }

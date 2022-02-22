@@ -25,13 +25,13 @@ public class EsaudeFeaturesResponseExceptionHandler extends ResponseEntityExcept
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.valueOf(ex.getStatusCode()),
 		    request);
 	}
-
+	
 	@ExceptionHandler({ RemoteOpenmrsSearchException.class })
 	public final ResponseEntity<Object> handleRemoteOpenmrsExceptions(RemoteOpenmrsSearchException ex, WebRequest request) {
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.valueOf(ex.getStatusCode()),
 		    request);
 	}
-
+	
 	@ExceptionHandler({ SSLException.class, SocketException.class })
 	public final ResponseEntity<Object> sslExceptions(Exception ex, WebRequest request) {
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR, request);

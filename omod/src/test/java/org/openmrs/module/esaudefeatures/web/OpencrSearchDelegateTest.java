@@ -78,30 +78,6 @@ public class OpencrSearchDelegateTest {
 		    PASSWORD);
 	}
 	
-	public void test1() throws IOException {
-		OkHttpClient client = new OkHttpClient.Builder().hostnameVerifier(new HostnameVerifier() {
-			
-			@Override
-			public boolean verify(String hostname, SSLSession session) {
-				System.out.println("Hostname: " + hostname);
-				return true;
-			}
-		}).build();
-		
-		OkHttpClient.Builder cb = new OkHttpClient.Builder();
-		HttpUrl.Builder builder = HttpUrl.parse("https://197.242.174.114:8000/ocrux/fhir/Patient").newBuilder()
-		        .addQueryParameter("name", "lazara");
-		String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImRlZmF1bHQtYWRtaW4tdXNlciIsImlhdCI6MTYzNzY5MTQ3OCwiZXhwIjoxNjM3Njk2ODc4fQ.9SLYPVwFUnZh6CLYHB9jjYCrVcP9ejuqK9jFc2W3634";
-		Request request = new Request.Builder().url(builder.build()).addHeader("Authorization", "Bearer ".concat(token))
-		        .build();
-		
-		Call call = client.newCall(request);
-		
-		Response response = call.execute();
-		
-		System.out.println(response.body().string());
-	}
-	
 	@Test
 	public void getServerJWTAuthenticationTokenSuccessfulRequest() throws Exception {
 		final String EXPECTED_PATH = "/ocrux/user/authenticate";

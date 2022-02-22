@@ -16,6 +16,7 @@ import org.hl7.fhir.r4.model.ResourceType;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.module.esaudefeatures.web.controller.OpencrAuthenticationException;
 import org.openmrs.module.esaudefeatures.web.dto.TokenDTO;
+import org.openmrs.module.webservices.rest.SimpleObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,9 +29,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENCR_REMOTE_SERVER_PASSWORD_GP;
-import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.REMOTE_SERVER_SKIP_HOSTNAME_VERIFICATION_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENCR_REMOTE_SERVER_URL_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENCR_REMOTE_SERVER_USERNAME_GP;
+import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.REMOTE_SERVER_SKIP_HOSTNAME_VERIFICATION_GP;
 
 /**
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 2/17/22.
@@ -53,19 +54,26 @@ public class OpencrSearchDelegate {
 	
 	private static final FhirContext FHIR_CONTEXT = FhirContext.forR4();
 	
+	private static TimedConcurrentHashMapCache<String, Bundle.BundleEntryComponent> PATIENTS_CACHE = new TimedConcurrentHashMapCache<String, Bundle.BundleEntryComponent>();
+	
 	private AdministrationService adminService;
 	
-	private static TimedConcurrentHashMapCache<String, Bundle.BundleEntryComponent> PATIENTS_CACHE = new TimedConcurrentHashMapCache<String, Bundle.BundleEntryComponent>();
+	private RemoteOpenmrsSearchDelegate openmrsSearchDelegate;
 	
 	@Autowired
 	public void setAdminService(AdministrationService adminService) {
 		this.adminService = adminService;
 	}
-
+	
+	@Autowired
+	public void setOpenmrsSearchDelegate(RemoteOpenmrsSearchDelegate openmrsSearchDelegate) {
+		this.openmrsSearchDelegate = openmrsSearchDelegate;
+	}
+	
 	public Patient getPatientByFhirId(final String id) {
 		throw new NotImplementedException("not yet");
 	}
-
+	
 	public Bundle searchOpencrForPatients(final String searchText) throws Exception {
 		IParser parser = FHIR_CONTEXT.newJsonParser();
 		String remoteServerUrl = adminService.getGlobalProperty(OPENCR_REMOTE_SERVER_URL_GP);
@@ -150,7 +158,7 @@ public class OpencrSearchDelegate {
 		}
 		throw new OpencrSearchException(opencrResponse.body().string(), opencrResponse.code());
 	}
-
+	
 	public boolean importOpencrPatient(final String fhirPatientId) {
 		//Check if patient is in cache.
 		Bundle.BundleEntryComponent patientEntry = PATIENTS_CACHE.get(fhirPatientId);
@@ -169,7 +177,14 @@ public class OpencrSearchDelegate {
 		String openmrsUuid = getOpenmrsUuid(patientResource.getIdentifier());
 		
 		if (openmrsUuid != null) {
-			
+			// Fetch patient from central server.
+			try {
+				SimpleObject patientObject = openmrsSearchDelegate.getRemotePatientByUuid(openmrsUuid);
+				
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 		return false;
 	}
