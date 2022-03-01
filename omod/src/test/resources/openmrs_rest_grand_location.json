@@ -1,0 +1,262 @@
+{
+  "uuid": "54e3a90e-c7c4-49ea-83a8-fd68b9880045",
+  "display": "Zambezia",
+  "name": "Zambezia",
+  "description": "Provincia da Zambezia",
+  "address1": null,
+  "address2": null,
+  "cityVillage": null,
+  "stateProvince": "Zambézia",
+  "country": "Moçambique",
+  "postalCode": null,
+  "latitude": null,
+  "longitude": null,
+  "countyDistrict": null,
+  "address3": null,
+  "address4": null,
+  "address5": null,
+  "address6": null,
+  "tags": [
+    {
+      "uuid": "cdacfe2c-9f15-45ab-8eb6-81b20425e49b",
+      "display": "Provincia",
+      "name": "Provincia",
+      "description": "Provincias",
+      "retired": false,
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/locationtag/cdacfe2c-9f15-45ab-8eb6-81b20425e49b",
+          "resourceAlias": "locationtag"
+        },
+        {
+          "rel": "full",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/locationtag/cdacfe2c-9f15-45ab-8eb6-81b20425e49b?v=full",
+          "resourceAlias": "locationtag"
+        }
+      ],
+      "resourceVersion": "1.8"
+    }
+  ],
+  "parentLocation": null,
+  "childLocations": [
+    {
+      "uuid": "2fad5905-351b-41d5-ad83-3e6114c7c16d",
+      "display": "Gurue",
+      "name": "Gurue",
+      "description": null,
+      "address1": null,
+      "address2": null,
+      "cityVillage": null,
+      "stateProvince": "Zambézia",
+      "country": "Moçambique",
+      "postalCode": null,
+      "latitude": null,
+      "longitude": null,
+      "countyDistrict": "Gurue",
+      "address3": null,
+      "address4": null,
+      "address5": null,
+      "address6": null,
+      "tags": [
+        {
+          "uuid": "abba7fd1-f239-4bf9-bf65-3662f27b8007",
+          "display": "Distrito",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://localhost:8083/openmrs/ws/rest/v1/locationtag/abba7fd1-f239-4bf9-bf65-3662f27b8007",
+              "resourceAlias": "locationtag"
+            }
+          ]
+        }
+      ],
+      "parentLocation": {
+        "uuid": "54e3a90e-c7c4-49ea-83a8-fd68b9880045",
+        "display": "Zambezia",
+        "links": [
+          {
+            "rel": "self",
+            "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/54e3a90e-c7c4-49ea-83a8-fd68b9880045",
+            "resourceAlias": "location"
+          }
+        ]
+      },
+      "childLocations": [
+        {
+          "uuid": "92077668-f485-4327-9407-267dbcd43a60",
+          "display": "CS Gurue",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/92077668-f485-4327-9407-267dbcd43a60",
+              "resourceAlias": "location"
+            }
+          ]
+        },
+        {
+          "uuid": "50189b56-c45a-4d64-a6bf-b753a4dca907",
+          "display": "CS III Muagiua",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/50189b56-c45a-4d64-a6bf-b753a4dca907",
+              "resourceAlias": "location"
+            }
+          ]
+        },
+        {
+          "uuid": "19d5976c-19be-42f0-b1a5-4b83b6dcf0b7",
+          "display": "CS III Tetete",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/19d5976c-19be-42f0-b1a5-4b83b6dcf0b7",
+              "resourceAlias": "location"
+            }
+          ]
+        },
+        {
+          "uuid": "ece513f0-38a7-49e1-b32b-049ebcd05413",
+          "display": "CS Lioma",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/ece513f0-38a7-49e1-b32b-049ebcd05413",
+              "resourceAlias": "location"
+            }
+          ]
+        },
+        {
+          "uuid": "70a2359b-a6c9-4ed2-82ab-e1dd4ff3fbb1",
+          "display": "CS Macuaro",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/70a2359b-a6c9-4ed2-82ab-e1dd4ff3fbb1",
+              "resourceAlias": "location"
+            }
+          ]
+        },
+        {
+          "uuid": "e02bf4c1-a300-4d14-9f01-1ae80606fabc",
+          "display": "CS Serra",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/e02bf4c1-a300-4d14-9f01-1ae80606fabc",
+              "resourceAlias": "location"
+            }
+          ]
+        },
+        {
+          "uuid": "6ee725f8-d793-49f3-80b7-19cdb1ca3ee7",
+          "display": "CS U.P.10",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/6ee725f8-d793-49f3-80b7-19cdb1ca3ee7",
+              "resourceAlias": "location"
+            }
+          ]
+        },
+        {
+          "uuid": "d11b0168-dae0-4779-99b5-787303af26ad",
+          "display": "PS Invinha",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/d11b0168-dae0-4779-99b5-787303af26ad",
+              "resourceAlias": "location"
+            }
+          ]
+        },
+        {
+          "uuid": "e76b2aeb-bf7f-4ba5-8877-a3af5715829a",
+          "display": "PS Mepuagiua",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/e76b2aeb-bf7f-4ba5-8877-a3af5715829a",
+              "resourceAlias": "location"
+            }
+          ]
+        },
+        {
+          "uuid": "0cfef544-b308-4c91-be4b-4ad14a59b7e8",
+          "display": "PS Nantulo",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/0cfef544-b308-4c91-be4b-4ad14a59b7e8",
+              "resourceAlias": "location"
+            }
+          ]
+        },
+        {
+          "uuid": "2a32a7bd-ae62-496f-a161-edd97d7aebf4",
+          "display": "PS Ruace",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/2a32a7bd-ae62-496f-a161-edd97d7aebf4",
+              "resourceAlias": "location"
+            }
+          ]
+        },
+        {
+          "uuid": "fceb2860-71ce-42de-87f6-bc3ade56270b",
+          "display": "PS U.P.4",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/fceb2860-71ce-42de-87f6-bc3ade56270b",
+              "resourceAlias": "location"
+            }
+          ]
+        }
+      ],
+      "retired": false,
+      "attributes": [],
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/2fad5905-351b-41d5-ad83-3e6114c7c16d",
+          "resourceAlias": "location"
+        },
+        {
+          "rel": "full",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/2fad5905-351b-41d5-ad83-3e6114c7c16d?v=full",
+          "resourceAlias": "location"
+        }
+      ],
+      "resourceVersion": "1.9"
+    }
+  ],
+  "retired": false,
+  "auditInfo": {
+    "creator": {
+      "uuid": "8fb15da7-3f0b-4910-b62a-ece7e336b5a9",
+      "display": "edias17",
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/user/8fb15da7-3f0b-4910-b62a-ece7e336b5a9",
+          "resourceAlias": "user"
+        }
+      ]
+    },
+    "dateCreated": "2015-08-20T18:10:08.000+0300",
+    "changedBy": null,
+    "dateChanged": null
+  },
+  "attributes": [],
+  "links": [
+    {
+      "rel": "self",
+      "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/54e3a90e-c7c4-49ea-83a8-fd68b9880045",
+      "resourceAlias": "location"
+    }
+  ],
+  "resourceVersion": "1.9"
+}

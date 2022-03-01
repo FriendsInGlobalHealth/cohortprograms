@@ -1,0 +1,177 @@
+{
+  "uuid": "2fad5905-351b-41d5-ad83-3e6114c7c16d",
+  "display": "Gurue",
+  "name": "Gurue",
+  "description": null,
+  "address1": null,
+  "address2": null,
+  "cityVillage": null,
+  "stateProvince": "Zambézia",
+  "country": "Moçambique",
+  "postalCode": null,
+  "latitude": null,
+  "longitude": null,
+  "countyDistrict": "Gurue",
+  "address3": null,
+  "address4": null,
+  "address5": null,
+  "address6": null,
+  "tags": [
+    {
+      "uuid": "abba7fd1-f239-4bf9-bf65-3662f27b8007",
+      "display": "Distrito",
+      "name": "Distrito",
+      "description": "Distritos",
+      "retired": false,
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/locationtag/abba7fd1-f239-4bf9-bf65-3662f27b8007",
+          "resourceAlias": "locationtag"
+        },
+        {
+          "rel": "full",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/locationtag/abba7fd1-f239-4bf9-bf65-3662f27b8007?v=full",
+          "resourceAlias": "locationtag"
+        }
+      ],
+      "resourceVersion": "1.8"
+    }
+  ],
+  "parentLocation": {
+    "uuid": "54e3a90e-c7c4-49ea-83a8-fd68b9880045",
+    "display": "Zambezia",
+    "name": "Zambezia",
+    "description": "Provincia da Zambezia",
+    "address1": null,
+    "address2": null,
+    "cityVillage": null,
+    "stateProvince": "Zambézia",
+    "country": "Moçambique",
+    "postalCode": null,
+    "latitude": null,
+    "longitude": null,
+    "countyDistrict": null,
+    "address3": null,
+    "address4": null,
+    "address5": null,
+    "address6": null,
+    "tags": [
+      {
+        "uuid": "cdacfe2c-9f15-45ab-8eb6-81b20425e49b",
+        "display": "Provincia",
+        "links": [
+          {
+            "rel": "self",
+            "uri": "http://localhost:8083/openmrs/ws/rest/v1/locationtag/cdacfe2c-9f15-45ab-8eb6-81b20425e49b",
+            "resourceAlias": "locationtag"
+          }
+        ]
+      }
+    ],
+    "parentLocation": null,
+    "childLocations": [
+      {
+        "uuid": "2fad5905-351b-41d5-ad83-3e6114c7c16d",
+        "display": "Gurue",
+        "links": [
+          {
+            "rel": "self",
+            "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/2fad5905-351b-41d5-ad83-3e6114c7c16d",
+            "resourceAlias": "location"
+          }
+        ]
+      }
+    ],
+    "retired": false,
+    "attributes": [],
+    "links": [
+      {
+        "rel": "self",
+        "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/54e3a90e-c7c4-49ea-83a8-fd68b9880045",
+        "resourceAlias": "location"
+      },
+      {
+        "rel": "full",
+        "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/54e3a90e-c7c4-49ea-83a8-fd68b9880045?v=full",
+        "resourceAlias": "location"
+      }
+    ],
+    "resourceVersion": "1.9"
+  },
+  "childLocations": [
+    {
+      "uuid": "ece513f0-38a7-49e1-b32b-049ebcd05413",
+      "display": "CS Lioma",
+      "name": "CS Lioma",
+      "description": "Centro de Saude de Lioma",
+      "address1": null,
+      "address2": null,
+      "cityVillage": null,
+      "stateProvince": "Zambézia",
+      "country": "Moçambique",
+      "postalCode": null,
+      "latitude": null,
+      "longitude": null,
+      "countyDistrict": "Gurue",
+      "address3": null,
+      "address4": null,
+      "address5": null,
+      "address6": null,
+      "tags": [],
+      "parentLocation": {
+        "uuid": "2fad5905-351b-41d5-ad83-3e6114c7c16d",
+        "display": "Gurue",
+        "links": [
+          {
+            "rel": "self",
+            "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/2fad5905-351b-41d5-ad83-3e6114c7c16d",
+            "resourceAlias": "location"
+          }
+        ]
+      },
+      "childLocations": [],
+      "retired": false,
+      "attributes": [],
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/ece513f0-38a7-49e1-b32b-049ebcd05413",
+          "resourceAlias": "location"
+        },
+        {
+          "rel": "full",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/ece513f0-38a7-49e1-b32b-049ebcd05413?v=full",
+          "resourceAlias": "location"
+        }
+      ],
+      "resourceVersion": "1.9"
+    }
+  ],
+  "retired": false,
+  "auditInfo": {
+    "creator": {
+      "uuid": "85a05c5e-1e3d-11e0-acca-000c29d83bf2",
+      "display": "admin",
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/user/85a05c5e-1e3d-11e0-acca-000c29d83bf2",
+          "resourceAlias": "user"
+        }
+      ]
+    },
+    "dateCreated": "2017-04-24T11:39:29.000+0300",
+    "changedBy": null,
+    "dateChanged": null
+  },
+  "attributes": [],
+  "links": [
+    {
+      "rel": "self",
+      "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/2fad5905-351b-41d5-ad83-3e6114c7c16d",
+      "resourceAlias": "location"
+    }
+  ],
+  "resourceVersion": "1.9"
+}
