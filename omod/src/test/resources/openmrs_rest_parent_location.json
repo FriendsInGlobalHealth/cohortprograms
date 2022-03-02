@@ -151,12 +151,12 @@
   "retired": false,
   "auditInfo": {
     "creator": {
-      "uuid": "85a05c5e-1e3d-11e0-acca-000c29d83bf2",
-      "display": "admin",
+      "uuid": "0bc18050-e132-11de-babe-001e378eb67e",
+      "display": "userWithSha512Hash",
       "links": [
         {
           "rel": "self",
-          "uri": "http://localhost:8083/openmrs/ws/rest/v1/user/85a05c5e-1e3d-11e0-acca-000c29d83bf2",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/user/0bc18050-e132-11de-babe-001e378eb67e",
           "resourceAlias": "user"
         }
       ]

@@ -236,12 +236,12 @@
   "retired": false,
   "auditInfo": {
     "creator": {
-      "uuid": "8fb15da7-3f0b-4910-b62a-ece7e336b5a9",
-      "display": "edias17",
+      "uuid": "0bc18050-e132-11de-babe-001e378eb67e",
+      "display": "userWithSha512Hash",
       "links": [
         {
           "rel": "self",
-          "uri": "http://localhost:8083/openmrs/ws/rest/v1/user/8fb15da7-3f0b-4910-b62a-ece7e336b5a9",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/user/0bc18050-e132-11de-babe-001e378eb67e",
           "resourceAlias": "user"
         }
       ]

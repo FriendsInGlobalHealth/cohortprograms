@@ -20,26 +20,85 @@
   "parentLocation": {
     "uuid": "2fad5905-351b-41d5-ad83-3e6114c7c16d",
     "display": "Gurue",
+    "name": "Gurue",
+    "description": null,
+    "address1": null,
+    "address2": null,
+    "cityVillage": null,
+    "stateProvince": "Zambézia",
+    "country": "Moçambique",
+    "postalCode": null,
+    "latitude": null,
+    "longitude": null,
+    "countyDistrict": "Gurue",
+    "address3": null,
+    "address4": null,
+    "address5": null,
+    "address6": null,
+    "tags": [
+      {
+        "uuid": "abba7fd1-f239-4bf9-bf65-3662f27b8007",
+        "display": "Distrito",
+        "links": [
+          {
+            "rel": "self",
+            "uri": "http://localhost:8083/openmrs/ws/rest/v1/locationtag/abba7fd1-f239-4bf9-bf65-3662f27b8007",
+            "resourceAlias": "locationtag"
+          }
+        ]
+      }
+    ],
+    "parentLocation": {
+      "uuid": "54e3a90e-c7c4-49ea-83a8-fd68b9880045",
+      "display": "Zambezia",
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/54e3a90e-c7c4-49ea-83a8-fd68b9880045",
+          "resourceAlias": "location"
+        }
+      ]
+    },
+    "childLocations": [],
+    "retired": false,
+    "attributes": [],
     "links": [
       {
         "rel": "self",
         "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/2fad5905-351b-41d5-ad83-3e6114c7c16d",
         "resourceAlias": "location"
+      },
+      {
+        "rel": "full",
+        "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/2fad5905-351b-41d5-ad83-3e6114c7c16d?v=full",
+        "resourceAlias": "location"
       }
-    ]
+    ],
+    "resourceVersion": "1.9"
   },
   "childLocations": [],
   "retired": false,
+  "auditInfo": {
+    "creator": {
+      "uuid": "0bc18050-e132-11de-babe-001e378eb67e",
+      "display": "userWithSha512Hash",
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/user/0bc18050-e132-11de-babe-001e378eb67e",
+          "resourceAlias": "user"
+        }
+      ]
+    },
+    "dateCreated": "2018-02-23T16:23:22.000+0300",
+    "changedBy": null,
+    "dateChanged": null
+  },
   "attributes": [],
   "links": [
     {
       "rel": "self",
       "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/ece513f0-38a7-49e1-b32b-049ebcd05413",
-      "resourceAlias": "location"
-    },
-    {
-      "rel": "full",
-      "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/ece513f0-38a7-49e1-b32b-049ebcd05413?v=full",
       "resourceAlias": "location"
     }
   ],

@@ -3,6 +3,7 @@ package org.openmrs.module.esaudefeatures.web;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.apache.commons.io.IOUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -22,10 +23,10 @@ import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
@@ -34,7 +35,8 @@ import static org.junit.Assert.assertNull;
  */
 @Component
 public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
-	private static final String OPENMRS_LOCATION_FILE = "/openmrs_rest_child_location.json";
+	private static final String OPENMRS_LOCATION_FILE = "/openmrs_rest_location.json";
+	private static final String OPENMRS_CHILD_LOCATION_FILE = "/openmrs_rest_child_location.json";
 	private static final String OPENMRS_PARENT_LOCATION_FILE = "/openmrs_rest_parent_location.json";
 	private static final String OPENMRS_GRAND_LOCATION_FILE = "/openmrs_rest_grand_location.json";
 	private static final String OPENMRS_USER_FILE = "/openmrs_rest_user_both_creator_and_changer_already_exist.json";
@@ -43,7 +45,6 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 	private static final String USERS_TEST_FILE = "org/openmrs/api/include/UserServiceTest.xml";
 	private static final String USERNAME = "user1";
 	private static final String PASSWORD = "pa$$w0rd";
-	private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 	private MockWebServer mockWebServer;
 	
 	@Mock
@@ -71,7 +72,12 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		Mockito.when(adminService.getGlobalProperty(EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_PASSWORD_GP)).thenReturn(
 		    PASSWORD);
 	}
-	
+
+	@After
+	public void tearDown() throws Exception {
+		mockWebServer.close();
+	}
+
 	@Test
 	public void getPatientFromOpenmrsPayloadShouldReturnTheCorrectObject() throws Exception {
 		final String PATIENT_JSON = IOUtils.toString(getClass().getResourceAsStream("/openmrs_rest_single_patient.json"));
@@ -138,16 +144,14 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		assertEquals(userObject.get("username"), importedUser.getUsername());
 		assertEquals(userObject.get("systemId"), importedUser.getSystemId());
 		assertEquals(((Map)auditInfo.get("creator")).get("uuid"), importedUser.getCreator().getUuid());
-		assertNull(auditInfo.get("changedBy"));
 		assertNull(importedUser.getChangedBy());
 		assertEquals(Utils.parseDateString((String) auditInfo.get("dateCreated")), importedUser.getDateCreated());
-		assertNull(auditInfo.get("dateChanged"));
 		assertNull(importedUser.getDateChanged());
 	}
 
 	@Test
 	public void importLocationFromRemoteOpenmrsServerShouldImportLocationWithoutParent() throws IOException, InterruptedException {
-		final String LOCATION = IOUtils.toString(getClass().getResourceAsStream(OPENMRS_GRAND_LOCATION_FILE));
+		final String LOCATION = IOUtils.toString(getClass().getResourceAsStream(OPENMRS_LOCATION_FILE));
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
 				.addHeader("Content-Type", "application/json").setBody(LOCATION));
 
@@ -156,17 +160,32 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		Map auditInfo = locationObj.get("auditInfo");
 		helperService.importLocationFromRemoteOpenmrsServer(locUuid);
 
-		Location location = locationService.getLocationByUuid(locUuid);
+		final Location location = locationService.getLocationByUuid(locUuid);
 
 		assertNotNull(location);
 		assertEquals(locUuid, location.getUuid());
 		assertEquals(locationObj.get("name"), location.getName());
+		assertEquals(locationObj.get("description"), location.getDescription());
+		assertEquals(locationObj.get("countyDistrict"), location.getCountyDistrict());
+		assertEquals(locationObj.get("stateProvince"), location.getStateProvince());
+		assertEquals(locationObj.get("country"), location.getCountry());
+		assertFalse(location.isRetired());
+		assertNull(location.getAddress1());
+		assertNull(location.getAddress2());
+		assertNull(location.getAddress3());
+		assertNull(location.getAddress4());
+		assertNull(location.getAddress5());
+		assertNull(location.getAddress6());
+		assertNull(location.getLongitude());
+		assertNull(location.getLatitude());
+		assertNull(location.getPostalCode());
 		assertEquals(((Map)auditInfo.get("creator")).get("uuid"), location.getCreator().getUuid());
+		assertEquals(Utils.parseDateString((String) auditInfo.get("dateCreated")), location.getDateCreated());
 	}
 
 	@Test
 	public void importLocationFromRemoteOpenmrsServerShouldImportLocationWithAncestors() throws IOException, InterruptedException {
-		final String LOCATION = IOUtils.toString(getClass().getResourceAsStream(OPENMRS_LOCATION_FILE));
+		final String LOCATION = IOUtils.toString(getClass().getResourceAsStream(OPENMRS_CHILD_LOCATION_FILE));
 		final String PARENT_LOCATION = IOUtils.toString(getClass().getResourceAsStream(OPENMRS_PARENT_LOCATION_FILE));
 		final String GRAND_PARENT_LOCATION = IOUtils.toString(getClass().getResourceAsStream(OPENMRS_GRAND_LOCATION_FILE));
 
@@ -188,11 +207,11 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 
 		Location location = locationService.getLocationByUuid(locUuid);
 		Location parentLocation = locationService.getLocationByUuid(parentUuid);
-		Location grandLocation = locationService.getLocationByUuid(grandUuid);
+		Location grandParentLocation = locationService.getLocationByUuid(grandUuid);
 		assertNotNull(location);
 		assertNotNull(parentLocation);
-		assertNotNull(grandLocation);
-		assertEquals(parentUuid, location.getParentLocation().getUuid());
-		assertEquals(grandUuid, parentLocation.getParentLocation().getUuid());
+		assertNotNull(grandParentLocation);
+		assertEquals(parentLocation, location.getParentLocation());
+		assertEquals(grandParentLocation, parentLocation.getParentLocation());
 	}
 }

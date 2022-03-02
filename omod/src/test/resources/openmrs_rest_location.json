@@ -1,0 +1,47 @@
+{
+  "uuid": "ece513f0-38a7-49e1-b32b-049ebcd05413",
+  "display": "CS Lioma",
+  "name": "CS Lioma",
+  "description": "Centro de Saude de Lioma",
+  "address1": null,
+  "address2": null,
+  "cityVillage": null,
+  "stateProvince": "Zambézia",
+  "country": "Moçambique",
+  "postalCode": null,
+  "latitude": null,
+  "longitude": null,
+  "countyDistrict": "Gurue",
+  "address3": null,
+  "address4": null,
+  "address5": null,
+  "address6": null,
+  "tags": [],
+  "childLocations": [],
+  "retired": false,
+  "auditInfo": {
+    "creator": {
+      "uuid": "0bc18050-e132-11de-babe-001e378eb67e",
+      "display": "userWithSha512Hash",
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/user/0bc18050-e132-11de-babe-001e378eb67e",
+          "resourceAlias": "user"
+        }
+      ]
+    },
+    "dateCreated": "2018-02-23T16:23:22.000+0300",
+    "changedBy": null,
+    "dateChanged": null
+  },
+  "attributes": [],
+  "links": [
+    {
+      "rel": "self",
+      "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/ece513f0-38a7-49e1-b32b-049ebcd05413",
+      "resourceAlias": "location"
+    }
+  ],
+  "resourceVersion": "1.9"
+}

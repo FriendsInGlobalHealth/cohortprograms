@@ -32,6 +32,7 @@ import org.springframework.util.StringUtils;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -68,10 +69,8 @@ public class ImportHelperService {
 	
 	private UserService userService;
 
+	//TODO: Not fully implemented as of now (This is mainly to take care of circular user dependencies)
 	private ConcurrentMap<String, User> importedUsersCache = new ConcurrentHashMap<String, User>();
-
-	private static int importUserCalls = 0;
-	private static int updateAuditInfoCalls = 0;
 	
 	public static final List<String> IGNORED_PERSON_ATTRIBUTE_TYPES = new ArrayList<String>();
 	
@@ -285,7 +284,6 @@ public class ImportHelperService {
 	}
 	
 	public void updateAuditInfo(Auditable openmrsObject, Map<String, Object> auditInfo) {
-		System.out.println("updateAuditInfo Call Count is " + (++updateAuditInfoCalls));
 		Map creatorMap = (Map) auditInfo.get("creator");
 		if (creatorMap != null) {
 			String creatorUuid = (String) creatorMap.get("uuid");
@@ -335,7 +333,6 @@ public class ImportHelperService {
 		String[] urlUserPass = getRemoteOpenmrsHostUsernamePassword();
 		String errorMessage = String.format("Could not fetch user with uuid %s from server %s", userUuid, urlUserPass[0]);
 		String[] pathSegments = { "ws/rest/v1/user", userUuid };
-		System.out.println("importUserFromRemoteOpenmrsServer Call Count is " + (++importUserCalls));
 
 		Map<String, String> queryParams = new HashMap<String, String>();
 		queryParams.put("v", "full");
@@ -381,12 +378,12 @@ public class ImportHelperService {
 			}
 		}
 		catch (IOException e) {
-			LOGGER.error("Could not execute the http request", null, e);
+			LOGGER.error("Error when executing http request {} ", userRequest, e);
 			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
 		throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 	}
-	
+
 	public Location importLocationFromRemoteOpenmrsServer(String locationUuid) {
 		String[] urlUserPass = getRemoteOpenmrsHostUsernamePassword();
 		String message = String.format("Could not fetch location with uuid %s from server %s", locationUuid, urlUserPass[0]);
@@ -403,7 +400,7 @@ public class ImportHelperService {
 			httpClient = Utils.createOkHttpClient(skipHostnameVerification);
 		}
 		catch (Exception e) {
-			LOGGER.error("Could not create http client");
+			LOGGER.error("Could not create http client", e);
 			throw new RemoteOpenmrsSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
 		
@@ -412,8 +409,7 @@ public class ImportHelperService {
 			response = httpClient.newCall(locRequest).execute();
 		}
 		catch (IOException e) {
-			LOGGER.error(
-			    String.format("Error when fetching location with uuid \"%s\" from server %s", locationUuid, urlUserPass[0]), e);
+			LOGGER.error("Error when executing http request {}", locRequest, e);
 			throw new RemoteOpenmrsSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
 		
@@ -423,16 +419,12 @@ public class ImportHelperService {
 				fetchedLocationObject = SimpleObject.parseJson(response.body().string());
 			}
 			catch (IOException e) {
-				LOGGER.error(String.format("Error while reading response from server %s", urlUserPass[0]), e);
+				LOGGER.error("Error while reading response from server {}", urlUserPass[0], e);
 				throw new RemoteOpenmrsSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			}
 			// TODO: Currently location tags and attributes are not being used so we can ignore them. however a complete solution will have to take
 			// these into account.
-			List<String> ignoredFields = Arrays.asList("display", "tags", "parentLocation", "childLocations", "attributes",
-			    "links", "resourceVersion", "auditInfo");
-			final Set<String> allFields = fetchedLocationObject.keySet();
-			allFields.removeAll(ignoredFields);
-			
+
 			final Location fetchedLocation = new Location();
 			ReflectionUtils.doWithFields(Location.class, new ReflectionUtils.FieldCallback() {
 				@Override
@@ -444,11 +436,15 @@ public class ImportHelperService {
 			}, new ReflectionUtils.FieldFilter() {
 				@Override
 				public boolean matches(Field field) {
-					return allFields.contains(field.getName());
+					if(Arrays.asList("tags", "parentLocation", "childLocations", "attributes").contains(field.getName())) {
+						return false;
+					}
+					int modifiers = field.getModifiers();
+					return (!Modifier.isFinal(modifiers) && !Modifier.isStatic(modifiers));
 				}
 			});
 
-			if(fetchedLocationObject.containsKey("")) {
+			if(fetchedLocationObject.containsKey("auditInfo")) {
 				updateAuditInfo(fetchedLocation, (Map) fetchedLocationObject.get("auditInfo"));
 			}
 
