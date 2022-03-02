@@ -11,6 +11,11 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.openmrs.Location;
 import org.openmrs.Patient;
+import org.openmrs.PatientIdentifier;
+import org.openmrs.Person;
+import org.openmrs.PersonAddress;
+import org.openmrs.PersonAttribute;
+import org.openmrs.PersonName;
 import org.openmrs.User;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.LocationService;
@@ -23,12 +28,15 @@ import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 2/20/22.
@@ -49,7 +57,7 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 	
 	@Mock
 	private AdministrationService adminService;
-	
+
 	@InjectMocks
 	@Autowired
 	private ImportHelperService helperService;
@@ -81,24 +89,110 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 	@Test
 	public void getPatientFromOpenmrsPayloadShouldReturnTheCorrectObject() throws Exception {
 		final String PATIENT_JSON = IOUtils.toString(getClass().getResourceAsStream("/openmrs_rest_single_patient.json"));
-		
+		final String IDENTIFIER_LOCATION_JSON = IOUtils.toString(getClass().getResourceAsStream("/openmrs_rest_location.json"));
+
+		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
+				.addHeader("Content-Type", "application/json").setBody(IDENTIFIER_LOCATION_JSON));
+
 		SimpleObject patientObject = SimpleObject.parseJson(PATIENT_JSON);
+		Map personObject = patientObject.get("person");
 		Map<String, Object> auditInfo = patientObject.get("auditInfo");
 		Boolean voided = patientObject.get("voided");
+
 		Patient patient = helperService.getPatientFromOpenmrsRestPayload(patientObject);
-		
-		assertEquals(((Map) patientObject.get("person")).get("uuid"), patient.getUuid());
+
+		List<Map> identifiersMaps = patientObject.get("identifiers");
+		Set<PatientIdentifier> patientIdentifiers = patient.getIdentifiers();
+		for(Map identifierMap: identifiersMaps) {
+			String identifierUuid = (String) identifierMap.get("uuid");
+			PatientIdentifier patientIdentifier = null;
+			for(PatientIdentifier identifier: patientIdentifiers) {
+				if(identifierUuid.equals(identifier.getUuid())) {
+					patientIdentifier = identifier;
+					break;
+				}
+			}
+			assertNotNull(patientIdentifier);
+			assertEquals(identifierMap.get("identifier"), patientIdentifier.getIdentifier());
+			assertEquals(((Map)identifierMap.get("identifierType")).get("uuid"), patientIdentifier.getIdentifierType().getUuid());
+		}
+
+		assertEquals(personObject.get("uuid"), patient.getUuid());
 		assertEquals(voided, patient.getVoided());
+		assertEquals(personObject.get("gender"), patient.getGender());
+		assertEquals(Utils.parseDateString((String) personObject.get("birthdate")), patient.getBirthdate());
+		assertNull(patient.getDeathDate());
+		assertNull(patient.getCauseOfDeath());
+		assertEquals(((Map)auditInfo.get("creator")).get("uuid"), patient.getCreator().getUuid());
+		assertNull(patient.getChangedBy());
+		assertEquals(Utils.parseDateString((String) auditInfo.get("dateCreated")), patient.getDateCreated());
+		assertNull(patient.getDateChanged());
+		assertFalse(patient.getVoided());
+
+		auditInfo = (Map) personObject.get("auditInfo");
+		Person person = patient.getPerson();
+		assertEquals(((Map)auditInfo.get("creator")).get("uuid"), person.getCreator().getUuid());
+		assertNull(patient.getChangedBy());
+		assertEquals(Utils.parseDateString((String) auditInfo.get("dateCreated")), person.getDateCreated());
+		assertNull(person.getDateChanged());
+		assertFalse(person.getVoided());
+
+		PersonName name = person.getPersonName();
+		Map preferredName = (Map)personObject.get("preferredName");
+		assertTrue(name.isPreferred());
+		assertEquals(preferredName.get("uuid"), name.getUuid());
+		assertEquals(preferredName.get("givenName"), name.getGivenName());
+		assertEquals(preferredName.get("middleName"), name.getMiddleName());
+		assertEquals(preferredName.get("familyName"), name.getFamilyName());
+		assertNull(name.getFamilyName2());
+		assertNull(name.getPrefix());
+		assertNull(name.getFamilyNameSuffix());
+		assertFalse(name.getVoided());
+
+		PersonAddress address = person.getPersonAddress();
+		Map preferredAddress = (Map) personObject.get("preferredAddress");
+		assertTrue(address.isPreferred());
+		assertEquals(preferredAddress.get("uuid"), address.getUuid());
+		assertEquals(preferredAddress.get("address1"), address.getAddress1());
+		assertEquals(preferredAddress.get("address2"), address.getAddress2());
+		assertEquals(preferredAddress.get("address5"), address.getAddress5());
+		assertEquals(preferredAddress.get("countyDistrict"), address.getCountyDistrict());
+		assertEquals(preferredAddress.get("stateProvince"), address.getStateProvince());
+		assertEquals(preferredAddress.get("country"), address.getCountry());
+		assertNull(address.getCityVillage());
+		assertNull(address.getAddress3());
+		assertNull(address.getAddress4());
+		assertNull(address.getAddress6());
+		assertNull(address.getLongitude());
+		assertNull(address.getLatitude());
+		assertNull(address.getPostalCode());
+		assertFalse(address.getVoided());
+
+		List<Map> attributesMaps = (List<Map>) personObject.get("attributes");
+		Set<PersonAttribute> personAttributes = person.getAttributes();
+		for(Map attributeMap: attributesMaps) {
+			String attrUuid = (String) attributeMap.get("uuid");
+			PersonAttribute personAttribute = null;
+			for(PersonAttribute attribute: personAttributes) {
+				if(attrUuid.equals(attribute.getUuid())) {
+					personAttribute = attribute;
+					break;
+				}
+			}
+			assertNotNull(personAttribute);
+			assertEquals(attributeMap.get("value"), personAttribute.getValue());
+			assertEquals(((Map)attributeMap.get("attributeType")).get("uuid"), personAttribute.getAttributeType().getUuid());
+		}
 	}
 
 	@Test
 	public void importUserFromRemoteOpenmrsServerShouldImportCorrectly() throws IOException {
 		final String USER = IOUtils.toString(getClass().getResourceAsStream(OPENMRS_USER_FILE));
 		SimpleObject userObject = SimpleObject.parseJson(USER);
-		String userUuid = userObject.get("uuid");
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
 				.addHeader("Content-Type", "application/json").setBody(USER));
 
+		String userUuid = userObject.get("uuid");
 		Map auditInfo = userObject.get("auditInfo");
 		helperService.importUserFromRemoteOpenmrsServer(userUuid);
 
@@ -118,13 +212,13 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		final String USER = IOUtils.toString(getClass().getResourceAsStream(OPENMRS_USER_CHANGER_NOT_EXISTS_FILE));
 		final String CHANGER = IOUtils.toString(getClass().getResourceAsStream(OPENMRS_USER2_FILE));
 		SimpleObject userObject = SimpleObject.parseJson(USER);
-		String userUuid = userObject.get("uuid");
+
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
 				.addHeader("Content-Type", "application/json").setBody(USER));
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
 				.addHeader("Content-Type", "application/json").setBody(CHANGER));
 
-
+		String userUuid = userObject.get("uuid");
 		Map auditInfo = userObject.get("auditInfo");
 		helperService.importUserFromRemoteOpenmrsServer(userUuid);
 

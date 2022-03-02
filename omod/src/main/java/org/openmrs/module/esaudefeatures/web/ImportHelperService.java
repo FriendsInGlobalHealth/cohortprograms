@@ -25,6 +25,7 @@ import org.openmrs.module.webservices.rest.SimpleObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
@@ -53,6 +54,7 @@ import static org.openmrs.module.esaudefeatures.web.Utils.parseDateString;
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 2/20/22.
  */
 @Component
+@Scope("prototype")
 public class ImportHelperService {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(ImportHelperService.class);
@@ -69,7 +71,7 @@ public class ImportHelperService {
 	
 	private UserService userService;
 
-	//TODO: Not fully implemented as of now (This is mainly to take care of circular user dependencies)
+	//TODO: Not fully implemented as of now (This is mainly to take care of circular user dependencies, e.g creator, changedBy, retiredBy)
 	private ConcurrentMap<String, User> importedUsersCache = new ConcurrentHashMap<String, User>();
 	
 	public static final List<String> IGNORED_PERSON_ATTRIBUTE_TYPES = new ArrayList<String>();
@@ -211,25 +213,23 @@ public class ImportHelperService {
 		if (personMap.containsKey("addresses") && personMap.get("addresses") != null) {
 			List<Map> addressesMaps = (List<Map>) personMap.get("addresses");
 			Set<PersonAddress> personAddresses = new TreeSet<PersonAddress>();
-			Set<String> allKeys = addressesMaps.get(0).keySet();
-			allKeys.removeAll(Arrays.asList("display", "links", "resourceVersion"));
 			
-			for (Map addressMap : addressesMaps) {
-				PersonAddress personAddress = new PersonAddress();
-				for (String key : allKeys) {
-					try {
-						Field field = PersonAddress.class.getField(key);
+			for (final Map addressMap : addressesMaps) {
+				final PersonAddress personAddress = new PersonAddress();
+				ReflectionUtils.doWithFields(PersonAddress.class, new ReflectionUtils.FieldCallback() {
+					@Override
+					public void doWith(Field field) throws IllegalArgumentException, IllegalAccessException {
 						field.setAccessible(true);
-						field.set(personAddress, addressMap.get(key));
+						field.set(personAddress, addressMap.get(field.getName()));
 						field.setAccessible(false);
 					}
-					catch (NoSuchFieldException e) {
-						// Ignore the field.
+				}, new ReflectionUtils.FieldFilter() {
+					@Override
+					public boolean matches(Field field) {
+						int modifiers = field.getModifiers();
+						return (!Modifier.isFinal(modifiers) && !Modifier.isStatic(modifiers));
 					}
-					catch (IllegalAccessException e) {
-						// Ignore this as well.
-					}
-				}
+				});
 				personAddresses.add(personAddress);
 			}
 			person.setAddresses(personAddresses);
