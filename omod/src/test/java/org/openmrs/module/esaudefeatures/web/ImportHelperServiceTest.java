@@ -50,6 +50,7 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 	private static final String OPENMRS_USER_FILE = "/openmrs_rest_user_both_creator_and_changer_already_exist.json";
 	private static final String OPENMRS_USER_CHANGER_NOT_EXISTS_FILE = "/openmrs_rest_user_changer_does_not_exist.json";
 	private static final String OPENMRS_USER2_FILE = "/openmrs_rest_user2.json";
+	private static final String PATIENT_IDENTIFIERS_FILE = "/openmrs_rest_patient_identifiers.json";
 	private static final String USERS_TEST_FILE = "org/openmrs/api/include/UserServiceTest.xml";
 	private static final String USERNAME = "user1";
 	private static final String PASSWORD = "pa$$w0rd";
@@ -89,10 +90,10 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 	@Test
 	public void getPatientFromOpenmrsPayloadShouldReturnTheCorrectObject() throws Exception {
 		final String PATIENT_JSON = IOUtils.toString(getClass().getResourceAsStream("/openmrs_rest_single_patient.json"));
-		final String IDENTIFIER_LOCATION_JSON = IOUtils.toString(getClass().getResourceAsStream("/openmrs_rest_location.json"));
+		final String PATIENT_IDENTIFIERS_JSON = IOUtils.toString(getClass().getResourceAsStream(PATIENT_IDENTIFIERS_FILE));
 
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
-				.addHeader("Content-Type", "application/json").setBody(IDENTIFIER_LOCATION_JSON));
+				.addHeader("Content-Type", "application/json").setBody(PATIENT_IDENTIFIERS_JSON));
 
 		SimpleObject patientObject = SimpleObject.parseJson(PATIENT_JSON);
 		Map personObject = patientObject.get("person");
@@ -101,7 +102,7 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 
 		Patient patient = helperService.getPatientFromOpenmrsRestPayload(patientObject);
 
-		List<Map> identifiersMaps = patientObject.get("identifiers");
+		List<Map> identifiersMaps = SimpleObject.parseJson(PATIENT_IDENTIFIERS_JSON).get("results");
 		Set<PatientIdentifier> patientIdentifiers = patient.getIdentifiers();
 		for(Map identifierMap: identifiersMaps) {
 			String identifierUuid = (String) identifierMap.get("uuid");
@@ -112,9 +113,13 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 					break;
 				}
 			}
+			Map<String, Object> identifierAuditInfo = (Map<String, Object>) identifierMap.get("auditInfo");
 			assertNotNull(patientIdentifier);
+			assertNotNull(identifierAuditInfo);
 			assertEquals(identifierMap.get("identifier"), patientIdentifier.getIdentifier());
 			assertEquals(((Map)identifierMap.get("identifierType")).get("uuid"), patientIdentifier.getIdentifierType().getUuid());
+			assertEquals(((Map)identifierAuditInfo.get("creator")).get("uuid"), patientIdentifier.getCreator().getUuid());
+			assertEquals(Utils.parseDateString((String) identifierAuditInfo.get("dateCreated")), patientIdentifier.getDateCreated());
 		}
 
 		assertEquals(personObject.get("uuid"), patient.getUuid());

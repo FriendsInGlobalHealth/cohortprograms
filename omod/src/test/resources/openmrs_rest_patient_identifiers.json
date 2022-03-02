@@ -1,0 +1,109 @@
+{
+  "results": [
+    {
+      "display": "Test National ID No = 0103010001/2010/00434",
+      "uuid": "a164090f-fe4e-4159-a1c1-d3eb9f3ced08",
+      "identifier": "0103010001/2010/00434",
+      "identifierType": {
+        "uuid": "b0d10dc0-d8ce-11e3-9c1a-0800200c9a66",
+        "display": "Test National ID No",
+        "name": "Test National ID No",
+        "description": "Some description",
+        "format": "[0-9]{10}/[0-9]{4}/[0-9]{5}",
+        "formatDescription": "CCPPDDUUSS/AAAA/NNNNN",
+        "required": false,
+        "checkDigit": false,
+        "validator": null,
+        "locationBehavior": null,
+        "uniquenessBehavior": null,
+        "retired": false,
+        "links": [
+          {
+            "rel": "self",
+            "uri": "http://localhost:8083/openmrs/ws/rest/v1/patientidentifiertype/e2b966d0-1d5f-11e0-b929-000c29ad1d07",
+            "resourceAlias": "patientidentifiertype"
+          },
+          {
+            "rel": "full",
+            "uri": "http://localhost:8083/openmrs/ws/rest/v1/patientidentifiertype/e2b966d0-1d5f-11e0-b929-000c29ad1d07?v=full",
+            "resourceAlias": "patientidentifiertype"
+          }
+        ],
+        "resourceVersion": "1.8"
+      },
+      "location":{
+        "uuid": "9356400c-a5a2-4532-8f2b-2361b3446eb8",
+        "display": "Xanadu",
+        "name": "Xanadu",
+        "description": "Some description",
+        "address1": null,
+        "address2": null,
+        "cityVillage": null,
+        "stateProvince": "Zambézia",
+        "country": "Moçambique",
+        "postalCode": null,
+        "latitude": null,
+        "longitude": null,
+        "countyDistrict": "Gurue",
+        "address3": null,
+        "address4": null,
+        "address5": null,
+        "address6": null,
+        "tags": [],
+        "childLocations": [],
+        "retired": false,
+        "auditInfo": {
+          "creator": {
+            "uuid": "0bc18050-e132-11de-babe-001e378eb67e",
+            "display": "userWithSha512Hash",
+            "links": [
+              {
+                "rel": "self",
+                "uri": "http://localhost:8083/openmrs/ws/rest/v1/user/0bc18050-e132-11de-babe-001e378eb67e",
+                "resourceAlias": "user"
+              }
+            ]
+          },
+          "dateCreated": "2018-02-23T16:23:22.000+0300",
+          "changedBy": null,
+          "dateChanged": null
+        },
+        "attributes": [],
+        "links": [
+          {
+            "rel": "self",
+            "uri": "http://localhost:8083/openmrs/ws/rest/v1/location/ece513f0-38a7-49e1-b32b-049ebcd05413",
+            "resourceAlias": "location"
+          }
+        ],
+        "resourceVersion": "1.9"
+      },
+      "preferred": true,
+      "voided": false,
+      "auditInfo": {
+        "creator": {
+          "uuid": "0bc18050-e132-11de-babe-001e378eb67e",
+          "display": "userWithSha512Hash",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://localhost:8083/openmrs/ws/rest/v1/user/0bc18050-e132-11de-babe-001e378eb67e",
+              "resourceAlias": "user"
+            }
+          ]
+        },
+        "dateCreated": "2021-12-10T18:16:17.000+0300",
+        "changedBy": null,
+        "dateChanged": null
+      },
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/patient/d062effc-e000-11e6-a91f-4485001ec084/identifier/a164090f-fe4e-4159-a1c1-d3eb9f3ced08",
+          "resourceAlias": "identifier"
+        }
+      ],
+      "resourceVersion": "1.8"
+    }
+  ]
+}

@@ -117,37 +117,77 @@ public class ImportHelperService {
 		Map auditInfo = patientObject.get("auditInfo");
 		
 		if (patientObject.containsKey("identifiers") && patientObject.get("identifiers") != null) {
-			List<Map> identifiersMaps = (List<Map>) patientObject.get("identifiers");
-			Set<PatientIdentifier> identifiers = new TreeSet<PatientIdentifier>();
-			
-			for (Map identifierMap : identifiersMaps) {
-				if (!(Boolean) identifierMap.get("voided")) {
-					PatientIdentifier identifier = new PatientIdentifier();
-					identifier.setUuid((String) identifierMap.get("uuid"));
-					identifier.setIdentifier((String) identifierMap.get("identifier"));
-					identifier.setIdentifierType(patientService.getPatientIdentifierTypeByUuid((String) ((Map) identifierMap
-					        .get("identifierType")).get("uuid")));
-					if (identifierMap.containsKey("location") && identifierMap.get("location") != null) {
-						String idLocUuid = (String) ((Map) identifierMap.get("location")).get("uuid");
-						Location idLocation = locationService.getLocationByUuid(idLocUuid);
-						
-						if (idLocation == null) {
-							idLocation = importLocationFromRemoteOpenmrsServer(idLocUuid);
-						}
-						identifier.setLocation(idLocation);
-					}
-					identifier.setPreferred((Boolean) identifierMap.get("preferred"));
-					identifier.setPatient(patient);
-					identifiers.add(identifier);
-				}
-			}
-			patient.setIdentifiers(identifiers);
+			updateIdentifiersForPatient(patient);
 		}
 		
 		updateAuditInfo(patient, auditInfo);
 		return patient;
 	}
-	
+
+	protected void updateIdentifiersForPatient(Patient patient) {
+		String[] urlUserPass = getRemoteOpenmrsHostUsernamePassword();
+		String[] pathSegments = { "ws/rest/v1/patient", patient.getUuid(), "identifier" };
+		String errorMessage = String.format("Could not fetch identifiers for patient with uuid %s from server %s", patient.getUuid(), urlUserPass[0]);
+
+		Map<String, String> queryParams = new HashMap<String, String>();
+		queryParams.put("v", "full");
+
+		Request identifiersRequest = Utils.createBasicAuthGetRequest(urlUserPass[0], urlUserPass[1], urlUserPass[2], pathSegments, queryParams);
+		boolean skipHostnameVerification = Boolean.parseBoolean(adminService.getGlobalProperty(
+				REMOTE_SERVER_SKIP_HOSTNAME_VERIFICATION_GP, "FALSE"));
+
+		OkHttpClient httpClient;
+		try {
+			httpClient = Utils.createOkHttpClient(skipHostnameVerification);
+		}
+		catch (Exception e) {
+			LOGGER.error("Could not create an http client", null, e);
+			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
+
+		Response response;
+		try {
+			response = httpClient.newCall(identifiersRequest).execute();
+			if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
+				SimpleObject responseBody = SimpleObject.parseJson(response.body().string());
+				List<Map> identifiersMaps = responseBody.get("results");
+				Set<PatientIdentifier> identifiers = new TreeSet<PatientIdentifier>();
+
+				for (Map identifierMap : identifiersMaps) {
+					if (!(Boolean) identifierMap.get("voided")) {
+						PatientIdentifier identifier = new PatientIdentifier();
+						identifier.setUuid((String) identifierMap.get("uuid"));
+						identifier.setIdentifier((String) identifierMap.get("identifier"));
+						identifier.setIdentifierType(patientService.getPatientIdentifierTypeByUuid((String) ((Map) identifierMap
+								.get("identifierType")).get("uuid")));
+						if (identifierMap.containsKey("location") && identifierMap.get("location") != null) {
+							String idLocUuid = (String) ((Map) identifierMap.get("location")).get("uuid");
+							Location idLocation = locationService.getLocationByUuid(idLocUuid);
+
+							if (idLocation == null) {
+								idLocation = importLocationFromRemoteOpenmrsServer(idLocUuid);
+							}
+							identifier.setLocation(idLocation);
+						}
+						identifier.setPreferred((Boolean) identifierMap.get("preferred"));
+						identifier.setPatient(patient);
+						identifiers.add(identifier);
+
+						updateAuditInfo(identifier, (Map<String, Object>) identifierMap.get("auditInfo"));
+					}
+				}
+				patient.setIdentifiers(identifiers);
+			} else {
+				LOGGER.error("Error when executing http request {} ", identifiersRequest);
+				throw new RemoteOpenmrsSearchException(errorMessage, response.code());
+			}
+		}
+		catch (IOException e) {
+			LOGGER.error("Error when executing http request {} ", identifiersRequest);
+			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
+	}
+
 	public Person getPersonFromOpenmrsRestRepresentation(Map personMap) {
 		Person person = new Person();
 		person.setUuid((String) personMap.get("uuid"));
