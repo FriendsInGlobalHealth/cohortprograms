@@ -22,10 +22,12 @@ import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 2/20/22.
@@ -41,7 +43,7 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 	private static final String USERS_TEST_FILE = "org/openmrs/api/include/UserServiceTest.xml";
 	private static final String USERNAME = "user1";
 	private static final String PASSWORD = "pa$$w0rd";
-	
+	private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 	private MockWebServer mockWebServer;
 	
 	@Mock
@@ -86,7 +88,6 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 	@Test
 	public void importUserFromRemoteOpenmrsServerShouldImportCorrectly() throws IOException {
 		final String USER = IOUtils.toString(getClass().getResourceAsStream(OPENMRS_USER_FILE));
-		final String CHANGER = IOUtils.toString(getClass().getResourceAsStream(OPENMRS_USER2_FILE));
 		SimpleObject userObject = SimpleObject.parseJson(USER);
 		String userUuid = userObject.get("uuid");
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
@@ -98,6 +99,12 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		User importedUser = userService.getUserByUuid(userUuid);
 		assertNotNull(importedUser);
 		assertEquals(userUuid, importedUser.getUuid());
+		assertEquals(userObject.get("username"), importedUser.getUsername());
+		assertEquals(userObject.get("systemId"), importedUser.getSystemId());
+		assertEquals(((Map)auditInfo.get("creator")).get("uuid"), importedUser.getCreator().getUuid());
+		assertEquals(((Map)auditInfo.get("changedBy")).get("uuid"), importedUser.getChangedBy().getUuid());
+		assertEquals(Utils.parseDateString((String) auditInfo.get("dateCreated")), importedUser.getDateCreated());
+		assertEquals(Utils.parseDateString((String) auditInfo.get("dateChanged")), importedUser.getDateChanged());
 	}
 
 	@Test
@@ -118,6 +125,24 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		User importedUser = userService.getUserByUuid(userUuid);
 		assertNotNull(importedUser);
 		assertEquals(userUuid, importedUser.getUuid());
+		assertEquals(userObject.get("username"), importedUser.getUsername());
+		assertEquals(userObject.get("systemId"), importedUser.getSystemId());
+		assertEquals(((Map)auditInfo.get("creator")).get("uuid"), importedUser.getCreator().getUuid());
+		assertEquals(((Map)auditInfo.get("changedBy")).get("uuid"), importedUser.getChangedBy().getUuid());
+		assertEquals(Utils.parseDateString((String) auditInfo.get("dateCreated")), importedUser.getDateCreated());
+		assertEquals(Utils.parseDateString((String) auditInfo.get("dateChanged")), importedUser.getDateChanged());
+
+		importedUser = importedUser.getChangedBy();
+		userObject = SimpleObject.parseJson(CHANGER);
+		auditInfo = userObject.get("auditInfo");
+		assertEquals(userObject.get("username"), importedUser.getUsername());
+		assertEquals(userObject.get("systemId"), importedUser.getSystemId());
+		assertEquals(((Map)auditInfo.get("creator")).get("uuid"), importedUser.getCreator().getUuid());
+		assertNull(auditInfo.get("changedBy"));
+		assertNull(importedUser.getChangedBy());
+		assertEquals(Utils.parseDateString((String) auditInfo.get("dateCreated")), importedUser.getDateCreated());
+		assertNull(auditInfo.get("dateChanged"));
+		assertNull(importedUser.getDateChanged());
 	}
 
 	@Test

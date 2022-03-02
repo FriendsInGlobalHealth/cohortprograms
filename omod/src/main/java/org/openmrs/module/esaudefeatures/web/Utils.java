@@ -8,12 +8,19 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Map;
 
 /**
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 2/17/22.
  */
 public class Utils {
+
+	static SimpleDateFormat[] DATE_FORMARTS = { new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
+			new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS"), new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS'Z'"),
+			new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"), };
 	
 	/**
 	 * Copied from org.apache.solr.common.util.Base64 class to avoid dependency issues between 1.x
@@ -107,4 +114,20 @@ public class Utils {
 				.header("Content-Type", "application/json").build();
 	}
 
+	public static Date parseDateString(String toParse) {
+		if (toParse == null)
+			return null;
+
+		Date ret = null;
+		for (int i = 0; i < DATE_FORMARTS.length; i++) {
+			try {
+				ret = DATE_FORMARTS[i].parse(toParse);
+				break;
+			}
+			catch (ParseException e) {
+				// Do nothing because what can we do?
+			}
+		}
+		return ret;
+	}
 }

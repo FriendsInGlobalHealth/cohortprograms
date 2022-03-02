@@ -5,10 +5,8 @@ import okhttp3.Request;
 import okhttp3.Response;
 import org.openmrs.Auditable;
 import org.openmrs.BaseOpenmrsMetadata;
-import org.openmrs.BaseOpenmrsObject;
 import org.openmrs.Concept;
 import org.openmrs.Location;
-import org.openmrs.OpenmrsMetadata;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
 import org.openmrs.Person;
@@ -34,11 +32,8 @@ import org.springframework.util.StringUtils;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +46,7 @@ import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_URL_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_USERNAME_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.REMOTE_SERVER_SKIP_HOSTNAME_VERIFICATION_GP;
+import static org.openmrs.module.esaudefeatures.web.Utils.parseDateString;
 
 /**
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 2/20/22.
@@ -76,10 +72,6 @@ public class ImportHelperService {
 
 	private static int importUserCalls = 0;
 	private static int updateAuditInfoCalls = 0;
-	
-	private static SimpleDateFormat[] DATE_FORMARTS = { new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
-	        new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS"), new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS'Z'"),
-	        new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"), };
 	
 	public static final List<String> IGNORED_PERSON_ATTRIBUTE_TYPES = new ArrayList<String>();
 	
@@ -303,9 +295,8 @@ public class ImportHelperService {
 				creator = importUserFromRemoteOpenmrsServer(creatorUuid);
 			}
 			openmrsObject.setCreator(creator);
-			openmrsObject.setDateCreated(parseDateString((String) creatorMap.get("dateCreated")));
+			openmrsObject.setDateCreated(parseDateString((String) auditInfo.get("dateCreated")));
 		}
-
 
 		Map changerMap = (Map) auditInfo.get("changedBy");
 		if (changerMap != null) {
@@ -316,7 +307,7 @@ public class ImportHelperService {
 				changer = importUserFromRemoteOpenmrsServer(changerUuid);
 			}
 			openmrsObject.setChangedBy(changer);
-			openmrsObject.setDateChanged(parseDateString((String) changerMap.get("dateChanged")));
+			openmrsObject.setDateChanged(parseDateString((String) auditInfo.get("dateChanged")));
 		}
 
 		if(openmrsObject instanceof BaseOpenmrsMetadata) {
@@ -330,9 +321,9 @@ public class ImportHelperService {
 					retirer = importUserFromRemoteOpenmrsServer(retirerUuid);
 				}
 				metadata.setRetiredBy(retirer);
-				metadata.setDateRetired(parseDateString((String) retireeMap.get("dateRetired")));
 				metadata.setRetired(true);
 				metadata.setRetireReason((String) retireeMap.get("retireReason"));
+				metadata.setDateRetired(parseDateString((String) auditInfo.get("dateRetired")));
 			}
 		}
 	}
@@ -495,22 +486,5 @@ public class ImportHelperService {
 		}
 		
 		return new String[] { remoteServerUrl, remoteServerUsername, remoteServerPassword };
-	}
-	
-	private Date parseDateString(String toParse) {
-		if (toParse == null)
-			return null;
-		
-		Date ret = null;
-		for (int i = 0; i < DATE_FORMARTS.length; i++) {
-			try {
-				ret = DATE_FORMARTS[i].parse(toParse);
-				break;
-			}
-			catch (ParseException e) {
-				// Do nothing because what can we do?
-			}
-		}
-		return ret;
 	}
 }
