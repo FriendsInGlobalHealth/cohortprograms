@@ -17,10 +17,10 @@ import java.util.Map;
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 2/17/22.
  */
 public class Utils {
-
+	
 	static SimpleDateFormat[] DATE_FORMARTS = { new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
-			new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS"), new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS'Z'"),
-			new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"), };
+	        new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS"), new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS'Z'"),
+	        new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"), };
 	
 	/**
 	 * Copied from org.apache.solr.common.util.Base64 class to avoid dependency issues between 1.x
@@ -111,13 +111,13 @@ public class Utils {
 		String credentials = Credentials.basic(username, password);
 		return new Request.Builder().url(urlBuilder.build()).get().header("Content-Length", "0")
 		        .header("Authorization", "Basic ".concat(credentials)).header("Accept", "application/json")
-				.header("Content-Type", "application/json").build();
+		        .header("Content-Type", "application/json").build();
 	}
-
+	
 	public static Date parseDateString(String toParse) {
 		if (toParse == null)
 			return null;
-
+		
 		Date ret = null;
 		for (int i = 0; i < DATE_FORMARTS.length; i++) {
 			try {

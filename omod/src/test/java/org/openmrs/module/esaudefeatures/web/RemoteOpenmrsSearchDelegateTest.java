@@ -14,7 +14,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.openmrs.Patient;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants;
 import org.openmrs.module.webservices.rest.SimpleObject;
@@ -24,7 +23,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -38,9 +36,9 @@ import static org.junit.Assert.assertTrue;
 @RunWith(MockitoJUnitRunner.class)
 public class RemoteOpenmrsSearchDelegateTest {
 	
-	private static final String MATCHED_PATIENT_LIST_FILE_NAME = "/openmrs_rest_patient_list.json";
+	private static final String MATCHED_PATIENT_LIST_FILE_NAME = "/openmrs-rest/patient_list.json";
 	
-	private static final String SINGLE_PATIENT_FILE_NAME = "/openmrs_rest_single_patient.json";
+	private static final String SINGLE_PATIENT_FILE_NAME = "/openmrs-rest/single_patient.json";
 	
 	private static final String EXPECTED_PATIENT_PATH = "/ws/rest/v1/patient";
 	

@@ -43,32 +43,45 @@ import static org.junit.Assert.assertTrue;
  */
 @Component
 public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
-	private static final String OPENMRS_LOCATION_FILE = "/openmrs_rest_location.json";
-	private static final String OPENMRS_CHILD_LOCATION_FILE = "/openmrs_rest_child_location.json";
-	private static final String OPENMRS_PARENT_LOCATION_FILE = "/openmrs_rest_parent_location.json";
-	private static final String OPENMRS_GRAND_LOCATION_FILE = "/openmrs_rest_grand_location.json";
-	private static final String OPENMRS_USER_FILE = "/openmrs_rest_user_both_creator_and_changer_already_exist.json";
-	private static final String OPENMRS_USER_CHANGER_NOT_EXISTS_FILE = "/openmrs_rest_user_changer_does_not_exist.json";
-	private static final String OPENMRS_USER2_FILE = "/openmrs_rest_user2.json";
-	private static final String PATIENT_IDENTIFIERS_FILE = "/openmrs_rest_patient_identifiers.json";
+	
+	private static final String OPENMRS_LOCATION_FILE = "/openmrs-rest/location.json";
+	
+	private static final String OPENMRS_CHILD_LOCATION_FILE = "/openmrs-rest/child_location.json";
+	
+	private static final String OPENMRS_PARENT_LOCATION_FILE = "/openmrs-rest/parent_location.json";
+	
+	private static final String OPENMRS_GRAND_LOCATION_FILE = "/openmrs-rest/grand_location.json";
+	
+	private static final String OPENMRS_USER_FILE = "/openmrs-rest/user_both_creator_and_changer_already_exist.json";
+	
+	private static final String OPENMRS_USER_CHANGER_NOT_EXISTS_FILE = "/openmrs-rest/user_changer_does_not_exist.json";
+	
+	private static final String OPENMRS_USER2_FILE = "/openmrs-rest/user2.json";
+	
+	private static final String PATIENT_IDENTIFIERS_FILE = "/openmrs-rest/patient_identifiers.json";
+	private static final String PERSON_NAMES_FILE = "/openmrs-rest/person_names.json";
+
 	private static final String USERS_TEST_FILE = "org/openmrs/api/include/UserServiceTest.xml";
+	
 	private static final String USERNAME = "user1";
+	
 	private static final String PASSWORD = "pa$$w0rd";
+	
 	private MockWebServer mockWebServer;
 	
 	@Mock
 	private AdministrationService adminService;
-
+	
 	@InjectMocks
 	@Autowired
 	private ImportHelperService helperService;
-
+	
 	@Autowired
 	private LocationService locationService;
-
+	
 	@Autowired
 	private UserService userService;
-
+	
 	@Before
 	public void setup() throws Exception {
 		executeDataSet(USERS_TEST_FILE);
@@ -81,34 +94,38 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		Mockito.when(adminService.getGlobalProperty(EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_PASSWORD_GP)).thenReturn(
 		    PASSWORD);
 	}
-
+	
 	@After
 	public void tearDown() throws Exception {
 		mockWebServer.close();
 	}
-
+	
 	@Test
 	public void getPatientFromOpenmrsPayloadShouldReturnTheCorrectObject() throws Exception {
-		final String PATIENT_JSON = IOUtils.toString(getClass().getResourceAsStream("/openmrs_rest_single_patient.json"));
+		final String PATIENT_JSON = IOUtils.toString(getClass().getResourceAsStream("/openmrs-rest/single_patient.json"));
 		final String PATIENT_IDENTIFIERS_JSON = IOUtils.toString(getClass().getResourceAsStream(PATIENT_IDENTIFIERS_FILE));
+		final String PERSON_NAMES_JSON = IOUtils.toString(getClass().getResourceAsStream(PERSON_NAMES_FILE));
 
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
-				.addHeader("Content-Type", "application/json").setBody(PATIENT_IDENTIFIERS_JSON));
+		        .addHeader("Content-Type", "application/json").setBody(PERSON_NAMES_JSON));
 
+		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
+		        .addHeader("Content-Type", "application/json").setBody(PATIENT_IDENTIFIERS_JSON));
+		
 		SimpleObject patientObject = SimpleObject.parseJson(PATIENT_JSON);
 		Map personObject = patientObject.get("person");
 		Map<String, Object> auditInfo = patientObject.get("auditInfo");
 		Boolean voided = patientObject.get("voided");
-
+		
 		Patient patient = helperService.getPatientFromOpenmrsRestPayload(patientObject);
-
+		
 		List<Map> identifiersMaps = SimpleObject.parseJson(PATIENT_IDENTIFIERS_JSON).get("results");
 		Set<PatientIdentifier> patientIdentifiers = patient.getIdentifiers();
-		for(Map identifierMap: identifiersMaps) {
+		for (Map identifierMap : identifiersMaps) {
 			String identifierUuid = (String) identifierMap.get("uuid");
 			PatientIdentifier patientIdentifier = null;
-			for(PatientIdentifier identifier: patientIdentifiers) {
-				if(identifierUuid.equals(identifier.getUuid())) {
+			for (PatientIdentifier identifier : patientIdentifiers) {
+				if (identifierUuid.equals(identifier.getUuid())) {
 					patientIdentifier = identifier;
 					break;
 				}
@@ -117,33 +134,38 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 			assertNotNull(patientIdentifier);
 			assertNotNull(identifierAuditInfo);
 			assertEquals(identifierMap.get("identifier"), patientIdentifier.getIdentifier());
-			assertEquals(((Map)identifierMap.get("identifierType")).get("uuid"), patientIdentifier.getIdentifierType().getUuid());
-			assertEquals(((Map)identifierAuditInfo.get("creator")).get("uuid"), patientIdentifier.getCreator().getUuid());
-			assertEquals(Utils.parseDateString((String) identifierAuditInfo.get("dateCreated")), patientIdentifier.getDateCreated());
+			assertEquals(((Map) identifierMap.get("identifierType")).get("uuid"), patientIdentifier.getIdentifierType()
+			        .getUuid());
+			assertEquals(((Map) identifierAuditInfo.get("creator")).get("uuid"), patientIdentifier.getCreator().getUuid());
+			assertEquals(Utils.parseDateString((String) identifierAuditInfo.get("dateCreated")),
+			    patientIdentifier.getDateCreated());
 		}
-
+		
 		assertEquals(personObject.get("uuid"), patient.getUuid());
 		assertEquals(voided, patient.getVoided());
 		assertEquals(personObject.get("gender"), patient.getGender());
 		assertEquals(Utils.parseDateString((String) personObject.get("birthdate")), patient.getBirthdate());
 		assertNull(patient.getDeathDate());
 		assertNull(patient.getCauseOfDeath());
-		assertEquals(((Map)auditInfo.get("creator")).get("uuid"), patient.getCreator().getUuid());
+		assertEquals(((Map) auditInfo.get("creator")).get("uuid"), patient.getCreator().getUuid());
 		assertNull(patient.getChangedBy());
 		assertEquals(Utils.parseDateString((String) auditInfo.get("dateCreated")), patient.getDateCreated());
 		assertNull(patient.getDateChanged());
 		assertFalse(patient.getVoided());
-
+		
 		auditInfo = (Map) personObject.get("auditInfo");
 		Person person = patient.getPerson();
-		assertEquals(((Map)auditInfo.get("creator")).get("uuid"), person.getCreator().getUuid());
+		assertEquals(((Map) auditInfo.get("creator")).get("uuid"), person.getCreator().getUuid());
 		assertNull(patient.getChangedBy());
 		assertEquals(Utils.parseDateString((String) auditInfo.get("dateCreated")), person.getDateCreated());
 		assertNull(person.getDateChanged());
 		assertFalse(person.getVoided());
-
+		
 		PersonName name = person.getPersonName();
-		Map preferredName = (Map)personObject.get("preferredName");
+		List<Map> namesMaps = SimpleObject.parseJson(PERSON_NAMES_JSON).get("results");
+		Map preferredName = namesMaps.get(0);
+
+		Map nameAuditInfo = (Map) preferredName.get("auditInfo");
 		assertTrue(name.isPreferred());
 		assertEquals(preferredName.get("uuid"), name.getUuid());
 		assertEquals(preferredName.get("givenName"), name.getGivenName());
@@ -153,7 +175,12 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		assertNull(name.getPrefix());
 		assertNull(name.getFamilyNameSuffix());
 		assertFalse(name.getVoided());
-
+		assertEquals(((Map) nameAuditInfo.get("creator")).get("uuid"), name.getCreator().getUuid());
+		assertEquals(Utils.parseDateString((String) nameAuditInfo.get("dateCreated")),
+				name.getDateCreated());
+		assertNull(name.getChangedBy());
+		assertNull(name.getDateChanged());
+		
 		PersonAddress address = person.getPersonAddress();
 		Map preferredAddress = (Map) personObject.get("preferredAddress");
 		assertTrue(address.isPreferred());
@@ -172,95 +199,96 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		assertNull(address.getLatitude());
 		assertNull(address.getPostalCode());
 		assertFalse(address.getVoided());
-
+		
 		List<Map> attributesMaps = (List<Map>) personObject.get("attributes");
 		Set<PersonAttribute> personAttributes = person.getAttributes();
-		for(Map attributeMap: attributesMaps) {
+		for (Map attributeMap : attributesMaps) {
 			String attrUuid = (String) attributeMap.get("uuid");
 			PersonAttribute personAttribute = null;
-			for(PersonAttribute attribute: personAttributes) {
-				if(attrUuid.equals(attribute.getUuid())) {
+			for (PersonAttribute attribute : personAttributes) {
+				if (attrUuid.equals(attribute.getUuid())) {
 					personAttribute = attribute;
 					break;
 				}
 			}
 			assertNotNull(personAttribute);
 			assertEquals(attributeMap.get("value"), personAttribute.getValue());
-			assertEquals(((Map)attributeMap.get("attributeType")).get("uuid"), personAttribute.getAttributeType().getUuid());
+			assertEquals(((Map) attributeMap.get("attributeType")).get("uuid"), personAttribute.getAttributeType().getUuid());
 		}
 	}
-
+	
 	@Test
 	public void importUserFromRemoteOpenmrsServerShouldImportCorrectly() throws IOException {
 		final String USER = IOUtils.toString(getClass().getResourceAsStream(OPENMRS_USER_FILE));
 		SimpleObject userObject = SimpleObject.parseJson(USER);
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
-				.addHeader("Content-Type", "application/json").setBody(USER));
-
+		        .addHeader("Content-Type", "application/json").setBody(USER));
+		
 		String userUuid = userObject.get("uuid");
 		Map auditInfo = userObject.get("auditInfo");
 		helperService.importUserFromRemoteOpenmrsServer(userUuid);
-
+		
 		User importedUser = userService.getUserByUuid(userUuid);
 		assertNotNull(importedUser);
 		assertEquals(userUuid, importedUser.getUuid());
 		assertEquals(userObject.get("username"), importedUser.getUsername());
 		assertEquals(userObject.get("systemId"), importedUser.getSystemId());
-		assertEquals(((Map)auditInfo.get("creator")).get("uuid"), importedUser.getCreator().getUuid());
-		assertEquals(((Map)auditInfo.get("changedBy")).get("uuid"), importedUser.getChangedBy().getUuid());
+		assertEquals(((Map) auditInfo.get("creator")).get("uuid"), importedUser.getCreator().getUuid());
+		assertEquals(((Map) auditInfo.get("changedBy")).get("uuid"), importedUser.getChangedBy().getUuid());
 		assertEquals(Utils.parseDateString((String) auditInfo.get("dateCreated")), importedUser.getDateCreated());
 		assertEquals(Utils.parseDateString((String) auditInfo.get("dateChanged")), importedUser.getDateChanged());
 	}
-
+	
 	@Test
 	public void importUserFromRemoteOpenmrsServerShouldImportCorrectlyWithChangerNotExisting() throws IOException {
 		final String USER = IOUtils.toString(getClass().getResourceAsStream(OPENMRS_USER_CHANGER_NOT_EXISTS_FILE));
 		final String CHANGER = IOUtils.toString(getClass().getResourceAsStream(OPENMRS_USER2_FILE));
 		SimpleObject userObject = SimpleObject.parseJson(USER);
-
+		
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
-				.addHeader("Content-Type", "application/json").setBody(USER));
+		        .addHeader("Content-Type", "application/json").setBody(USER));
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
-				.addHeader("Content-Type", "application/json").setBody(CHANGER));
-
+		        .addHeader("Content-Type", "application/json").setBody(CHANGER));
+		
 		String userUuid = userObject.get("uuid");
 		Map auditInfo = userObject.get("auditInfo");
 		helperService.importUserFromRemoteOpenmrsServer(userUuid);
-
+		
 		User importedUser = userService.getUserByUuid(userUuid);
 		assertNotNull(importedUser);
 		assertEquals(userUuid, importedUser.getUuid());
 		assertEquals(userObject.get("username"), importedUser.getUsername());
 		assertEquals(userObject.get("systemId"), importedUser.getSystemId());
-		assertEquals(((Map)auditInfo.get("creator")).get("uuid"), importedUser.getCreator().getUuid());
-		assertEquals(((Map)auditInfo.get("changedBy")).get("uuid"), importedUser.getChangedBy().getUuid());
+		assertEquals(((Map) auditInfo.get("creator")).get("uuid"), importedUser.getCreator().getUuid());
+		assertEquals(((Map) auditInfo.get("changedBy")).get("uuid"), importedUser.getChangedBy().getUuid());
 		assertEquals(Utils.parseDateString((String) auditInfo.get("dateCreated")), importedUser.getDateCreated());
 		assertEquals(Utils.parseDateString((String) auditInfo.get("dateChanged")), importedUser.getDateChanged());
-
+		
 		importedUser = importedUser.getChangedBy();
 		userObject = SimpleObject.parseJson(CHANGER);
 		auditInfo = userObject.get("auditInfo");
 		assertEquals(userObject.get("username"), importedUser.getUsername());
 		assertEquals(userObject.get("systemId"), importedUser.getSystemId());
-		assertEquals(((Map)auditInfo.get("creator")).get("uuid"), importedUser.getCreator().getUuid());
+		assertEquals(((Map) auditInfo.get("creator")).get("uuid"), importedUser.getCreator().getUuid());
 		assertNull(importedUser.getChangedBy());
 		assertEquals(Utils.parseDateString((String) auditInfo.get("dateCreated")), importedUser.getDateCreated());
 		assertNull(importedUser.getDateChanged());
 	}
-
+	
 	@Test
-	public void importLocationFromRemoteOpenmrsServerShouldImportLocationWithoutParent() throws IOException, InterruptedException {
+	public void importLocationFromRemoteOpenmrsServerShouldImportLocationWithoutParent() throws IOException,
+	        InterruptedException {
 		final String LOCATION = IOUtils.toString(getClass().getResourceAsStream(OPENMRS_LOCATION_FILE));
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
-				.addHeader("Content-Type", "application/json").setBody(LOCATION));
-
+		        .addHeader("Content-Type", "application/json").setBody(LOCATION));
+		
 		SimpleObject locationObj = SimpleObject.parseJson(LOCATION);
 		String locUuid = locationObj.get("uuid");
 		Map auditInfo = locationObj.get("auditInfo");
 		helperService.importLocationFromRemoteOpenmrsServer(locUuid);
-
+		
 		final Location location = locationService.getLocationByUuid(locUuid);
-
+		
 		assertNotNull(location);
 		assertEquals(locUuid, location.getUuid());
 		assertEquals(locationObj.get("name"), location.getName());
@@ -278,32 +306,33 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		assertNull(location.getLongitude());
 		assertNull(location.getLatitude());
 		assertNull(location.getPostalCode());
-		assertEquals(((Map)auditInfo.get("creator")).get("uuid"), location.getCreator().getUuid());
+		assertEquals(((Map) auditInfo.get("creator")).get("uuid"), location.getCreator().getUuid());
 		assertEquals(Utils.parseDateString((String) auditInfo.get("dateCreated")), location.getDateCreated());
 	}
-
+	
 	@Test
-	public void importLocationFromRemoteOpenmrsServerShouldImportLocationWithAncestors() throws IOException, InterruptedException {
+	public void importLocationFromRemoteOpenmrsServerShouldImportLocationWithAncestors() throws IOException,
+	        InterruptedException {
 		final String LOCATION = IOUtils.toString(getClass().getResourceAsStream(OPENMRS_CHILD_LOCATION_FILE));
 		final String PARENT_LOCATION = IOUtils.toString(getClass().getResourceAsStream(OPENMRS_PARENT_LOCATION_FILE));
 		final String GRAND_PARENT_LOCATION = IOUtils.toString(getClass().getResourceAsStream(OPENMRS_GRAND_LOCATION_FILE));
-
+		
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
-				.addHeader("Content-Type", "application/json").setBody(LOCATION));
+		        .addHeader("Content-Type", "application/json").setBody(LOCATION));
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
-				.addHeader("Content-Type", "application/json").setBody(PARENT_LOCATION));
+		        .addHeader("Content-Type", "application/json").setBody(PARENT_LOCATION));
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
-				.addHeader("Content-Type", "application/json").setBody(GRAND_PARENT_LOCATION));
-
+		        .addHeader("Content-Type", "application/json").setBody(GRAND_PARENT_LOCATION));
+		
 		SimpleObject locationObj = SimpleObject.parseJson(LOCATION);
 		String locUuid = locationObj.get("uuid");
 		SimpleObject parentLocationObj = SimpleObject.parseJson(PARENT_LOCATION);
 		String parentUuid = parentLocationObj.get("uuid");
 		SimpleObject grandLocationObj = SimpleObject.parseJson(GRAND_PARENT_LOCATION);
 		String grandUuid = grandLocationObj.get("uuid");
-
+		
 		helperService.importLocationFromRemoteOpenmrsServer(locUuid);
-
+		
 		Location location = locationService.getLocationByUuid(locUuid);
 		Location parentLocation = locationService.getLocationByUuid(parentUuid);
 		Location grandParentLocation = locationService.getLocationByUuid(grandUuid);

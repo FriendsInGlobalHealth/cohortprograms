@@ -24,9 +24,11 @@ import org.openmrs.api.UserService;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -70,7 +72,7 @@ public class ImportHelperService {
 	private PersonService personService;
 	
 	private UserService userService;
-
+	
 	//TODO: Not fully implemented as of now (This is mainly to take care of circular user dependencies, e.g creator, changedBy, retiredBy)
 	private ConcurrentMap<String, User> importedUsersCache = new ConcurrentHashMap<String, User>();
 	
@@ -110,7 +112,7 @@ public class ImportHelperService {
 	public void setUserService(UserService userService) {
 		this.userService = userService;
 	}
-
+	
 	public Patient getPatientFromOpenmrsRestPayload(SimpleObject patientObject) throws Exception {
 		Person person = getPersonFromOpenmrsRestRepresentation((Map) patientObject.get("person"));
 		Patient patient = new Patient(person);
@@ -123,19 +125,21 @@ public class ImportHelperService {
 		updateAuditInfo(patient, auditInfo);
 		return patient;
 	}
-
-	protected void updateIdentifiersForPatient(Patient patient) {
+	
+	protected void updateIdentifiersForPatient(final Patient patient) {
 		String[] urlUserPass = getRemoteOpenmrsHostUsernamePassword();
 		String[] pathSegments = { "ws/rest/v1/patient", patient.getUuid(), "identifier" };
-		String errorMessage = String.format("Could not fetch identifiers for patient with uuid %s from server %s", patient.getUuid(), urlUserPass[0]);
-
+		String errorMessage = String.format("Could not fetch identifiers for patient with uuid %s from server %s",
+		    patient.getUuid(), urlUserPass[0]);
+		
 		Map<String, String> queryParams = new HashMap<String, String>();
 		queryParams.put("v", "full");
-
-		Request identifiersRequest = Utils.createBasicAuthGetRequest(urlUserPass[0], urlUserPass[1], urlUserPass[2], pathSegments, queryParams);
+		
+		Request identifiersRequest = Utils.createBasicAuthGetRequest(urlUserPass[0], urlUserPass[1], urlUserPass[2],
+		    pathSegments, queryParams);
 		boolean skipHostnameVerification = Boolean.parseBoolean(adminService.getGlobalProperty(
-				REMOTE_SERVER_SKIP_HOSTNAME_VERIFICATION_GP, "FALSE"));
-
+		    REMOTE_SERVER_SKIP_HOSTNAME_VERIFICATION_GP, "FALSE"));
+		
 		OkHttpClient httpClient;
 		try {
 			httpClient = Utils.createOkHttpClient(skipHostnameVerification);
@@ -144,7 +148,7 @@ public class ImportHelperService {
 			LOGGER.error("Could not create an http client", null, e);
 			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
-
+		
 		Response response;
 		try {
 			response = httpClient.newCall(identifiersRequest).execute();
@@ -152,18 +156,19 @@ public class ImportHelperService {
 				SimpleObject responseBody = SimpleObject.parseJson(response.body().string());
 				List<Map> identifiersMaps = responseBody.get("results");
 				Set<PatientIdentifier> identifiers = new TreeSet<PatientIdentifier>();
-
+				
 				for (Map identifierMap : identifiersMaps) {
 					if (!(Boolean) identifierMap.get("voided")) {
 						PatientIdentifier identifier = new PatientIdentifier();
 						identifier.setUuid((String) identifierMap.get("uuid"));
 						identifier.setIdentifier((String) identifierMap.get("identifier"));
-						identifier.setIdentifierType(patientService.getPatientIdentifierTypeByUuid((String) ((Map) identifierMap
-								.get("identifierType")).get("uuid")));
+						identifier.setIdentifierType(patientService
+						        .getPatientIdentifierTypeByUuid((String) ((Map) identifierMap.get("identifierType"))
+						                .get("uuid")));
 						if (identifierMap.containsKey("location") && identifierMap.get("location") != null) {
 							String idLocUuid = (String) ((Map) identifierMap.get("location")).get("uuid");
 							Location idLocation = locationService.getLocationByUuid(idLocUuid);
-
+							
 							if (idLocation == null) {
 								idLocation = importLocationFromRemoteOpenmrsServer(idLocUuid);
 							}
@@ -171,9 +176,10 @@ public class ImportHelperService {
 						}
 						identifier.setPreferred((Boolean) identifierMap.get("preferred"));
 						identifier.setPatient(patient);
-						identifiers.add(identifier);
-
+						
 						updateAuditInfo(identifier, (Map<String, Object>) identifierMap.get("auditInfo"));
+						identifier.setPatient(patient);
+						identifiers.add(identifier);
 					}
 				}
 				patient.setIdentifiers(identifiers);
@@ -187,7 +193,7 @@ public class ImportHelperService {
 			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
 	}
-
+	
 	public Person getPersonFromOpenmrsRestRepresentation(Map personMap) {
 		Person person = new Person();
 		person.setUuid((String) personMap.get("uuid"));
@@ -216,39 +222,7 @@ public class ImportHelperService {
 		}
 		
 		// Names
-		Set<PersonName> personNames = new TreeSet<PersonName>();
-		String preferredNameUuid = null;
-		if (personMap.containsKey("preferredName")) {
-			Map preferredName = (Map) personMap.get("preferredName");
-			preferredNameUuid = (String) preferredName.get("uuid");
-			PersonName preferredPersonName = new PersonName();
-			preferredPersonName.setUuid(preferredNameUuid);
-			preferredPersonName.setGivenName((String) preferredName.get("givenName"));
-			preferredPersonName.setMiddleName((String) preferredName.get("middleName"));
-			preferredPersonName.setFamilyName((String) preferredName.get("familyName"));
-			preferredPersonName.setPreferred(true);
-			personNames.add(preferredPersonName);
-		}
-		
-		if (personMap.containsKey("names") && personMap.get("names") != null) {
-			List<Map> names = (List<Map>) personMap.get("names");
-			for (Map name : names) {
-				String nameUuid = (String) name.get("uuid");
-				if (nameUuid.equals(preferredNameUuid)) {
-					continue;
-				}
-				if (!(Boolean) name.get("voided")) {
-					PersonName personName = new PersonName();
-					personName.setUuid((String) name.get("uuid"));
-					personName.setGivenName((String) name.get("givenName"));
-					personName.setMiddleName((String) name.get("middleName"));
-					personName.setFamilyName((String) name.get("familyName"));
-					personNames.add(personName);
-				}
-			}
-		}
-		
-		person.setNames(personNames);
+		updatePersonNames(person);
 		
 		if (personMap.containsKey("addresses") && personMap.get("addresses") != null) {
 			List<Map> addressesMaps = (List<Map>) personMap.get("addresses");
@@ -257,6 +231,7 @@ public class ImportHelperService {
 			for (final Map addressMap : addressesMaps) {
 				final PersonAddress personAddress = new PersonAddress();
 				ReflectionUtils.doWithFields(PersonAddress.class, new ReflectionUtils.FieldCallback() {
+					
 					@Override
 					public void doWith(Field field) throws IllegalArgumentException, IllegalAccessException {
 						field.setAccessible(true);
@@ -264,12 +239,14 @@ public class ImportHelperService {
 						field.setAccessible(false);
 					}
 				}, new ReflectionUtils.FieldFilter() {
+					
 					@Override
 					public boolean matches(Field field) {
 						int modifiers = field.getModifiers();
 						return (!Modifier.isFinal(modifiers) && !Modifier.isStatic(modifiers));
 					}
 				});
+				personAddress.setPerson(person);
 				personAddresses.add(personAddress);
 			}
 			person.setAddresses(personAddresses);
@@ -322,39 +299,110 @@ public class ImportHelperService {
 		}
 		return person;
 	}
-	
+
+	protected void updatePersonNames(final Person person) {
+		String[] urlUserPass = getRemoteOpenmrsHostUsernamePassword();
+		String[] pathSegments = { "ws/rest/v1/person", person.getUuid(), "name" };
+		String errorMessage = String.format("Could not fetch names for person with uuid %s from server %s",
+				person.getUuid(), urlUserPass[0]);
+
+		Map<String, String> queryParams = new HashMap<String, String>();
+		queryParams.put("v", "full");
+
+		Request namesRequest = Utils.createBasicAuthGetRequest(urlUserPass[0], urlUserPass[1], urlUserPass[2],
+				pathSegments, queryParams);
+		boolean skipHostnameVerification = Boolean.parseBoolean(adminService.getGlobalProperty(
+				REMOTE_SERVER_SKIP_HOSTNAME_VERIFICATION_GP, "FALSE"));
+
+		OkHttpClient httpClient;
+		try {
+			httpClient = Utils.createOkHttpClient(skipHostnameVerification);
+		}
+		catch (Exception e) {
+			LOGGER.error("Could not create an http client", null, e);
+			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
+
+		Response response;
+		try {
+			response = httpClient.newCall(namesRequest).execute();
+			if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
+				SimpleObject responseBody = SimpleObject.parseJson(response.body().string());
+				List<Map> namesMaps = responseBody.get("results");
+				Set<PersonName> names = new TreeSet<PersonName>();
+
+				for (final Map nameMap : namesMaps) {
+					if (!(Boolean) nameMap.get("voided")) {
+						final PersonName personName = new PersonName();
+						ReflectionUtils.doWithFields(PersonName.class, new ReflectionUtils.FieldCallback() {
+
+							@Override
+							public void doWith(Field field) throws IllegalArgumentException, IllegalAccessException {
+								field.setAccessible(true);
+								field.set(personName, nameMap.get(field.getName()));
+								field.setAccessible(false);
+							}
+						}, new ReflectionUtils.FieldFilter() {
+
+							@Override
+							public boolean matches(Field field) {
+								int modifiers = field.getModifiers();
+								if(!ClassUtils.isPrimitiveOrWrapper(field.getClass()) && String.class.equals(field.getClass())) {
+									return false;
+								}
+								return (!Modifier.isFinal(modifiers) && !Modifier.isStatic(modifiers));
+							}
+						});
+
+						updateAuditInfo(personName, (Map) nameMap.get("auditInfo"));
+						personName.setPerson(person);
+						names.add(personName);
+					}
+				}
+				person.setNames(names);
+			} else {
+				LOGGER.error("Error when executing http request {} ", namesRequest);
+				throw new RemoteOpenmrsSearchException(errorMessage, response.code());
+			}
+		}
+		catch (IOException e) {
+			LOGGER.error("Error when executing http request {} ", namesRequest);
+			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
+	}
+
 	public void updateAuditInfo(Auditable openmrsObject, Map<String, Object> auditInfo) {
 		Map creatorMap = (Map) auditInfo.get("creator");
 		if (creatorMap != null) {
 			String creatorUuid = (String) creatorMap.get("uuid");
 			User creator = userService.getUserByUuid(creatorUuid);
-
+			
 			if (creator == null) {
 				creator = importUserFromRemoteOpenmrsServer(creatorUuid);
 			}
 			openmrsObject.setCreator(creator);
 			openmrsObject.setDateCreated(parseDateString((String) auditInfo.get("dateCreated")));
 		}
-
+		
 		Map changerMap = (Map) auditInfo.get("changedBy");
 		if (changerMap != null) {
 			String changerUuid = (String) changerMap.get("uuid");
 			User changer = userService.getUserByUuid(changerUuid);
-
+			
 			if (changer == null) {
 				changer = importUserFromRemoteOpenmrsServer(changerUuid);
 			}
 			openmrsObject.setChangedBy(changer);
 			openmrsObject.setDateChanged(parseDateString((String) auditInfo.get("dateChanged")));
 		}
-
-		if(openmrsObject instanceof BaseOpenmrsMetadata) {
+		
+		if (openmrsObject instanceof BaseOpenmrsMetadata) {
 			Map retireeMap = (Map) auditInfo.get("retiredBy");
 			if (retireeMap != null) {
 				BaseOpenmrsMetadata metadata = (BaseOpenmrsMetadata) openmrsObject;
 				String retirerUuid = (String) retireeMap.get("uuid");
 				User retirer = userService.getUserByUuid(retirerUuid);
-
+				
 				if (retirer == null) {
 					retirer = importUserFromRemoteOpenmrsServer(retirerUuid);
 				}
@@ -365,22 +413,23 @@ public class ImportHelperService {
 			}
 		}
 	}
-
+	
 	public User importUserFromRemoteOpenmrsServer(String userUuid) {
-		if(importedUsersCache.containsKey(userUuid)) {
+		if (importedUsersCache.containsKey(userUuid)) {
 			return importedUsersCache.get(userUuid);
 		}
 		String[] urlUserPass = getRemoteOpenmrsHostUsernamePassword();
 		String errorMessage = String.format("Could not fetch user with uuid %s from server %s", userUuid, urlUserPass[0]);
 		String[] pathSegments = { "ws/rest/v1/user", userUuid };
-
+		
 		Map<String, String> queryParams = new HashMap<String, String>();
 		queryParams.put("v", "full");
-
-		Request userRequest = Utils.createBasicAuthGetRequest(urlUserPass[0], urlUserPass[1], urlUserPass[2], pathSegments, queryParams);
+		
+		Request userRequest = Utils.createBasicAuthGetRequest(urlUserPass[0], urlUserPass[1], urlUserPass[2], pathSegments,
+		    queryParams);
 		boolean skipHostnameVerification = Boolean.parseBoolean(adminService.getGlobalProperty(
 		    REMOTE_SERVER_SKIP_HOSTNAME_VERIFICATION_GP, "FALSE"));
-
+		
 		OkHttpClient httpClient;
 		try {
 			httpClient = Utils.createOkHttpClient(skipHostnameVerification);
@@ -410,7 +459,7 @@ public class ImportHelperService {
 				if (fetchedUser.containsKey("userProperties") && fetchedUser.get("userProperties") != null) {
 					user.setUserProperties((Map) fetchedUser.get("userProperties"));
 				}
-
+				
 				importedUsersCache.put(userUuid, user);
 				updateAuditInfo(user, (Map) fetchedUser.get("auditInfo"));
 				user = userService.createUser(user, "aldkldlala8040202dfewdaddl23423");
@@ -423,7 +472,7 @@ public class ImportHelperService {
 		}
 		throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 	}
-
+	
 	public Location importLocationFromRemoteOpenmrsServer(String locationUuid) {
 		String[] urlUserPass = getRemoteOpenmrsHostUsernamePassword();
 		String message = String.format("Could not fetch location with uuid %s from server %s", locationUuid, urlUserPass[0]);
@@ -464,9 +513,10 @@ public class ImportHelperService {
 			}
 			// TODO: Currently location tags and attributes are not being used so we can ignore them. however a complete solution will have to take
 			// these into account.
-
+			
 			final Location fetchedLocation = new Location();
 			ReflectionUtils.doWithFields(Location.class, new ReflectionUtils.FieldCallback() {
+				
 				@Override
 				public void doWith(Field field) throws IllegalArgumentException, IllegalAccessException {
 					field.setAccessible(true);
@@ -474,20 +524,21 @@ public class ImportHelperService {
 					field.setAccessible(false);
 				}
 			}, new ReflectionUtils.FieldFilter() {
+				
 				@Override
 				public boolean matches(Field field) {
-					if(Arrays.asList("tags", "parentLocation", "childLocations", "attributes").contains(field.getName())) {
+					if (Arrays.asList("tags", "parentLocation", "childLocations", "attributes").contains(field.getName())) {
 						return false;
 					}
 					int modifiers = field.getModifiers();
 					return (!Modifier.isFinal(modifiers) && !Modifier.isStatic(modifiers));
 				}
 			});
-
-			if(fetchedLocationObject.containsKey("auditInfo")) {
+			
+			if (fetchedLocationObject.containsKey("auditInfo")) {
 				updateAuditInfo(fetchedLocation, (Map) fetchedLocationObject.get("auditInfo"));
 			}
-
+			
 			if (fetchedLocationObject.containsKey("parentLocation") && fetchedLocationObject.get("parentLocation") != null) {
 				// Check if this location exists locally
 				String parentLocationUuid = (String) ((Map) fetchedLocationObject.get("parentLocation")).get("uuid");

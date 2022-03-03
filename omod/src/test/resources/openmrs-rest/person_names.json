@@ -1,0 +1,42 @@
+{
+  "results": [
+    {
+      "display": "PCT Madrid Family",
+      "uuid": "6d8982e4-8125-11e0-a437-00242122a7a8",
+      "givenName": "PCT",
+      "middleName": "Madrid",
+      "familyName": "Family",
+      "familyName2": null,
+      "preferred": true,
+      "prefix": null,
+      "familyNamePrefix": null,
+      "familyNameSuffix": null,
+      "degree": null,
+      "voided": false,
+      "auditInfo": {
+        "creator": {
+          "uuid": "0bc18050-e132-11de-babe-001e378eb67e",
+          "display": "userWithSha512Hash",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://localhost:8083/openmrs/ws/rest/v1/user/0bc18050-e132-11de-babe-001e378eb67e",
+              "resourceAlias": "user"
+            }
+          ]
+        },
+        "dateCreated": "2021-12-10T18:16:17.000+0300",
+        "changedBy": null,
+        "dateChanged": null
+      },
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/d062effc-e000-11e6-a91f-4485001ec084/name/6d8982e4-8125-11e0-a437-00242122a7a8",
+          "resourceAlias": "name"
+        }
+      ],
+      "resourceVersion": "1.8"
+    }
+  ]
+}
