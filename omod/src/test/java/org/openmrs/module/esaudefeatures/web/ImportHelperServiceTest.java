@@ -59,8 +59,11 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 	private static final String OPENMRS_USER2_FILE = "/openmrs-rest/user2.json";
 	
 	private static final String PATIENT_IDENTIFIERS_FILE = "/openmrs-rest/patient_identifiers.json";
+	
 	private static final String PERSON_NAMES_FILE = "/openmrs-rest/person_names.json";
-
+	
+	private static final String PERSON_ADDRESSES_FILE = "/openmrs-rest/person_addresses.json";
+	
 	private static final String USERS_TEST_FILE = "org/openmrs/api/include/UserServiceTest.xml";
 	
 	private static final String USERNAME = "user1";
@@ -105,10 +108,14 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		final String PATIENT_JSON = IOUtils.toString(getClass().getResourceAsStream("/openmrs-rest/single_patient.json"));
 		final String PATIENT_IDENTIFIERS_JSON = IOUtils.toString(getClass().getResourceAsStream(PATIENT_IDENTIFIERS_FILE));
 		final String PERSON_NAMES_JSON = IOUtils.toString(getClass().getResourceAsStream(PERSON_NAMES_FILE));
-
+		final String PERSON_ADDRESSES_JSON = IOUtils.toString(getClass().getResourceAsStream(PERSON_ADDRESSES_FILE));
+		
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
 		        .addHeader("Content-Type", "application/json").setBody(PERSON_NAMES_JSON));
-
+		
+		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
+		        .addHeader("Content-Type", "application/json").setBody(PERSON_ADDRESSES_JSON));
+		
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
 		        .addHeader("Content-Type", "application/json").setBody(PATIENT_IDENTIFIERS_JSON));
 		
@@ -164,7 +171,7 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		PersonName name = person.getPersonName();
 		List<Map> namesMaps = SimpleObject.parseJson(PERSON_NAMES_JSON).get("results");
 		Map preferredName = namesMaps.get(0);
-
+		
 		Map nameAuditInfo = (Map) preferredName.get("auditInfo");
 		assertTrue(name.isPreferred());
 		assertEquals(preferredName.get("uuid"), name.getUuid());
@@ -176,13 +183,15 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		assertNull(name.getFamilyNameSuffix());
 		assertFalse(name.getVoided());
 		assertEquals(((Map) nameAuditInfo.get("creator")).get("uuid"), name.getCreator().getUuid());
-		assertEquals(Utils.parseDateString((String) nameAuditInfo.get("dateCreated")),
-				name.getDateCreated());
+		assertEquals(Utils.parseDateString((String) nameAuditInfo.get("dateCreated")), name.getDateCreated());
 		assertNull(name.getChangedBy());
 		assertNull(name.getDateChanged());
 		
 		PersonAddress address = person.getPersonAddress();
-		Map preferredAddress = (Map) personObject.get("preferredAddress");
+		List<Map> addressesMaps = SimpleObject.parseJson(PERSON_ADDRESSES_JSON).get("results");
+		Map preferredAddress = addressesMaps.get(0);
+		Map addressAuditInfo = (Map) preferredAddress.get("auditInfo");
+		
 		assertTrue(address.isPreferred());
 		assertEquals(preferredAddress.get("uuid"), address.getUuid());
 		assertEquals(preferredAddress.get("address1"), address.getAddress1());
@@ -199,6 +208,10 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		assertNull(address.getLatitude());
 		assertNull(address.getPostalCode());
 		assertFalse(address.getVoided());
+		assertEquals(((Map) addressAuditInfo.get("creator")).get("uuid"), name.getCreator().getUuid());
+		assertEquals(Utils.parseDateString((String) addressAuditInfo.get("dateCreated")), name.getDateCreated());
+		assertNull(name.getChangedBy());
+		assertNull(name.getDateChanged());
 		
 		List<Map> attributesMaps = (List<Map>) personObject.get("attributes");
 		Set<PersonAttribute> personAttributes = person.getAttributes();

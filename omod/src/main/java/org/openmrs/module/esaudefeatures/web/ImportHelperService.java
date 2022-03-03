@@ -35,6 +35,8 @@ import org.springframework.util.StringUtils;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -224,36 +226,11 @@ public class ImportHelperService {
 		// Names
 		updatePersonNames(person);
 		
-		if (personMap.containsKey("addresses") && personMap.get("addresses") != null) {
-			List<Map> addressesMaps = (List<Map>) personMap.get("addresses");
-			Set<PersonAddress> personAddresses = new TreeSet<PersonAddress>();
-			
-			for (final Map addressMap : addressesMaps) {
-				final PersonAddress personAddress = new PersonAddress();
-				ReflectionUtils.doWithFields(PersonAddress.class, new ReflectionUtils.FieldCallback() {
-					
-					@Override
-					public void doWith(Field field) throws IllegalArgumentException, IllegalAccessException {
-						field.setAccessible(true);
-						field.set(personAddress, addressMap.get(field.getName()));
-						field.setAccessible(false);
-					}
-				}, new ReflectionUtils.FieldFilter() {
-					
-					@Override
-					public boolean matches(Field field) {
-						int modifiers = field.getModifiers();
-						return (!Modifier.isFinal(modifiers) && !Modifier.isStatic(modifiers));
-					}
-				});
-				personAddress.setPerson(person);
-				personAddresses.add(personAddress);
-			}
-			person.setAddresses(personAddresses);
+		if (personMap.get("addresses") != null) {
+			updatePersonAddresses(person);
 		}
 		
-		if (personMap.containsKey("attributes") && personMap.get("attributes") != null
-		        && ((List) personMap.get("attributes")).size() > 0) {
+		if (personMap.get("attributes") != null && ((List) personMap.get("attributes")).size() > 0) {
 			List<Map> attributesMaps = (List<Map>) personMap.get("attributes");
 			Set<PersonAttribute> personAttributes = new TreeSet<PersonAttribute>();
 			
@@ -299,21 +276,30 @@ public class ImportHelperService {
 		}
 		return person;
 	}
-
+	
 	protected void updatePersonNames(final Person person) {
+		updatePersonCollectionProperty(person, PersonName.class, "name", "setNames");
+	}
+	
+	protected void updatePersonAddresses(final Person person) {
+		updatePersonCollectionProperty(person, PersonAddress.class, "address", "setAddresses");
+	}
+	
+	protected <T extends Auditable> void updatePersonCollectionProperty(final Person person, Class<T> propretyClass,
+	        String restSubResource, String setterMethod) {
 		String[] urlUserPass = getRemoteOpenmrsHostUsernamePassword();
-		String[] pathSegments = { "ws/rest/v1/person", person.getUuid(), "name" };
-		String errorMessage = String.format("Could not fetch names for person with uuid %s from server %s",
-				person.getUuid(), urlUserPass[0]);
-
+		String[] pathSegments = { "ws/rest/v1/person", person.getUuid(), restSubResource };
+		String errorMessage = String.format("Could not fetch and/or update %s for person with uuid %s from server %s",
+		    restSubResource, person.getUuid(), urlUserPass[0]);
+		
 		Map<String, String> queryParams = new HashMap<String, String>();
 		queryParams.put("v", "full");
-
-		Request namesRequest = Utils.createBasicAuthGetRequest(urlUserPass[0], urlUserPass[1], urlUserPass[2],
-				pathSegments, queryParams);
+		
+		Request namesRequest = Utils.createBasicAuthGetRequest(urlUserPass[0], urlUserPass[1], urlUserPass[2], pathSegments,
+		    queryParams);
 		boolean skipHostnameVerification = Boolean.parseBoolean(adminService.getGlobalProperty(
-				REMOTE_SERVER_SKIP_HOSTNAME_VERIFICATION_GP, "FALSE"));
-
+		    REMOTE_SERVER_SKIP_HOSTNAME_VERIFICATION_GP, "FALSE"));
+		
 		OkHttpClient httpClient;
 		try {
 			httpClient = Utils.createOkHttpClient(skipHostnameVerification);
@@ -322,44 +308,58 @@ public class ImportHelperService {
 			LOGGER.error("Could not create an http client", null, e);
 			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
-
+		
 		Response response;
 		try {
 			response = httpClient.newCall(namesRequest).execute();
 			if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
 				SimpleObject responseBody = SimpleObject.parseJson(response.body().string());
-				List<Map> namesMaps = responseBody.get("results");
-				Set<PersonName> names = new TreeSet<PersonName>();
-
-				for (final Map nameMap : namesMaps) {
-					if (!(Boolean) nameMap.get("voided")) {
+				List<Map> propertyMaps = responseBody.get("results");
+				Set<T> properties = new TreeSet<T>();
+				
+				for (final Map propertyMap : propertyMaps) {
+					if (!(Boolean) propertyMap.get("voided")) {
+						final T personProperty = propretyClass.newInstance();
 						final PersonName personName = new PersonName();
-						ReflectionUtils.doWithFields(PersonName.class, new ReflectionUtils.FieldCallback() {
-
+						ReflectionUtils.doWithFields(propretyClass, new ReflectionUtils.FieldCallback() {
+							
 							@Override
 							public void doWith(Field field) throws IllegalArgumentException, IllegalAccessException {
 								field.setAccessible(true);
-								field.set(personName, nameMap.get(field.getName()));
+								field.set(personProperty, propertyMap.get(field.getName()));
 								field.setAccessible(false);
 							}
 						}, new ReflectionUtils.FieldFilter() {
-
+							
 							@Override
 							public boolean matches(Field field) {
 								int modifiers = field.getModifiers();
-								if(!ClassUtils.isPrimitiveOrWrapper(field.getClass()) && String.class.equals(field.getClass())) {
+								if (!ClassUtils.isPrimitiveOrWrapper(field.getClass())
+								        && String.class.equals(field.getClass())) {
 									return false;
 								}
 								return (!Modifier.isFinal(modifiers) && !Modifier.isStatic(modifiers));
 							}
 						});
-
-						updateAuditInfo(personName, (Map) nameMap.get("auditInfo"));
-						personName.setPerson(person);
-						names.add(personName);
+						
+						updateAuditInfo(personProperty, (Map) propertyMap.get("auditInfo"));
+						
+						try {
+							Method method = propretyClass.getMethod("setPerson", Person.class);
+							method.invoke(personProperty, person);
+						}
+						catch (NoSuchMethodException nsme) {
+							LOGGER.warn("No method setPerson on class {}. Ignoring...", propretyClass.getName());
+						}
+						catch (InvocationTargetException e) {
+							LOGGER.warn("Could not invoke setPerson on instance of {}", propretyClass.getName());
+						}
+						properties.add(personProperty);
 					}
 				}
-				person.setNames(names);
+				
+				Method method = Person.class.getMethod(setterMethod, Set.class);
+				method.invoke(person, properties);
 			} else {
 				LOGGER.error("Error when executing http request {} ", namesRequest);
 				throw new RemoteOpenmrsSearchException(errorMessage, response.code());
@@ -369,8 +369,24 @@ public class ImportHelperService {
 			LOGGER.error("Error when executing http request {} ", namesRequest);
 			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
+		catch (IllegalAccessException e) {
+			LOGGER.error("Error while attempting instantiation of {}", propretyClass, e);
+			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
+		catch (InstantiationException e) {
+			LOGGER.error("Error instantiating class {}", propretyClass, e);
+			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
+		catch (NoSuchMethodException e) {
+			LOGGER.error("Method {} not found on Person class", setterMethod, e);
+			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
+		catch (InvocationTargetException e) {
+			LOGGER.error("Error invoking method {} on instance of org.openmrs.Person class", setterMethod, e);
+			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
 	}
-
+	
 	public void updateAuditInfo(Auditable openmrsObject, Map<String, Object> auditInfo) {
 		Map creatorMap = (Map) auditInfo.get("creator");
 		if (creatorMap != null) {
