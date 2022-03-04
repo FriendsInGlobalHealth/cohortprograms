@@ -1,0 +1,49 @@
+{
+  "results": [
+    {
+      "display": "Kilwa Kivinje Tanzania",
+      "uuid": "796e7fc8-9bc8-11ec-8943-0242ac110002",
+      "preferred": true,
+      "address1": "Mabwepax",
+      "address2": "Kinondo Juu",
+      "cityVillage": null,
+      "stateProvince": "Lindi",
+      "country": "Tanzania",
+      "postalCode": null,
+      "countyDistrict": "Kilwa",
+      "address3": null,
+      "address4": null,
+      "address5": "Eduardo Mondlane",
+      "address6": null,
+      "startDate": null,
+      "endDate": null,
+      "latitude": null,
+      "longitude": null,
+      "voided": false,
+      "auditInfo": {
+        "creator": {
+          "uuid": "0bc18050-e132-11de-babe-001e378eb67e",
+          "display": "userWithSha512Hash",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://localhost:8083/openmrs/ws/rest/v1/user/0bc18050-e132-11de-babe-001e378eb67e",
+              "resourceAlias": "user"
+            }
+          ]
+        },
+        "dateCreated": "2021-12-10T18:16:17.000+0300",
+        "changedBy": null,
+        "dateChanged": null
+      },
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/d062effc-e000-11e6-a91f-4485001ec084/address/6d42118e-8125-11e0-a437-00242122a7a8",
+          "resourceAlias": "address"
+        }
+      ],
+      "resourceVersion": "1.8"
+    }
+  ]
+}

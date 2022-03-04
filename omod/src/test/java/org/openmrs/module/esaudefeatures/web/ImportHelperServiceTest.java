@@ -62,7 +62,13 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 	
 	private static final String PERSON_NAMES_FILE = "/openmrs-rest/person_names.json";
 	
+	private static final String PERSON_NAMES2_FILE = "/openmrs-rest/person_names2.json";
+	
 	private static final String PERSON_ADDRESSES_FILE = "/openmrs-rest/person_addresses.json";
+	
+	private static final String PERSON_ADDRESSES2_FILE = "/openmrs-rest/person_addresses2.json";
+	
+	private static final String PERSON_ATTRIBUTES_FILE = "/openmrs-rest/person_attributes.json";
 	
 	private static final String USERS_TEST_FILE = "org/openmrs/api/include/UserServiceTest.xml";
 	
@@ -71,6 +77,18 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 	private static final String PASSWORD = "pa$$w0rd";
 	
 	private MockWebServer mockWebServer;
+	
+	final String PATIENT_IDENTIFIERS_JSON = IOUtils.toString(getClass().getResourceAsStream(PATIENT_IDENTIFIERS_FILE));
+	
+	final String PERSON_NAMES_JSON = IOUtils.toString(getClass().getResourceAsStream(PERSON_NAMES_FILE));
+	
+	final String PERSON_NAMES2_JSON = IOUtils.toString(getClass().getResourceAsStream(PERSON_NAMES2_FILE));
+	
+	final String PERSON_ADDRESSES_JSON = IOUtils.toString(getClass().getResourceAsStream(PERSON_ADDRESSES_FILE));
+	
+	final String PERSON_ADDRESSES2_JSON = IOUtils.toString(getClass().getResourceAsStream(PERSON_ADDRESSES2_FILE));
+	
+	final String PERSON_ATTRIBUTES_JSON = IOUtils.toString(getClass().getResourceAsStream(PERSON_ATTRIBUTES_FILE));
 	
 	@Mock
 	private AdministrationService adminService;
@@ -84,6 +102,9 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 	
 	@Autowired
 	private UserService userService;
+	
+	public ImportHelperServiceTest() throws IOException {
+	}
 	
 	@Before
 	public void setup() throws Exception {
@@ -106,16 +127,8 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 	@Test
 	public void getPatientFromOpenmrsPayloadShouldReturnTheCorrectObject() throws Exception {
 		final String PATIENT_JSON = IOUtils.toString(getClass().getResourceAsStream("/openmrs-rest/single_patient.json"));
-		final String PATIENT_IDENTIFIERS_JSON = IOUtils.toString(getClass().getResourceAsStream(PATIENT_IDENTIFIERS_FILE));
-		final String PERSON_NAMES_JSON = IOUtils.toString(getClass().getResourceAsStream(PERSON_NAMES_FILE));
-		final String PERSON_ADDRESSES_JSON = IOUtils.toString(getClass().getResourceAsStream(PERSON_ADDRESSES_FILE));
 		
-		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
-		        .addHeader("Content-Type", "application/json").setBody(PERSON_NAMES_JSON));
-		
-		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
-		        .addHeader("Content-Type", "application/json").setBody(PERSON_ADDRESSES_JSON));
-		
+		setUpMockWebServerToReturnPersonPropertiesInRequiredOrder();
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
 		        .addHeader("Content-Type", "application/json").setBody(PATIENT_IDENTIFIERS_JSON));
 		
@@ -208,26 +221,22 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		assertNull(address.getLatitude());
 		assertNull(address.getPostalCode());
 		assertFalse(address.getVoided());
-		assertEquals(((Map) addressAuditInfo.get("creator")).get("uuid"), name.getCreator().getUuid());
-		assertEquals(Utils.parseDateString((String) addressAuditInfo.get("dateCreated")), name.getDateCreated());
-		assertNull(name.getChangedBy());
-		assertNull(name.getDateChanged());
+		assertEquals(((Map) addressAuditInfo.get("creator")).get("uuid"), address.getCreator().getUuid());
+		assertEquals(Utils.parseDateString((String) addressAuditInfo.get("dateCreated")), address.getDateCreated());
+		assertNull(address.getChangedBy());
+		assertNull(address.getDateChanged());
 		
-		List<Map> attributesMaps = (List<Map>) personObject.get("attributes");
-		Set<PersonAttribute> personAttributes = person.getAttributes();
-		for (Map attributeMap : attributesMaps) {
-			String attrUuid = (String) attributeMap.get("uuid");
-			PersonAttribute personAttribute = null;
-			for (PersonAttribute attribute : personAttributes) {
-				if (attrUuid.equals(attribute.getUuid())) {
-					personAttribute = attribute;
-					break;
-				}
-			}
-			assertNotNull(personAttribute);
-			assertEquals(attributeMap.get("value"), personAttribute.getValue());
-			assertEquals(((Map) attributeMap.get("attributeType")).get("uuid"), personAttribute.getAttributeType().getUuid());
-		}
+		List<Map> attributesMaps = SimpleObject.parseJson(PERSON_ATTRIBUTES_JSON).get("results");
+		Map attributeMap = attributesMaps.get(0);
+		Map attributeAuditInfo = (Map) attributeMap.get("auditInfo");
+		PersonAttribute personAttribute = person.getAttributes().iterator().next();
+		assertNotNull(personAttribute);
+		assertEquals(attributeMap.get("value"), personAttribute.getValue());
+		assertEquals(((Map) attributeMap.get("attributeType")).get("uuid"), personAttribute.getAttributeType().getUuid());
+		assertEquals(((Map) attributeAuditInfo.get("creator")).get("uuid"), personAttribute.getCreator().getUuid());
+		assertEquals(Utils.parseDateString((String) attributeAuditInfo.get("dateCreated")), personAttribute.getDateCreated());
+		assertNull(personAttribute.getChangedBy());
+		assertNull(personAttribute.getDateChanged());
 	}
 	
 	@Test
@@ -236,6 +245,8 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		SimpleObject userObject = SimpleObject.parseJson(USER);
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
 		        .addHeader("Content-Type", "application/json").setBody(USER));
+		
+		setUpMockWebServerToReturnPersonPropertiesInRequiredOrder();
 		
 		String userUuid = userObject.get("uuid");
 		Map auditInfo = userObject.get("auditInfo");
@@ -260,8 +271,17 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
 		        .addHeader("Content-Type", "application/json").setBody(USER));
+		
+		setUpMockWebServerToReturnPersonPropertiesInRequiredOrder();
+		
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
 		        .addHeader("Content-Type", "application/json").setBody(CHANGER));
+		
+		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
+		        .addHeader("Content-Type", "application/json").setBody(PERSON_NAMES2_JSON));
+		
+		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
+		        .addHeader("Content-Type", "application/json").setBody(PERSON_ADDRESSES2_JSON));
 		
 		String userUuid = userObject.get("uuid");
 		Map auditInfo = userObject.get("auditInfo");
@@ -354,5 +374,17 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		assertNotNull(grandParentLocation);
 		assertEquals(parentLocation, location.getParentLocation());
 		assertEquals(grandParentLocation, parentLocation.getParentLocation());
+	}
+	
+	private void setUpMockWebServerToReturnPersonPropertiesInRequiredOrder() {
+		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
+		        .addHeader("Content-Type", "application/json").setBody(PERSON_NAMES_JSON));
+		
+		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
+		        .addHeader("Content-Type", "application/json").setBody(PERSON_ADDRESSES_JSON));
+		
+		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
+		        .addHeader("Content-Type", "application/json").setBody(PERSON_ATTRIBUTES_JSON));
+		
 	}
 }

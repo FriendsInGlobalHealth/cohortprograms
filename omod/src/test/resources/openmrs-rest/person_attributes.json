@@ -1,0 +1,50 @@
+{
+  "results": [
+    {
+      "display": "Race = Red blooded homo sapien",
+      "uuid": "7d09b927-cd1b-4707-8fd9-37b632b1a858",
+      "value": "Red blooded homo sapien",
+      "attributeType": {
+        "uuid": "b3b6d540-a32e-44c7-91b3-292d97667518",
+        "display": "Race",
+        "links": [
+          {
+            "rel": "self",
+            "uri": "http://localhost:8083/openmrs/ws/rest/v1/personattributetype/b3b6d540-a32e-44c7-91b3-292d97667518",
+            "resourceAlias": "personattributetype"
+          }
+        ]
+      },
+      "voided": false,
+      "auditInfo": {
+        "creator": {
+          "uuid": "0bc18050-e132-11de-babe-001e378eb67e",
+          "display": "userWithSha512Hash",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://localhost:8083/openmrs/ws/rest/v1/user/0bc18050-e132-11de-babe-001e378eb67e",
+              "resourceAlias": "user"
+            }
+          ]
+        },
+        "dateCreated": "2022-02-21T17:05:19.000+0300",
+        "changedBy": null,
+        "dateChanged": null
+      },
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/6d24f374-8125-11e0-a437-00242122a7a8/attribute/7d09b927-cd1b-4707-8fd9-37b632b1a858",
+          "resourceAlias": "attribute"
+        },
+        {
+          "rel": "full",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/6d24f374-8125-11e0-a437-00242122a7a8/attribute/7d09b927-cd1b-4707-8fd9-37b632b1a858?v=full",
+          "resourceAlias": "attribute"
+        }
+      ],
+      "resourceVersion": "1.8"
+    }
+  ]
+}

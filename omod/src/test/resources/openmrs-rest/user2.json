@@ -17,17 +17,30 @@
     "deathDate": null,
     "causeOfDeath": null,
     "preferredName": {
-      "uuid": "4c581b2b-70da-49a4-b389-e2265e7b710b",
-      "display": "Given Middle Family",
+      "uuid": "d4006630-9bc7-11ec-8943-0242ac110002",
+      "display": "Really Nice Guy",
       "links": [
         {
           "rel": "self",
-          "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/43c44bde-f858-4aa4-9085-ea47a34fa0d7/name/4c581b2b-70da-49a4-b389-e2265e7b710b",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/43c44bde-f858-4aa4-9085-ea47a34fa0d7/name/d4006630-9bc7-11ec-8943-0242ac110002",
           "resourceAlias": "name"
         }
       ]
     },
     "preferredAddress": null,
+    "names": [
+      {
+        "uuid": "d4006630-9bc7-11ec-8943-0242ac110002",
+        "display": "Really Nice Guy",
+        "links": [
+          {
+            "rel": "self",
+            "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/43c44bde-f858-4aa4-9085-ea47a34fa0d7/name/d4006630-9bc7-11ec-8943-0242ac110002",
+            "resourceAlias": "name"
+          }
+        ]
+      }
+    ],
     "attributes": [],
     "voided": false,
     "birthtime": null,

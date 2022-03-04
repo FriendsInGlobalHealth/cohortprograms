@@ -24,7 +24,6 @@ import org.openmrs.api.UserService;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -226,53 +225,12 @@ public class ImportHelperService {
 		// Names
 		updatePersonNames(person);
 		
-		if (personMap.get("addresses") != null) {
+		if (personMap.get("addresses") != null && ((List) personMap.get("addresses")).size() > 0) {
 			updatePersonAddresses(person);
 		}
 		
 		if (personMap.get("attributes") != null && ((List) personMap.get("attributes")).size() > 0) {
-			List<Map> attributesMaps = (List<Map>) personMap.get("attributes");
-			Set<PersonAttribute> personAttributes = new TreeSet<PersonAttribute>();
-			
-			for (Map attributeMap : attributesMaps) {
-				String personAttributeTypeUuid = (String) ((Map) attributeMap.get("attributeType")).get("uuid");
-				if (IGNORED_PERSON_ATTRIBUTE_TYPES.contains(personAttributeTypeUuid)) {
-					continue;
-				}
-				
-				if (!(Boolean) attributeMap.get("voided")) {
-					PersonAttribute personAttribute = new PersonAttribute();
-					personAttribute.setUuid((String) attributeMap.get("uuid"));
-					
-					PersonAttributeType personAttributeType = personService
-					        .getPersonAttributeTypeByUuid(personAttributeTypeUuid);
-					personAttribute.setAttributeType(personAttributeType);
-					
-					Object attributeValue = attributeMap.get("value");
-					if (attributeValue instanceof String) {
-						personAttribute.setValue((String) attributeValue);
-					} else if (attributeValue instanceof Map) {
-						if ("org.openmrs.Concept".equals(personAttributeType.getFormat())) {
-							Concept concept = conceptService.getConceptByUuid((String) ((Map) attributeValue).get("uuid"));
-							personAttribute.setValue(concept.getConceptId().toString());
-						} else if ("org.openmrs.Location".equals(personAttributeType.getFormat())) {
-							// Location is not harmonized hence some work needs to be done here.
-							String locationUuid = (String) ((Map) attributeValue).get("uuid");
-							Location location = locationService.getLocationByUuid(locationUuid);
-							if (location == null) {
-								// Import this location from central (possibly including its ancestors)
-								location = importLocationFromRemoteOpenmrsServer(locationUuid);
-							}
-							personAttribute.setValue(location.getLocationId().toString());
-						} else {
-							// We gonna go on a limb and set the uuid (assuming it is openmrs domain object) as is (What could happen here?) (._.)
-							personAttribute.setValue((String) ((Map) attributeValue).get("uuid"));
-						}
-					}
-					personAttributes.add(personAttribute);
-				}
-			}
-			person.setAttributes(personAttributes);
+			updatePersonAttributes(person);
 		}
 		return person;
 	}
@@ -383,6 +341,91 @@ public class ImportHelperService {
 		}
 		catch (InvocationTargetException e) {
 			LOGGER.error("Error invoking method {} on instance of org.openmrs.Person class", setterMethod, e);
+			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
+	}
+	
+	protected void updatePersonAttributes(final Person person) {
+		String[] urlUserPass = getRemoteOpenmrsHostUsernamePassword();
+		String[] pathSegments = { "ws/rest/v1/person", person.getUuid(), "attribute" };
+		String errorMessage = String.format(
+		    "Could not fetch and/or update attributes for person with uuid %s from server %s", person.getUuid(),
+		    urlUserPass[0]);
+		
+		Map<String, String> queryParams = new HashMap<String, String>();
+		queryParams.put("v", "full");
+		
+		Request namesRequest = Utils.createBasicAuthGetRequest(urlUserPass[0], urlUserPass[1], urlUserPass[2], pathSegments,
+		    queryParams);
+		boolean skipHostnameVerification = Boolean.parseBoolean(adminService.getGlobalProperty(
+		    REMOTE_SERVER_SKIP_HOSTNAME_VERIFICATION_GP, "FALSE"));
+		
+		OkHttpClient httpClient;
+		try {
+			httpClient = Utils.createOkHttpClient(skipHostnameVerification);
+		}
+		catch (Exception e) {
+			LOGGER.error("Could not create an http client", null, e);
+			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
+		
+		Response response;
+		try {
+			response = httpClient.newCall(namesRequest).execute();
+			if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
+				SimpleObject responseBody = SimpleObject.parseJson(response.body().string());
+				List<Map> attributesMaps = responseBody.get("results");
+				Set<PersonAttribute> personAttributes = new TreeSet<PersonAttribute>();
+				
+				for (final Map attributeMap : attributesMaps) {
+					String personAttributeTypeUuid = (String) ((Map) attributeMap.get("attributeType")).get("uuid");
+					if (IGNORED_PERSON_ATTRIBUTE_TYPES.contains(personAttributeTypeUuid)) {
+						continue;
+					}
+					
+					if (!(Boolean) attributeMap.get("voided")) {
+						PersonAttribute personAttribute = new PersonAttribute();
+						personAttribute.setUuid((String) attributeMap.get("uuid"));
+						
+						PersonAttributeType personAttributeType = personService
+						        .getPersonAttributeTypeByUuid(personAttributeTypeUuid);
+						personAttribute.setAttributeType(personAttributeType);
+						
+						Object attributeValue = attributeMap.get("value");
+						if (attributeValue instanceof String) {
+							personAttribute.setValue((String) attributeValue);
+						} else if (attributeValue instanceof Map) {
+							if ("org.openmrs.Concept".equals(personAttributeType.getFormat())) {
+								Concept concept = conceptService.getConceptByUuid((String) ((Map) attributeValue)
+								        .get("uuid"));
+								personAttribute.setValue(concept.getConceptId().toString());
+							} else if ("org.openmrs.Location".equals(personAttributeType.getFormat())) {
+								// Location is not harmonized hence some work needs to be done here.
+								String locationUuid = (String) ((Map) attributeValue).get("uuid");
+								Location location = locationService.getLocationByUuid(locationUuid);
+								if (location == null) {
+									// Import this location from central (possibly including its ancestors)
+									location = importLocationFromRemoteOpenmrsServer(locationUuid);
+								}
+								personAttribute.setValue(location.getLocationId().toString());
+							} else {
+								// We gonna go on a limb and set the uuid (assuming it is openmrs domain object) as is (What could happen here?) (._.)
+								personAttribute.setValue((String) ((Map) attributeValue).get("uuid"));
+							}
+						}
+						updateAuditInfo(personAttribute, (Map) attributeMap.get("auditInfo"));
+						personAttribute.setPerson(person);
+						personAttributes.add(personAttribute);
+					}
+				}
+				person.setAttributes(personAttributes);
+			} else {
+				LOGGER.error("Error when executing http request {} ", namesRequest);
+				throw new RemoteOpenmrsSearchException(errorMessage, response.code());
+			}
+		}
+		catch (IOException e) {
+			LOGGER.error("Error when executing http request {} ", namesRequest);
 			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
 	}
