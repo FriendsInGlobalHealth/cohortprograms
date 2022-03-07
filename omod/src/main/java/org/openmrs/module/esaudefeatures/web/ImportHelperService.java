@@ -570,7 +570,7 @@ public class ImportHelperService {
 				LOGGER.error("Error while reading response from server {}", urlUserPass[0], e);
 				throw new RemoteOpenmrsSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			}
-			// TODO: Currently location tags and attributes are not being used so we can ignore them. however a complete solution will have to take
+			// TODO: Currently location tags and attributes are not being used so we can ignore them. However a complete solution will have to take
 			// these into account.
 			
 			final Location fetchedLocation = new Location();
@@ -632,5 +632,10 @@ public class ImportHelperService {
 		}
 		
 		return new String[] { remoteServerUrl, remoteServerUsername, remoteServerPassword };
+	}
+	
+	public void updateOpenmrsPatientWithMPIData(Patient openmrsPatient, org.hl7.fhir.r4.model.Patient opencrPatient) {
+		//TODO: Implement this method to update the passed Openmrs Patient object with info from opencr patient
+		// Update names.
 	}
 }

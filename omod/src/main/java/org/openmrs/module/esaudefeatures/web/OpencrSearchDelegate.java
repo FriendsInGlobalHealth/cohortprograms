@@ -14,6 +14,7 @@ import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.openmrs.api.AdministrationService;
+import org.openmrs.api.PatientService;
 import org.openmrs.module.esaudefeatures.web.controller.OpencrAuthenticationException;
 import org.openmrs.module.esaudefeatures.web.dto.TokenDTO;
 import org.openmrs.module.webservices.rest.SimpleObject;
@@ -60,6 +61,10 @@ public class OpencrSearchDelegate {
 	
 	private RemoteOpenmrsSearchDelegate openmrsSearchDelegate;
 	
+	private ImportHelperService helperService;
+	
+	private PatientService patientService;
+	
 	@Autowired
 	public void setAdminService(AdministrationService adminService) {
 		this.adminService = adminService;
@@ -68,6 +73,16 @@ public class OpencrSearchDelegate {
 	@Autowired
 	public void setOpenmrsSearchDelegate(RemoteOpenmrsSearchDelegate openmrsSearchDelegate) {
 		this.openmrsSearchDelegate = openmrsSearchDelegate;
+	}
+	
+	@Autowired
+	public void setHelperService(ImportHelperService helperService) {
+		this.helperService = helperService;
+	}
+	
+	@Autowired
+	public void setPatientService(PatientService patientService) {
+		this.patientService = patientService;
 	}
 	
 	public Patient getPatientByFhirId(final String id) {
@@ -180,7 +195,11 @@ public class OpencrSearchDelegate {
 			// Fetch patient from central server.
 			try {
 				SimpleObject patientObject = openmrsSearchDelegate.getRemotePatientByUuid(openmrsUuid);
-				
+				org.openmrs.Patient opPatient = helperService.getPatientFromOpenmrsRestPayload(patientObject);
+				// Apply changes from OpenCR server
+				helperService.updateOpenmrsPatientWithMPIData(opPatient, patientResource);
+				patientService.savePatient(opPatient);
+				return true;
 			}
 			catch (Exception e) {
 				e.printStackTrace();

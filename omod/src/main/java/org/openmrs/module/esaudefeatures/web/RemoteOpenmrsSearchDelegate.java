@@ -81,9 +81,4 @@ public class RemoteOpenmrsSearchDelegate {
 		LOGGER.error("Response from {} server: {}", response.request().url().toString(), response.body().string());
 		throw new RemoteOpenmrsSearchException(response.body().string(), response.code());
 	}
-	
-	//	public Patient getPatientFromOpenmrsRestPayload(SimpleObject patientObject) {
-	//		Patient oPatient = patientResource18.getPatient(patientObject);
-	//		return oPatient;
-	//	}
 }

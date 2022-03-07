@@ -1,6 +1,8 @@
 package org.openmrs.module.esaudefeatures.web.controller;
 
 import org.openmrs.Location;
+import org.openmrs.annotation.Authorized;
+import org.openmrs.api.APIException;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.LocationService;
 import org.openmrs.api.context.Context;
@@ -12,7 +14,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
+
+import java.util.List;
 
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.IMPORTED_PATIENT_LOCATION_UUID_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_PASSWORD_GP;
@@ -108,5 +113,10 @@ public class RemotePatientsController {
 			modelAndView.setViewName("module/esaudefeatures/remotePatients/findRemotePatients2x");
 		}
 		return modelAndView;
+	}
+	
+	@RequestMapping(method = RequestMethod.POST, value = "module/esaudefeatures/remotePatients/openmrsPatient.json")
+	public String importPatient(@RequestParam String patientUuid) {
+		return "32413";
 	}
 }
