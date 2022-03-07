@@ -53,6 +53,9 @@ public class RemoteOpenmrsSearchDelegateTest {
 	@Mock
 	private AdministrationService adminService;
 	
+	@Mock
+	private ImportHelperService helperService;
+	
 	@InjectMocks
 	private RemoteOpenmrsSearchDelegate delegate = new RemoteOpenmrsSearchDelegate();
 	
@@ -61,12 +64,8 @@ public class RemoteOpenmrsSearchDelegateTest {
 		mockWebServer = new MockWebServer();
 		mockWebServer.start();
 		baseRemoteServerUrl = mockWebServer.url("/").toString();
-		Mockito.when(adminService.getGlobalProperty(EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_URL_GP)).thenReturn(
-		    baseRemoteServerUrl);
-		Mockito.when(adminService.getGlobalProperty(EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_USERNAME_GP)).thenReturn(
-		    USERNAME);
-		Mockito.when(adminService.getGlobalProperty(EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_PASSWORD_GP)).thenReturn(
-		    PASSWORD);
+		String[] hostUserPass = { baseRemoteServerUrl, USERNAME, PASSWORD };
+		Mockito.when(helperService.getRemoteOpenmrsHostUsernamePassword()).thenReturn(hostUserPass);
 	}
 	
 	@Test
@@ -106,7 +105,7 @@ public class RemoteOpenmrsSearchDelegateTest {
 		        .addHeader("Content-Type", "application/json").setBody(EXPECTED_JSON_RESPONSE));
 		
 		final String SEARCH_TEXT = "Madrid";
-		SimpleObject matchedEntries = delegate.searchPatients(SEARCH_TEXT);
+		delegate.searchPatients(SEARCH_TEXT);
 		
 		RecordedRequest request = mockWebServer.takeRequest();
 		HttpUrl requestUrl = request.getRequestUrl();
@@ -126,7 +125,6 @@ public class RemoteOpenmrsSearchDelegateTest {
 	@Test
 	public void searchPatientsShouldIssueACorrectQueryForMultipleNames() throws Exception {
 		final String SEARCH_TEXT = "Nashada Mhawila";
-		String[] names = SEARCH_TEXT.split(" ");
 		final String EXPECTED_JSON_RESPONSE = IOUtils.toString(getClass()
 		        .getResourceAsStream(MATCHED_PATIENT_LIST_FILE_NAME));
 		
@@ -141,18 +139,17 @@ public class RemoteOpenmrsSearchDelegateTest {
 		assertTrue(request.getPath().startsWith(EXPECTED_PATIENT_PATH));
 		assertFalse(requestUrl.isHttps());
 		
-		assertEquals(3, requestUrl.querySize());
-		assertTrue(requestUrl.queryParameter("name").equals(names[0]) || requestUrl.queryParameter("name").equals(names[1]));
-		assertEquals("true", requestUrl.queryParameter("active"));
+		assertEquals(2, requestUrl.querySize());
+		assertTrue(requestUrl.queryParameter("q").equals(SEARCH_TEXT));
 	}
 	
-	//	@Test(expected = OpenmrsSearchException.class)
-	//	public void searchOpenmrsForPatientShouldThrowExceptionIfCouldNotAuthenticate() throws Exception {
-	//		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_BAD_REQUEST)
-	//		        .addHeader("Content-Type", "application/json").setBody("{}"));
-	//
-	//		delegate.searchPatients("sometext");
-	//	}
+	@Test(expected = RemoteOpenmrsSearchException.class)
+	public void searchOpenmrsForPatientShouldThrowExceptionIfCouldNotAuthenticate() throws Exception {
+		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_BAD_REQUEST)
+		        .addHeader("Content-Type", "application/json").setBody("{}"));
+		
+		delegate.searchPatients("sometext");
+	}
 	
 	@After
 	public void teardown() throws IOException {

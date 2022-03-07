@@ -43,7 +43,30 @@ public class RemoteOpenmrsSearchDelegate {
 	}
 	
 	public SimpleObject searchPatients(final String searchText) throws Exception {
-		throw new NotImplementedException("Will be when I get around to this");
+		String[] urlUsernamePassword = helperService.getRemoteOpenmrsHostUsernamePassword();
+		String remoteServerUrl = urlUsernamePassword[0];
+		String remoteServerUsername = urlUsernamePassword[1];
+		String remoteServerPassword = urlUsernamePassword[2];
+		boolean skipHostnameVerification = Boolean.parseBoolean(adminService.getGlobalProperty(
+		    REMOTE_SERVER_SKIP_HOSTNAME_VERIFICATION_GP, "FALSE"));
+		
+		String[] pathSegments = { OPENMRS_REST_PATIENT_PATH };
+		Map<String, String> queryParams = new HashMap<String, String>();
+		queryParams.put("q", searchText);
+		queryParams.put("v", "full");
+		Request fetchRequest = Utils.createBasicAuthGetRequest(remoteServerUrl, remoteServerUsername, remoteServerPassword,
+		    pathSegments, queryParams);
+		
+		OkHttpClient okHttpClient = Utils.createOkHttpClient(skipHostnameVerification);
+		
+		Response response = okHttpClient.newCall(fetchRequest).execute();
+		
+		if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
+			return parseServerResponse(response);
+		}
+		String errorMessage = String.format("Error fetching response from server %s", remoteServerUrl);
+		LOGGER.error(errorMessage);
+		throw new RemoteOpenmrsSearchException(errorMessage, response.code());
 	}
 	
 	public SimpleObject getRemotePatientByUuid(final String uuid) throws Exception {
@@ -65,20 +88,23 @@ public class RemoteOpenmrsSearchDelegate {
 		Response response = okHttpClient.newCall(fetchRequest).execute();
 		
 		if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
-			try {
-				SimpleObject object = SimpleObject.parseJson(response.body().string());
-				return object;
-			}
-			catch (IOException ioe) {
-				LOGGER.error("Error processing response {} from server", response.body().string());
-				LOGGER.error(ioe.getMessage());
-				throw new RemoteOpenmrsSearchException(ioe.getMessage(), HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			}
+			return parseServerResponse(response);
 		} else if (response.code() == HttpServletResponse.SC_NOT_FOUND) {
 			LOGGER.debug("Patient with uuid {} does not exist on the server {}", uuid, remoteServerUrl);
 			return null;
 		}
 		LOGGER.error("Response from {} server: {}", response.request().url().toString(), response.body().string());
 		throw new RemoteOpenmrsSearchException(response.body().string(), response.code());
+	}
+	
+	private SimpleObject parseServerResponse(Response response) {
+		try {
+			SimpleObject object = SimpleObject.parseJson(response.body().string());
+			return object;
+		}
+		catch (IOException ioe) {
+			LOGGER.error("Error processing response from server", ioe);
+			throw new RemoteOpenmrsSearchException(ioe.getMessage(), HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
 	}
 }
