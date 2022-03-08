@@ -309,6 +309,35 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 	}
 	
 	@Test
+	public void importUserFromRemoteOpenmrsServerShouldImportSelfReferencingUser() throws Exception {
+		final String SELF_REFERENCING_USER_JSON = IOUtils.toString(getClass().getResourceAsStream(
+		    "/openmrs-rest/self_referencing_user.json"));
+		final String SINGLE_PERSON = IOUtils.toString(getClass().getResourceAsStream("/openmrs-rest/single_person.json"));
+		
+		SimpleObject userObject = SimpleObject.parseJson(SELF_REFERENCING_USER_JSON);
+		SimpleObject personObject = SimpleObject.parseJson(SINGLE_PERSON);
+		
+		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
+		        .addHeader("Content-Type", "application/json").setBody(SELF_REFERENCING_USER_JSON));
+		
+		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
+		        .addHeader("Content-Type", "application/json").setBody(SINGLE_PERSON));
+		
+		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
+		        .addHeader("Content-Type", "application/json").setBody(PERSON_NAMES_JSON));
+		
+		String userUuid = userObject.get("uuid");
+		
+		helperService.importUserFromRemoteOpenmrsServer(userUuid);
+		
+		User importedUser = userService.getUserByUuid(userUuid);
+		assertNotNull(importedUser.getUserId());
+		assertEquals(importedUser, importedUser.getCreator());
+		assertEquals(importedUser, importedUser.getPerson().getPersonCreator());
+		assertEquals(importedUser, importedUser.getPerson().getPersonChangedBy());
+	}
+	
+	@Test
 	public void importLocationFromRemoteOpenmrsServerShouldImportLocationWithoutParent() throws IOException,
 	        InterruptedException {
 		final String LOCATION = IOUtils.toString(getClass().getResourceAsStream(OPENMRS_LOCATION_FILE));
@@ -385,6 +414,5 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
 		        .addHeader("Content-Type", "application/json").setBody(PERSON_ATTRIBUTES_JSON));
-		
 	}
 }

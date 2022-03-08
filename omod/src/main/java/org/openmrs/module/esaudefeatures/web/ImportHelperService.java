@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -74,8 +75,10 @@ public class ImportHelperService {
 	
 	private UserService userService;
 	
-	//TODO: Not fully implemented as of now (This is mainly to take care of circular user dependencies, e.g creator, changedBy, retiredBy)
-	private ConcurrentMap<String, User> importedUsersCache = new ConcurrentHashMap<String, User>();
+	private ConcurrentMap<User, Map<String, Object>> importedUsersCache = new ConcurrentHashMap<>();
+	
+	//A map of user uuid to person uuid.
+	private ConcurrentMap<User, Map<String, String>> usersToBeUpdatedLater = new ConcurrentHashMap<>();
 	
 	public static final List<String> IGNORED_PERSON_ATTRIBUTE_TYPES = new ArrayList<String>();
 	
@@ -83,6 +86,10 @@ public class ImportHelperService {
 		// Health center is not imported to allow for a new value to be propagated.
 		IGNORED_PERSON_ATTRIBUTE_TYPES.add("8d87236c-c2cc-11de-8d13-0010c6dffd0f");
 	}
+	
+	private Person dummyPerson;
+	
+	private User placeholderUser;
 	
 	@Autowired
 	public void setConceptService(ConceptService conceptService) {
@@ -133,7 +140,7 @@ public class ImportHelperService {
 		String errorMessage = String.format("Could not fetch identifiers for patient with uuid %s from server %s",
 		    patient.getUuid(), urlUserPass[0]);
 		
-		Map<String, String> queryParams = new HashMap<String, String>();
+		Map<String, String> queryParams = new HashMap<>();
 		queryParams.put("v", "full");
 		
 		Request identifiersRequest = Utils.createBasicAuthGetRequest(urlUserPass[0], urlUserPass[1], urlUserPass[2],
@@ -156,7 +163,7 @@ public class ImportHelperService {
 			if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
 				SimpleObject responseBody = SimpleObject.parseJson(response.body().string());
 				List<Map> identifiersMaps = responseBody.get("results");
-				Set<PatientIdentifier> identifiers = new TreeSet<PatientIdentifier>();
+				Set<PatientIdentifier> identifiers = new TreeSet<>();
 				
 				for (Map identifierMap : identifiersMaps) {
 					if (!(Boolean) identifierMap.get("voided")) {
@@ -193,6 +200,49 @@ public class ImportHelperService {
 			LOGGER.error("Error when executing http request {} ", identifiersRequest);
 			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
+	}
+	
+	public Person importPersonFromRemoteOpenmrsServer(String personUuid) {
+		String[] urlUserPass = getRemoteOpenmrsHostUsernamePassword();
+		String message = String.format("Could not fetch person with uuid %s from server %s", personUuid, urlUserPass[0]);
+		String[] locationPathSegments = { "ws/rest/v1/person", personUuid };
+		Map<String, String> queryParams = new HashMap<>();
+		queryParams.put("v", "full");
+		
+		Request personRequest = Utils.createBasicAuthGetRequest(urlUserPass[0], urlUserPass[1], urlUserPass[2],
+		    locationPathSegments, queryParams);
+		boolean skipHostnameVerification = Boolean.parseBoolean(adminService.getGlobalProperty(
+		    REMOTE_SERVER_SKIP_HOSTNAME_VERIFICATION_GP, "FALSE"));
+		OkHttpClient httpClient;
+		try {
+			httpClient = Utils.createOkHttpClient(skipHostnameVerification);
+		}
+		catch (Exception e) {
+			LOGGER.error("Could not create http client", e);
+			throw new RemoteOpenmrsSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
+		
+		Response response;
+		try {
+			response = httpClient.newCall(personRequest).execute();
+		}
+		catch (IOException e) {
+			LOGGER.error("Error when executing http request {}", personRequest, e);
+			throw new RemoteOpenmrsSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
+		
+		if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
+			try {
+				SimpleObject fetchedPersonObject = SimpleObject.parseJson(response.body().string());
+				Person person = getPersonFromOpenmrsRestRepresentation(fetchedPersonObject);
+				return personService.savePerson(person);
+			}
+			catch (IOException e) {
+				LOGGER.error("Error while reading response from server {}", urlUserPass[0], e);
+				throw new RemoteOpenmrsSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			}
+		}
+		throw new RemoteOpenmrsSearchException(response.message(), HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 	}
 	
 	public Person getPersonFromOpenmrsRestRepresentation(Map personMap) {
@@ -232,6 +282,8 @@ public class ImportHelperService {
 		if (personMap.get("attributes") != null && ((List) personMap.get("attributes")).size() > 0) {
 			updatePersonAttributes(person);
 		}
+		
+		updateAuditInfo(person, (Map) personMap.get("auditInfo"));
 		return person;
 	}
 	
@@ -250,7 +302,7 @@ public class ImportHelperService {
 		String errorMessage = String.format("Could not fetch and/or update %s for person with uuid %s from server %s",
 		    restSubResource, person.getUuid(), urlUserPass[0]);
 		
-		Map<String, String> queryParams = new HashMap<String, String>();
+		Map<String, String> queryParams = new HashMap<>();
 		queryParams.put("v", "full");
 		
 		Request namesRequest = Utils.createBasicAuthGetRequest(urlUserPass[0], urlUserPass[1], urlUserPass[2], pathSegments,
@@ -273,12 +325,11 @@ public class ImportHelperService {
 			if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
 				SimpleObject responseBody = SimpleObject.parseJson(response.body().string());
 				List<Map> propertyMaps = responseBody.get("results");
-				Set<T> properties = new TreeSet<T>();
+				Set<T> properties = new TreeSet<>();
 				
 				for (final Map propertyMap : propertyMaps) {
 					if (!(Boolean) propertyMap.get("voided")) {
 						final T personProperty = propretyClass.newInstance();
-						final PersonName personName = new PersonName();
 						ReflectionUtils.doWithFields(propretyClass, new ReflectionUtils.FieldCallback() {
 							
 							@Override
@@ -352,7 +403,7 @@ public class ImportHelperService {
 		    "Could not fetch and/or update attributes for person with uuid %s from server %s", person.getUuid(),
 		    urlUserPass[0]);
 		
-		Map<String, String> queryParams = new HashMap<String, String>();
+		Map<String, String> queryParams = new HashMap<>();
 		queryParams.put("v", "full");
 		
 		Request namesRequest = Utils.createBasicAuthGetRequest(urlUserPass[0], urlUserPass[1], urlUserPass[2], pathSegments,
@@ -431,16 +482,30 @@ public class ImportHelperService {
 	}
 	
 	public void updateAuditInfo(Auditable openmrsObject, Map<String, Object> auditInfo) {
+		if (openmrsObject instanceof Person) {
+			((Person) openmrsObject).setPersonDateCreated(parseDateString((String) auditInfo.get("dateCreated")));
+			((Person) openmrsObject).setPersonDateChanged(parseDateString((String) auditInfo.get("dateChanged")));
+		} else {
+			openmrsObject.setDateCreated(parseDateString((String) auditInfo.get("dateCreated")));
+			openmrsObject.setDateChanged(parseDateString((String) auditInfo.get("dateChanged")));
+		}
+		if (openmrsObject instanceof BaseOpenmrsMetadata) {
+			((BaseOpenmrsMetadata) openmrsObject).setDateRetired(parseDateString((String) auditInfo.get("dateRetired")));
+		}
+		
 		Map creatorMap = (Map) auditInfo.get("creator");
 		if (creatorMap != null) {
 			String creatorUuid = (String) creatorMap.get("uuid");
 			User creator = userService.getUserByUuid(creatorUuid);
-			
 			if (creator == null) {
 				creator = importUserFromRemoteOpenmrsServer(creatorUuid);
 			}
-			openmrsObject.setCreator(creator);
-			openmrsObject.setDateCreated(parseDateString((String) auditInfo.get("dateCreated")));
+			
+			if (openmrsObject instanceof Person) {
+				((Person) openmrsObject).setPersonCreator(creator);
+			} else {
+				openmrsObject.setCreator(creator);
+			}
 		}
 		
 		Map changerMap = (Map) auditInfo.get("changedBy");
@@ -451,8 +516,12 @@ public class ImportHelperService {
 			if (changer == null) {
 				changer = importUserFromRemoteOpenmrsServer(changerUuid);
 			}
-			openmrsObject.setChangedBy(changer);
-			openmrsObject.setDateChanged(parseDateString((String) auditInfo.get("dateChanged")));
+			
+			if (openmrsObject instanceof Person) {
+				((Person) openmrsObject).setPersonChangedBy(changer);
+			} else {
+				openmrsObject.setChangedBy(changer);
+			}
 		}
 		
 		if (openmrsObject instanceof BaseOpenmrsMetadata) {
@@ -468,20 +537,110 @@ public class ImportHelperService {
 				metadata.setRetiredBy(retirer);
 				metadata.setRetired(true);
 				metadata.setRetireReason((String) retireeMap.get("retireReason"));
-				metadata.setDateRetired(parseDateString((String) auditInfo.get("dateRetired")));
 			}
 		}
 	}
 	
+	private int importUserCallCount = 0;
+	
 	public User importUserFromRemoteOpenmrsServer(String userUuid) {
-		if (importedUsersCache.containsKey(userUuid)) {
-			return importedUsersCache.get(userUuid);
+		++importUserCallCount;
+		LOGGER.info("Importing user with uuid {}", userUuid);
+		for(Map.Entry<User, Map<String, Object>> entry: importedUsersCache.entrySet()) {
+			if (userUuid.equals(entry.getKey().getUuid())) {
+				System.out.println("Cache HIT");
+				// We need to persist this user already, with a dummy person associated with it.
+				// Create a place holder user for creator/changer/retiree if provided and not yet filled
+				Person dummyPerson = new Person();
+				User cachedUser = entry.getKey();
+				Map cachedUserObject = entry.getValue();
+				if(cachedUser.getPerson() == null && cachedUserObject.containsKey("person")) {
+					cachedUser.setPerson(dummyPerson);
+					if(usersToBeUpdatedLater.containsKey(cachedUser)) {
+						usersToBeUpdatedLater.get(cachedUser).put("personUuid", (String) ((Map) cachedUserObject.get("person")).get("uuid"));
+					} else {
+						Map<String, String> actualUuidsOfFieldsToUpdate = new HashMap<>();
+						actualUuidsOfFieldsToUpdate.put("personUuid", (String) ((Map) cachedUserObject.get("person")).get("uuid"));
+						usersToBeUpdatedLater.put(cachedUser, actualUuidsOfFieldsToUpdate);
+					}
+				}
+
+				//Audit info
+				Map userAuditInfo = (Map) cachedUserObject.get("auditInfo");
+				if(userAuditInfo.get("creator") != null && cachedUser.getCreator() == null) {
+					String creatorUuid = (String) ((Map) userAuditInfo.get("creator")).get("uuid");
+					User creator = userService.getUserByUuid(creatorUuid);
+					if (creator == null) {
+						cachedUser.setCreator(getPlaceholderUser());
+						if(usersToBeUpdatedLater.containsKey(cachedUser)) {
+							usersToBeUpdatedLater.get(cachedUser).put("creatorUuid", (String) ((Map) userAuditInfo.get("creator")).get("uuid"));
+						} else {
+							Map<String, String> actualUuidsOfFieldsToUpdate = new HashMap<>();
+							actualUuidsOfFieldsToUpdate.put("creatorUuid", (String) ((Map) userAuditInfo.get("creator")).get("uuid"));
+							usersToBeUpdatedLater.put(cachedUser, actualUuidsOfFieldsToUpdate);
+						}
+					} else {
+						cachedUser.setCreator(creator);
+						if(usersToBeUpdatedLater.containsKey(cachedUser)
+								&& creatorUuid.equals(usersToBeUpdatedLater.get(cachedUser).get("creatorUuid"))) {
+							usersToBeUpdatedLater.get(cachedUser).remove("creatorUuid");
+						}
+					}
+				}
+
+				if(userAuditInfo.get("changedBy") != null && cachedUser.getChangedBy() == null) {
+					String changerUuid = (String) ((Map) userAuditInfo.get("changedBy")).get("uuid");
+					User changer = userService.getUserByUuid(changerUuid);
+					if (changer == null) {
+						cachedUser.setChangedBy(getPlaceholderUser());
+						if(usersToBeUpdatedLater.containsKey(cachedUser)) {
+							usersToBeUpdatedLater.get(cachedUser).put("changerUuid", changerUuid);
+						} else {
+							Map<String, String> actualUuidsOfFieldsToUpdate = new HashMap<>();
+							actualUuidsOfFieldsToUpdate.put("changerUuid", changerUuid);
+							usersToBeUpdatedLater.put(cachedUser, actualUuidsOfFieldsToUpdate);
+						}
+					} else {
+						cachedUser.setChangedBy(changer);
+						if(usersToBeUpdatedLater.containsKey(cachedUser)
+								&& changerUuid.equals(usersToBeUpdatedLater.get(cachedUser).get("changerUuid"))) {
+							usersToBeUpdatedLater.get(cachedUser).remove("changerUuid");
+						}
+					}
+				}
+
+				if(userAuditInfo.get("retiredBy") != null && cachedUser.getRetiredBy() == null) {
+					String retireeUuid = (String) ((Map) userAuditInfo.get("retiredBy")).get("uuid");
+					User retiree = userService.getUserByUuid(retireeUuid);
+					if (retiree == null) {
+						cachedUser.setRetiredBy(getPlaceholderUser());
+						if(usersToBeUpdatedLater.containsKey(cachedUser)) {
+							usersToBeUpdatedLater.get(cachedUser).put("retireeUuid", retireeUuid);
+						} else {
+							Map<String, String> actualUuidsOfFieldsToUpdate = new HashMap<>();
+							actualUuidsOfFieldsToUpdate.put("retireeUuid", retireeUuid);
+							usersToBeUpdatedLater.put(cachedUser, actualUuidsOfFieldsToUpdate);
+						}
+					} else {
+						cachedUser.setRetiredBy(retiree);
+						if(usersToBeUpdatedLater.containsKey(cachedUser)
+								&& retireeUuid.equals(usersToBeUpdatedLater.get(cachedUser).get("retireeUuid"))) {
+							usersToBeUpdatedLater.get(cachedUser).remove("retireeUuid");
+						}
+					}
+				}
+
+				importedUsersCache.remove(cachedUser);
+				--importUserCallCount;
+				return userService.createUser(cachedUser, UUID.randomUUID().toString());
+			}
 		}
+
 		String[] urlUserPass = getRemoteOpenmrsHostUsernamePassword();
 		String errorMessage = String.format("Could not fetch user with uuid %s from server %s", userUuid, urlUserPass[0]);
 		String[] pathSegments = { "ws/rest/v1/user", userUuid };
 		
-		Map<String, String> queryParams = new HashMap<String, String>();
+		Map<String, String> queryParams = new HashMap<>();
 		queryParams.put("v", "full");
 		
 		Request userRequest = Utils.createBasicAuthGetRequest(urlUserPass[0], urlUserPass[1], urlUserPass[2], pathSegments,
@@ -507,11 +666,13 @@ public class ImportHelperService {
 				user.setUuid((String) fetchedUser.get("uuid"));
 				user.setSystemId((String) fetchedUser.get("systemId"));
 				user.setUsername((String) fetchedUser.get("username"));
-				
-				Person person = personService.getPersonByUuid((String) ((Map) fetchedUser.get("person")).get("uuid"));
+
+				// Cache the user before calling import person because potentially this might need to import users too.
+				importedUsersCache.put(user, fetchedUser);
+				String personUuid = (String) ((Map) fetchedUser.get("person")).get("uuid");
+				Person person = personService.getPersonByUuid(personUuid);
 				if (person == null) {
-					person = getPersonFromOpenmrsRestRepresentation((Map) fetchedUser.get("person"));
-					person = personService.savePerson(person);
+					person = importPersonFromRemoteOpenmrsServer(personUuid);
 				}
 				user.setPerson(person);
 				
@@ -519,9 +680,43 @@ public class ImportHelperService {
 					user.setUserProperties((Map) fetchedUser.get("userProperties"));
 				}
 				
-				importedUsersCache.put(userUuid, user);
+
 				updateAuditInfo(user, (Map) fetchedUser.get("auditInfo"));
-				user = userService.createUser(user, "aldkldlala8040202dfewdaddl23423");
+				user = userService.createUser(user, "alDICKldlala8040202dfewdaddl23423");
+
+				// Update the placeholders if the method is the first call
+				if(--importUserCallCount == 0) {
+					if(usersToBeUpdatedLater.size() > 0) {
+						for(Map.Entry<User, Map<String, String>> entry: usersToBeUpdatedLater.entrySet()) {
+							User userToUpdate = entry.getKey();
+							for(Map.Entry<String, String> entryToUpdate: entry.getValue().entrySet()){
+								switch (entryToUpdate.getKey()) {
+									case "personUuid":
+										userToUpdate.setPerson(personService.getPersonByUuid(entryToUpdate.getValue()));
+										break;
+									case "creatorUuid":
+										userToUpdate.setCreator(userService.getUserByUuid(entryToUpdate.getValue()));
+										break;
+									case "changerUuid":
+										userToUpdate.setChangedBy(userService.getUserByUuid(entryToUpdate.getValue()));
+										break;
+									case "retireeUuid":
+										userToUpdate.setRetiredBy(userService.getUserByUuid(entryToUpdate.getValue()));
+										break;
+								}
+							}
+						}
+					}
+					usersToBeUpdatedLater.clear();
+					// Delete place holders & dummy.
+					if(placeholderUser != null) {
+						userService.purgeUser(placeholderUser);
+					}
+
+					if(dummyPerson != null) {
+						personService.purgePerson(dummyPerson);
+					}
+				}
 				return user;
 			}
 		}
@@ -536,7 +731,7 @@ public class ImportHelperService {
 		String[] urlUserPass = getRemoteOpenmrsHostUsernamePassword();
 		String message = String.format("Could not fetch location with uuid %s from server %s", locationUuid, urlUserPass[0]);
 		String[] locationPathSegments = { "ws/rest/v1/location", locationUuid };
-		Map<String, String> queryParams = new HashMap<String, String>();
+		Map<String, String> queryParams = new HashMap<>();
 		queryParams.put("v", "full");
 		
 		Request locRequest = Utils.createBasicAuthGetRequest(urlUserPass[0], urlUserPass[1], urlUserPass[2],
@@ -637,5 +832,28 @@ public class ImportHelperService {
 	public void updateOpenmrsPatientWithMPIData(Patient openmrsPatient, org.hl7.fhir.r4.model.Patient opencrPatient) {
 		//TODO: Implement this method to update the passed Openmrs Patient object with info from opencr patient
 		// Update names.
+	}
+	
+	private Person getDummyPerson() {
+		if (dummyPerson != null) {
+			return dummyPerson;
+		}
+		
+		dummyPerson = new Person();
+		dummyPerson.setUuid(UUID.randomUUID().toString());
+		return personService.savePerson(dummyPerson);
+	}
+	
+	private User getPlaceholderUser() {
+		if (placeholderUser != null) {
+			return placeholderUser;
+		}
+		
+		placeholderUser = new User();
+		placeholderUser.setSystemId("PLACE-HOLDER");
+		placeholderUser.setUuid(UUID.randomUUID().toString());
+		placeholderUser.setPerson(getDummyPerson());
+		placeholderUser.setCreator(userService.getUserByUsername("admin"));
+		return userService.createUser(placeholderUser, UUID.randomUUID().toString());
 	}
 }

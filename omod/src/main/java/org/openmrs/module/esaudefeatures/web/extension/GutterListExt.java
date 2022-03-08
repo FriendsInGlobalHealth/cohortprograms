@@ -1,6 +1,6 @@
 package org.openmrs.module.esaudefeatures.web.extension;
 
-import org.openmrs.module.esaudefeatures.web.controller.RemotePatientsController;
+import org.openmrs.module.esaudefeatures.web.controller.OpenmrsSearchController;
 import org.openmrs.module.web.extension.LinkExt;
 import org.openmrs.util.OpenmrsUtil;
 
@@ -14,7 +14,7 @@ public class GutterListExt extends LinkExt {
 	}
 	
 	public String getUrl() {
-		return RemotePatientsController.ALT_ROOT_PATH;
+		return OpenmrsSearchController.ALT_ROOT_PATH;
 	}
 	
 	/**

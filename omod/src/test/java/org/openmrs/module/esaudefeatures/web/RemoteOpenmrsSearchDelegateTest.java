@@ -82,7 +82,7 @@ public class RemoteOpenmrsSearchDelegateTest {
 		
 		RecordedRequest request = mockWebServer.takeRequest();
 		HttpUrl requestUrl = request.getRequestUrl();
-		assertEquals("Basic ".concat(Credentials.basic(USERNAME, PASSWORD)), request.getHeader("Authorization"));
+		assertEquals(Credentials.basic(USERNAME, PASSWORD), request.getHeader("Authorization"));
 		assertEquals("GET", request.getMethod());
 		assertTrue(request.getPath().startsWith(expectedFetchPath));
 		assertFalse(requestUrl.isHttps());
@@ -141,6 +141,7 @@ public class RemoteOpenmrsSearchDelegateTest {
 		
 		assertEquals(2, requestUrl.querySize());
 		assertTrue(requestUrl.queryParameter("q").equals(SEARCH_TEXT));
+		assertEquals(Credentials.basic(USERNAME, PASSWORD), request.getHeader("Authorization"));
 	}
 	
 	@Test(expected = RemoteOpenmrsSearchException.class)

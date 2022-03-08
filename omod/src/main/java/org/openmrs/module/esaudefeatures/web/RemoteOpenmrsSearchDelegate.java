@@ -4,12 +4,15 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.apache.commons.lang.NotImplementedException;
+import org.openmrs.Patient;
 import org.openmrs.api.AdministrationService;
+import org.openmrs.api.PatientService;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -32,6 +35,8 @@ public class RemoteOpenmrsSearchDelegate {
 	
 	private ImportHelperService helperService;
 	
+	private PatientService patientService;
+	
 	@Autowired
 	public void setAdminService(AdministrationService adminService) {
 		this.adminService = adminService;
@@ -40,6 +45,20 @@ public class RemoteOpenmrsSearchDelegate {
 	@Autowired
 	public void setHelperService(ImportHelperService helperService) {
 		this.helperService = helperService;
+	}
+	
+	@Autowired
+	public void setPatientService(PatientService patientService) {
+		this.patientService = patientService;
+	}
+	
+	@Transactional
+	public Patient importPatientWithUuid(String patientUuid) throws Exception {
+		LOGGER.debug("Importing patient with uuid {}", patientUuid);
+		SimpleObject patientObject = getRemotePatientByUuid(patientUuid);
+		Patient patient = helperService.getPatientFromOpenmrsRestPayload(patientObject);
+		patient = patientService.savePatient(patient);
+		return patient;
 	}
 	
 	public SimpleObject searchPatients(final String searchText) throws Exception {
@@ -64,7 +83,8 @@ public class RemoteOpenmrsSearchDelegate {
 		if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
 			return parseServerResponse(response);
 		}
-		String errorMessage = String.format("Error fetching response from server %s", remoteServerUrl);
+		String errorMessage = String.format("Error fetching response from server %s (%s)", remoteServerUrl,
+		    response.message());
 		LOGGER.error(errorMessage);
 		throw new RemoteOpenmrsSearchException(errorMessage, response.code());
 	}
@@ -93,8 +113,10 @@ public class RemoteOpenmrsSearchDelegate {
 			LOGGER.debug("Patient with uuid {} does not exist on the server {}", uuid, remoteServerUrl);
 			return null;
 		}
-		LOGGER.error("Response from {} server: {}", response.request().url().toString(), response.body().string());
-		throw new RemoteOpenmrsSearchException(response.body().string(), response.code());
+		String errorMessage = String.format("Error fetching response from server %s (%s)", remoteServerUrl,
+		    response.message());
+		LOGGER.error(errorMessage);
+		throw new RemoteOpenmrsSearchException(errorMessage, response.code());
 	}
 	
 	private SimpleObject parseServerResponse(Response response) {

@@ -1,23 +1,29 @@
 package org.openmrs.module.esaudefeatures.web.controller;
 
 import org.openmrs.Location;
-import org.openmrs.annotation.Authorized;
-import org.openmrs.api.APIException;
+import org.openmrs.Patient;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.LocationService;
+import org.openmrs.api.PatientService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.esaudefeatures.web.ImportHelperService;
+import org.openmrs.module.esaudefeatures.web.RemoteOpenmrsSearchDelegate;
+import org.openmrs.module.esaudefeatures.web.RemoteOpenmrsSearchException;
 import org.openmrs.module.esaudefeatures.web.Utils;
+import org.openmrs.module.webservices.rest.SimpleObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.List;
+import javax.servlet.http.HttpServletResponse;
 
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.IMPORTED_PATIENT_LOCATION_UUID_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_PASSWORD_GP;
@@ -30,18 +36,23 @@ import static org.openmrs.util.OpenmrsConstants.OPENMRS_VERSION_SHORT;
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 8/5/21.
  */
 @Controller("esaudefeatures.remotePatientsController")
-@RequestMapping({ RemotePatientsController.ROOT_PATH, RemotePatientsController.ALT_ROOT_PATH })
-public class RemotePatientsController {
+public class OpenmrsSearchController {
 	
 	private AdministrationService adminService;
 	
+	private RemoteOpenmrsSearchDelegate delegate;
+	
+	private ImportHelperService helperService;
+	
+	private PatientService patientService;
+	
 	private LocationService locationService;
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(RemotePatientsController.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(OpenmrsSearchController.class);
 	
-	public static final String ROOT_PATH = "module/esaudefeatures/findRemotePatients.form";
+	public static final String ROOT_PATH = "/module/esaudefeatures/findRemotePatients.form";
 	
-	public static final String ALT_ROOT_PATH = "module/esaudefeatures/findRemotePatients.htm";
+	public static final String ALT_ROOT_PATH = "/module/esaudefeatures/findRemotePatients.htm";
 	
 	@Autowired
 	public void setAdminService(AdministrationService adminService) {
@@ -49,11 +60,26 @@ public class RemotePatientsController {
 	}
 	
 	@Autowired
+	public void setDelegate(RemoteOpenmrsSearchDelegate delegate) {
+		this.delegate = delegate;
+	}
+	
+	@Autowired
+	public void setHelperService(ImportHelperService helperService) {
+		this.helperService = helperService;
+	}
+	
+	@Autowired
+	public void setPatientService(PatientService patientService) {
+		this.patientService = patientService;
+	}
+	
+	@Autowired
 	public void setLocationService(LocationService locationService) {
 		this.locationService = locationService;
 	}
 	
-	@RequestMapping(method = RequestMethod.GET)
+	@RequestMapping(method = RequestMethod.GET, value = { ROOT_PATH, ALT_ROOT_PATH })
 	public ModelAndView searchRemoteForm(ModelAndView modelAndView) {
 		if (modelAndView == null) {
 			modelAndView = new ModelAndView();
@@ -115,8 +141,25 @@ public class RemotePatientsController {
 		return modelAndView;
 	}
 	
-	@RequestMapping(method = RequestMethod.POST, value = "module/esaudefeatures/remotePatients/openmrsPatient.json")
-	public String importPatient(@RequestParam String patientUuid) {
-		return "32413";
+	@RequestMapping(method = RequestMethod.GET, value = "/module/esaudefeatures/openmrsRemotePatients.json", produces = { "application/json " })
+	public SimpleObject remotePatientSearch(@RequestParam("text") String searchText) throws Exception {
+		return delegate.searchPatients(searchText);
+	}
+	
+	@ResponseStatus(HttpStatus.CREATED)
+	@RequestMapping(method = RequestMethod.POST, value = "/module/esaudefeatures/openmrsPatient.json")
+	public String importPatient(@RequestParam("uuid") String patientUuid) {
+		try {
+			Patient patient = delegate.importPatientWithUuid(patientUuid);
+			return patient.getPatientId().toString();
+		}
+		catch (Exception e) {
+			LOGGER.error("An error occured while importing patient with uuid {}", patientUuid, e);
+			if (e instanceof RemoteOpenmrsSearchException) {
+				throw (RemoteOpenmrsSearchException) e;
+			} else {
+				throw new RemoteOpenmrsSearchException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+			}
+		}
 	}
 }

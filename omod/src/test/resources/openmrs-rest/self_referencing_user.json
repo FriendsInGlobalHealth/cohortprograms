@@ -1,0 +1,141 @@
+{
+  "uuid": "85a05c5e-1e3d-11e0-acca-000c29d83bf2",
+  "display": "admin1",
+  "username": "admin1",
+  "systemId": "system-1",
+  "userProperties": {
+    "defaultLocale": "pt",
+    "notification": "internalOnly",
+    "loginAttempts": "0",
+    "showVerbose": "true",
+    "notificationAddress": "",
+    "showRetired": "false",
+    "defaultLocation": "1"
+  },
+  "person": {
+    "uuid": "e2bc25aa-1d5f-11e0-b929-000c29ad1d07",
+    "display": "Given Middle Family",
+    "gender": "M",
+    "age": null,
+    "birthdate": null,
+    "birthdateEstimated": false,
+    "dead": false,
+    "deathDate": null,
+    "causeOfDeath": null,
+    "preferredName": {
+      "uuid": "e2e4c50a-1d5f-11e0-b929-000c29ad1d07",
+      "display": "Given Middle Family",
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/e2bc25aa-1d5f-11e0-b929-000c29ad1d07/name/e2e4c50a-1d5f-11e0-b929-000c29ad1d07",
+          "resourceAlias": "name"
+        }
+      ]
+    },
+    "preferredAddress": null,
+    "attributes": [],
+    "voided": false,
+    "birthtime": null,
+    "deathdateEstimated": false,
+    "links": [
+      {
+        "rel": "self",
+        "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/e2bc25aa-1d5f-11e0-b929-000c29ad1d07",
+        "resourceAlias": "person"
+      },
+      {
+        "rel": "full",
+        "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/e2bc25aa-1d5f-11e0-b929-000c29ad1d07?v=full",
+        "resourceAlias": "person"
+      }
+    ],
+    "resourceVersion": "1.11"
+  },
+  "privileges": [],
+  "roles": [
+    {
+      "uuid": "8d94f852-c2cc-11de-8d13-0010c6dffd0f",
+      "display": "System Developer",
+      "name": "System Developer",
+      "description": "Developers of the OpenMRS .. have additional access to change fundamental structure of the database model.",
+      "retired": false,
+      "privileges": [],
+      "inheritedRoles": [],
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/role/8d94f852-c2cc-11de-8d13-0010c6dffd0f",
+          "resourceAlias": "role"
+        },
+        {
+          "rel": "full",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/role/8d94f852-c2cc-11de-8d13-0010c6dffd0f?v=full",
+          "resourceAlias": "role"
+        }
+      ],
+      "resourceVersion": "1.8"
+    }
+  ],
+  "allRoles": [
+    {
+      "uuid": "8d94f852-c2cc-11de-8d13-0010c6dffd0f",
+      "display": "System Developer",
+      "name": "System Developer",
+      "description": "Developers of the OpenMRS .. have additional access to change fundamental structure of the database model.",
+      "retired": false,
+      "privileges": [],
+      "inheritedRoles": [],
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/role/8d94f852-c2cc-11de-8d13-0010c6dffd0f",
+          "resourceAlias": "role"
+        },
+        {
+          "rel": "full",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/role/8d94f852-c2cc-11de-8d13-0010c6dffd0f?v=full",
+          "resourceAlias": "role"
+        }
+      ],
+      "resourceVersion": "1.8"
+    }
+  ],
+  "proficientLocales": [],
+  "secretQuestion": "",
+  "retired": false,
+  "auditInfo": {
+    "creator": {
+      "uuid": "85a05c5e-1e3d-11e0-acca-000c29d83bf2",
+      "display": "admin",
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/user/85a05c5e-1e3d-11e0-acca-000c29d83bf2",
+          "resourceAlias": "user"
+        }
+      ]
+    },
+    "dateCreated": "2005-01-01T00:00:00.000+0300",
+    "changedBy": {
+      "uuid": "0bc18050-e132-11de-babe-001e378eb67e",
+      "display": "userWithSha512Hash",
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/user/0bc18050-e132-11de-babe-001e378eb67e",
+          "resourceAlias": "user"
+        }
+      ]
+    },
+    "dateChanged": "2018-12-12T15:57:42.000+0300"
+  },
+  "links": [
+    {
+      "rel": "self",
+      "uri": "http://localhost:8083/openmrs/ws/rest/v1/user/85a05c5e-1e3d-11e0-acca-000c29d83bf2",
+      "resourceAlias": "user"
+    }
+  ],
+  "resourceVersion": "1.8"
+}

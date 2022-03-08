@@ -110,7 +110,7 @@ public class Utils {
 		
 		String credentials = Credentials.basic(username, password);
 		return new Request.Builder().url(urlBuilder.build()).get().header("Content-Length", "0")
-		        .header("Authorization", "Basic ".concat(credentials)).header("Accept", "application/json")
+		        .header("Authorization", credentials).header("Accept", "application/json")
 		        .header("Content-Type", "application/json").build();
 	}
 	

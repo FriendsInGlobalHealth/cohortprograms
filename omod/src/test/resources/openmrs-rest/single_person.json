@@ -1,0 +1,97 @@
+{
+  "uuid": "e2bc25aa-1d5f-11e0-b929-000c29ad1d07",
+  "display": "Given Middle Family",
+  "gender": "M",
+  "age": null,
+  "birthdate": null,
+  "birthdateEstimated": false,
+  "dead": false,
+  "deathDate": null,
+  "causeOfDeath": null,
+  "preferredName": {
+    "display": "Given Middle Family",
+    "uuid": "e2e4c50a-1d5f-11e0-b929-000c29ad1d07",
+    "givenName": "Given",
+    "middleName": "Middle",
+    "familyName": "Family",
+    "familyName2": null,
+    "voided": false,
+    "links": [
+      {
+        "rel": "self",
+        "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/e2bc25aa-1d5f-11e0-b929-000c29ad1d07/name/e2e4c50a-1d5f-11e0-b929-000c29ad1d07",
+        "resourceAlias": "name"
+      },
+      {
+        "rel": "full",
+        "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/e2bc25aa-1d5f-11e0-b929-000c29ad1d07/name/e2e4c50a-1d5f-11e0-b929-000c29ad1d07?v=full",
+        "resourceAlias": "name"
+      }
+    ],
+    "resourceVersion": "1.8"
+  },
+  "preferredAddress": null,
+  "names": [
+    {
+      "display": "Given Middle Family",
+      "uuid": "e2e4c50a-1d5f-11e0-b929-000c29ad1d07",
+      "givenName": "Given",
+      "middleName": "Middle",
+      "familyName": "Family",
+      "familyName2": null,
+      "voided": false,
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/e2bc25aa-1d5f-11e0-b929-000c29ad1d07/name/e2e4c50a-1d5f-11e0-b929-000c29ad1d07",
+          "resourceAlias": "name"
+        },
+        {
+          "rel": "full",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/e2bc25aa-1d5f-11e0-b929-000c29ad1d07/name/e2e4c50a-1d5f-11e0-b929-000c29ad1d07?v=full",
+          "resourceAlias": "name"
+        }
+      ],
+      "resourceVersion": "1.8"
+    }
+  ],
+  "addresses": [],
+  "attributes": [],
+  "voided": false,
+  "auditInfo": {
+    "creator": {
+      "uuid": "85a05c5e-1e3d-11e0-acca-000c29d83bf2",
+      "display": "admin1",
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/user/85a05c5e-1e3d-11e0-acca-000c29d83bf2",
+          "resourceAlias": "user"
+        }
+      ]
+    },
+    "dateCreated": "2005-01-01T00:00:00.000+0300",
+    "changedBy": {
+      "uuid": "85a05c5e-1e3d-11e0-acca-000c29d83bf2",
+      "display": "admin1",
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/user/85a05c5e-1e3d-11e0-acca-000c29d83bf2",
+          "resourceAlias": "user"
+        }
+      ]
+    },
+    "dateChanged": "2013-12-14T09:04:07.000+0300"
+  },
+  "birthtime": null,
+  "deathdateEstimated": false,
+  "links": [
+    {
+      "rel": "self",
+      "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/e2bc25aa-1d5f-11e0-b929-000c29ad1d07",
+      "resourceAlias": "person"
+    }
+  ],
+  "resourceVersion": "1.11"
+}

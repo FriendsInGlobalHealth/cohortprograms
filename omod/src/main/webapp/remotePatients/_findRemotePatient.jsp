@@ -27,8 +27,6 @@
 
     <script type="text/javascript">
         var localOpenmrsContextPath = '${pageContext.request.contextPath}';
-        var remoteServerUrl = "${remoteServerUrl}";
-        var base64encodedCredos = "${remoteServerAuth}";
         var importedPatientLocationUuid = "${importedPatientLocationUuid}";
         var patientTable = null;
         var lastSearchedText = null;
@@ -42,16 +40,6 @@
         const ERROR_DURING_SEARCH_MSG_PREFIX = '<openmrs:message code="esaudefeatures.remote.patients.search.error"/>'
         const IMPORT_CONFIRM_MSG_PREFIX = '<openmrs:message code="esaudefeatures.remote.patients.import.confirmation"/>';
         const REMOTE_SERVER_TYPE = "${remoteServerType}";
-        const NID_IDENTIFIER_TYPE_UUID = 'e2b966d0-1d5f-11e0-b929-000c29ad1d07';
-        const TELEFON_PERS_ATTR_TYPE_UUID = 'e2e3fd64-1d5f-11e0-b929-000c29ad1d07';
-        const TELEFON2_PERS_ATTR_TYPE_UUID = 'e6c97a9d-a77b-401f-b06e-81900e21ed1d';
-
-        // Health Center Attribute which is to be skipped during import
-        const SKIPPED_PERSON_ATTRIBUTES_DURING_IMPORT = [ '8d87236c-c2cc-11de-8d13-0010c6dffd0f'];
-
-        // Attribute type that will store the date of import for a patient record being imported
-        // Agreed to use the "Identificador definido localmente 10" whose uuid is below (i.e c649dae9-13b6-4c0d-9edc-6b1d304b13f4) for the purpose
-        const IMPORT_DATE_PATTRIB_UUID = 'c649dae9-13b6-4c0d-9edc-6b1d304b13f4';
 
         class HttpError extends Error {
             constructor(response) {
@@ -86,49 +74,7 @@
             }
         }
 
-        function searchPatientFromRemoteOpenmrsServer(searchText) {
-            $j('#search-busy-gif').css("visibility", "visible");
-            var requestHeaders = new Headers({
-                'Content-Type': 'application/json',
-                'Authorization': 'Basic ' + base64encodedCredos
-            });
-
-            var requestOptions = {
-                method: 'GET',
-                headers: requestHeaders,
-                redirect: 'follow'
-            };
-
-            var searchUrl = patientSearchUrl() + "&q=" + searchText;
-            if(searchController !== null) {
-                searchController.abort();
-            }
-            searchController = new AbortController();
-            requestOptions.signal = searchController.signal;
-            fetch(searchUrl, requestOptions)
-                .then(response => {
-                    if(response.status !== 200) {
-                        throw new HttpError(response);
-                    } else {
-                        return response.json()
-                    }
-                })
-                .then(data => {
-                    // Generate table.
-                    var results = [];
-                    if(Array.isArray(data.results) && data.results.length > 0) {
-                        foundPatientList = data.results;
-                        results = mapResults(data.results);
-                    }
-                    refreshTable(patientTable, results);
-                    $j('#search-busy-gif').css("visibility", "hidden");
-                }).catch(error => {
-                    searchErrorHandler(error);
-                });
-        }
-
-        // Using the backend to relay
-        function searchPatientFromRemoteOpencrServer(searchText) {
+        function searchPatientsFromRemoteServer(searchText) {
             $j('#search-busy-gif').css("visibility", "visible");
             var requestHeaders = new Headers({
                 'Content-Type': 'application/json',
@@ -138,16 +84,19 @@
             var requestOptions = {
                 method: 'GET',
                 headers: requestHeaders,
-                redirect: 'follow'
             };
+
+            if(REMOTE_SERVER_TYPE === 'OPENMRS') {
+                var patientSearchUrl = localOpenmrsContextPath + "/module/esaudefeatures/openmrsRemotePatients.json?text=" + searchText;
+            } else {
+                var patientSearchUrl = localOpenmrsContextPath + '/module/esaudefeatures/opencrRemotePatients.json?text=' + searchText;
+            }
 
             if(searchController !== null) {
                 searchController.abort();
             }
             searchController = new AbortController();
             requestOptions.signal = searchController.signal;
-
-            var patientSearchUrl = localOpenmrsContextPath + '/module/esaudefeatures/opencrRemotePatients.json?text=' + searchText;
             fetch(patientSearchUrl, requestOptions)
                 .then(response => {
                     if(response.status !== 200) {
@@ -159,36 +108,23 @@
                 .then(data => {
                     // Generate table.
                     var results = [];
-                    if(Array.isArray(data.entry) && data.entry.length > 0) {
-                        opencrMergedPatients = findMergedPatientsAndRemoveThemForOpencr(data.entry);
-                        foundPatientList = data.entry;
-                        results = mapResults(data.entry);
+                    if(REMOTE_SERVER_TYPE === 'OPENMRS') {
+                        if (Array.isArray(data) && data.length > 0) {
+                            foundPatientList = data;
+                            results = mapResults(data);
+                        }
+                    } else {
+                        if(Array.isArray(data.entry) && data.entry.length > 0) {
+                            opencrMergedPatients = findMergedPatientsAndRemoveThemForOpencr(data.entry);
+                            foundPatientList = data.entry;
+                            results = mapResults(data.entry);
+                        }
                     }
                     refreshTable(patientTable, results);
                     $j('#search-busy-gif').css("visibility", "hidden");
                 }).catch(error => {
                     searchErrorHandler(error);
                 });
-        }
-
-        function patientSearchUrl() {
-            var patientSearchUrl = remoteServerUrl;
-            if(remoteServerUrl !== null && !remoteServerUrl.endsWith("/")) {
-                patientSearchUrl += "/"
-            }
-
-            if(patientSearchUrl == null || patientSearchUrl == undefined) {
-                console.log("Remote Server URL is not set");
-                return;
-            }
-
-            if(REMOTE_SERVER_TYPE === 'OPENMRS') {
-                return patientSearchUrl + "ws/rest/v1/patient?v=full";
-            }
-
-            if(REMOTE_SERVER_TYPE === 'OPENCR') {
-                return patientSearchUrl + "ocrux/fhir/Patient?"
-            }
         }
 
         function findMergedPatientsAndRemoveThemForOpencr(entries) {
@@ -429,208 +365,6 @@
             });
         }
 
-        function createPatientPayload(restPatientPayload) {
-            var restPersonPayload = restPatientPayload.person;
-            var personPayload = {
-                uuid: restPersonPayload.uuid,
-                gender: restPersonPayload.gender,
-                birthdate: restPersonPayload.birthdate,
-                birthdateEstimated: restPersonPayload.birthdateEstimated
-            };
-
-            if(restPersonPayload.dead) {
-                Object.assign(personPayload, {
-                    dead: true,
-                    deathDate: restPersonPayload.deathDate,
-                    causeOfDeath: restPersonPayload.causeOfDeath
-                })
-            }
-
-            if(Array.isArray(restPersonPayload.names) && restPersonPayload.names.length > 0) {
-
-                personPayload.names = restPersonPayload.names.filter(name => !name.voided).map(name => {
-                    return {
-                        uuid: name.uuid,
-                        givenName: name.givenName,
-                        middleName: name.middleName,
-                        familyName: name.familyName,
-                    };
-                });
-            }
-
-            if(Array.isArray(restPersonPayload.addresses) && restPersonPayload.addresses.length > 0) {
-                var allKeys = Object.keys(restPersonPayload.addresses[0]);
-                var ignoredKeys = [ "uuid", "preferred", "voided", "display", "links", "resourceVersion" ];
-
-                ignoredKeys.forEach(ignored => {
-                    var index = allKeys.indexOf(ignored);
-                    allKeys.splice(index, 1);
-                });
-
-                var addressesToSend = restPersonPayload.addresses.filter(address => !address.voided);
-                if(addressesToSend.length > 0) {
-                    personPayload.addresses = [];
-                    addressesToSend.forEach(address => {
-
-                        var addressPayload = {
-                            uuid: address.uuid,
-                            preferred: address.preferred,
-                            voided: address.voided
-                        };
-
-
-                        allKeys.forEach(key => {
-                            if (address[key] !== null) {
-                                addressPayload[key] = address[key];
-                            }
-                        });
-
-                        personPayload.addresses.push(addressPayload);
-                    });
-                }
-            }
-
-            personPayload.attributes = [{
-                attributeType: IMPORT_DATE_PATTRIB_UUID,
-                value: new Date().toLocaleString('pt','%d-%b-%Y')
-            }];
-            if(Array.isArray(restPersonPayload.attributes) && restPersonPayload.attributes.length > 0) {
-                var attributesToSend = restPersonPayload.attributes.filter(attribute => !attribute.voided &&
-                                            !SKIPPED_PERSON_ATTRIBUTES_DURING_IMPORT.includes(attribute.attributeType.uuid));
-                if(attributesToSend.length > 0) {
-                    personPayload.attributes = personPayload.attributes.concat(attributesToSend.map(attribute => {
-                        var attrValue = attribute.value;
-                        if(typeof attribute.value === 'object' && attribute.value.uuid) {
-                            attrValue = attribute.value.uuid;
-                        }
-                        return {
-                            attributeType: attribute.attributeType.uuid,
-                            value: attrValue
-                        };
-                    }));
-                }
-            }
-
-            return {
-                person: personPayload,
-                identifiers: restPatientPayload.identifiers.filter(identifier => !identifier.voided).map(identifier => {
-                    var identifierPayload = {
-                        identifier: identifier.identifier,
-                        identifierType: identifier.identifierType.uuid,
-                        preferred: identifier.preferred
-                    };
-
-                    if(identifier.location && typeof identifier.location === 'object') {
-                        // Replace with the local imported patient location uuid
-                        identifierPayload.location = importedPatientLocationUuid;
-                    }
-                    return identifierPayload;
-                })
-            };
-        }
-
-        function createPatientPayloadForOpencr(fhirPayload) {
-            var patientResource = fhirPayload.resource;
-            var personPayload = {
-                uuid: patientResource.openmrsUuid,
-                gender: patientResource.gender,
-                birthdate: patientResource.birthdate,
-            };
-
-            if(patientResource.dead) {
-                Object.assign(personPayload, {
-                    dead: true,
-                    deathDate: patientResource.deathDate,
-                    causeOfDeath: patientResource.causeOfDeath
-                })
-            }
-
-            if(Array.isArray(patientResource.name) && patientResource.name.length > 0) {
-
-                personPayload.names = patientResource.name.map(name => {
-                    return {
-                        uuid: name.id,
-                        givenName: name.given[0],
-                        middleName: name.given[1] ? name.given[1] : '',
-                        familyName: name.family,
-                    };
-                });
-            }
-
-            if(Array.isArray(patientResource.address) && patientResource.address.length > 0) {
-                personPayload.addresses = [];
-                patientResource.address.forEach(addr => {
-
-                    var addressPayload = {
-                        uuid: addr.id,
-                    };
-
-                    if(Array.isArray(addr.line) && addr.line.length > 0) {
-                        for(var i=0; i < addr.line.length; i++) {
-                            addressPayload['address' + (i+1)] = addr.line[i];
-                        }
-                    }
-                    if(addr.district) {
-                        addressPayload.countyDistrict = addr.district;
-                    }
-
-                    if(addr.state) {
-                        addressPayload.stateProvince = addr.state;
-                    }
-                    if(addr.country) {
-                        addressPayload.country = addr.country;
-                    }
-
-                    personPayload.addresses.push(addressPayload);
-                });
-            }
-
-            personPayload.attributes = [{
-                attributeType: IMPORT_DATE_PATTRIB_UUID,
-                value: new Date().toLocaleString('pt','%d-%b-%Y')
-            }];
-
-            if(Array.isArray(patientResource.telecom) && patientResource.telecom.length > 0) {
-                personPayload.attributes.push({
-                    attributeType: TELEFON_PERS_ATTR_TYPE_UUID,
-                    value: patientResource.telecom[0].value
-                });
-
-                if(patientResource.telecom.length >= 2) {
-                    personPayload.attributes.push({
-                        attributeType: TELEFON2_PERS_ATTR_TYPE_UUID,
-                        value: patientResource.telecom[1].value
-                    });
-                }
-            }
-
-            // TODO: The identifier payload makes a lot of assumption, for 1 it assumes all identifiers will be already defined in OpenMRS which
-            // will obviosly not always be true. Also it assumes what identifier.system represents (this can easily change)
-            // A more sophisticated way to handle this is needed after learning all possible scenarios.
-            return {
-                person: personPayload,
-                identifiers: patientResource.identifier.filter(identi => !/openmrs/.test(identi.system)).map(identi => {
-                    var identifierType = null;
-                    if(identi.system.indexOf(':') >= 0) {
-                        // Split to get uuid of identifier type
-                        var components = identi.system.split(':');
-                        identifierType = components[components.length - 1];
-                    }
-
-                    var identifierPayload = {
-                        identifier: identi.value,
-                        identifierType: identifierType === null ? identi.system : identifierType,
-                    };
-
-                    if(identifierPayload.identifierType === NID_IDENTIFIER_TYPE_UUID) {
-                        // Replace with the local imported patient location uuid
-                        identifierPayload.location = importedPatientLocationUuid;
-                    }
-                    return identifierPayload;
-                })
-            };
-        }
-
         function refreshTable(oTable, data) {
             oTable.fnClearTable();
             oTable.fnAddData(data);
@@ -811,7 +545,7 @@
         }
 
         function importPatient(patientUuid, pressedButtonId) {
-            var _importWork = (patientName, payloadData) => {
+            var _importWork = (patientName, importPatientUrl) => {
                 var confirmationMessage = IMPORT_CONFIRM_MSG_PREFIX + "Patient: " + patientName;
                 var confirmed = window.confirm(confirmationMessage);
 
@@ -827,26 +561,16 @@
                     $j('#remote_patient_error_msg').css('visibility', 'hidden');
                     $j('#remote_patient_error_msg').html(IMPORT_ERROR_MSG_PREFIX);
 
-                    var localPatientRestUrl = localOpenmrsContextPath + '/ws/rest/v1/patient';
-
                     var requestHeaders = new Headers();
                     requestHeaders.append("Content-Type", "application/json");
-
-                    if(REMOTE_SERVER_TYPE === 'OPENMRS') {
-                        var rawPatient = JSON.stringify(createPatientPayload(payloadData));
-                    } else {
-                        // OpenCR
-                        var rawPatient = JSON.stringify(createPatientPayloadForOpencr(payloadData));
-                    }
 
                     var requestOptions = {
                         method: 'POST',
                         headers: requestHeaders,
-                        body: rawPatient,
                     };
 
                     var createPatientStatus = -1;
-                    fetch(localPatientRestUrl, requestOptions)
+                    fetch(importPatientUrl, requestOptions)
                         .then(response => {
                             createPatientStatus = response.status;
                             return response.json()
@@ -863,7 +587,10 @@
                                 // TODO: Maybe Remove the remote patient from the list.
                                 $j('#openmrs_msg').css('visibility', 'visible');
                                 $j(busyGifImgs).css('visibility', 'hidden');
-                                refreshTable(patientTable, mapResults(foundPatientList));
+
+                                // Redirect
+                                window.location = localOpenmrsContextPath + '/patientDashboard.form?patientId=' + patientResult;
+//                                refreshTable(patientTable, mapResults(foundPatientList));
                             }
                         })
                         .catch(trouble => {
@@ -876,20 +603,13 @@
 
             if(REMOTE_SERVER_TYPE === 'OPENMRS') {
                 var openmrsPatient = foundPatientList.find(patient => patient.uuid === patientUuid);
-                var identifierWithLocationExists = openmrsPatient.identifiers.filter(identifier => !identifier.voided).some(identifier => {
-                    return identifier.location && typeof identifier.location === 'object'
-                });
-
-                if(identifierWithLocationExists && (importedPatientLocationUuid === null || importedPatientLocationUuid === undefined ||
-                    importedPatientLocationUuid.length == 0)) {
-                    window.alert("Please set the EsaudeFeatures imported patient location uuid global property");
-                } else {
-                    _importWork(openmrsPatient.display, openmrsPatient);
-                }
+                var importPatientUrl = localOpenmrsContextPath + '/module/esaudefeatures/openmrsPatient.json?uuid=' + patientUuid;
+                _importWork(openmrsPatient.display, importPatientUrl);
             } else {
                 // OpenCR
                 var opencrPatient = foundPatientList.find(patient => patient.resource.id === patientUuid);
-                _importWork(opencrPatient.resource.fullname, opencrPatient);
+                var importPatientUrl = localOpenmrsContextPath + '/module/esaudefeatures/opencrPatient.json?uuid=' + patientUuid;
+                _importWork(opencrPatient.resource.fullname, importPatientUrl);
             }
         }
 
@@ -907,12 +627,7 @@
                     $j('#remote_patient_error_msg').css('visibility', 'hidden');
                     $j('#openmrs_msg').css('visibility', 'hidden');
                     if(searchText.length >= MIN_SEARCH_LENGTH) {
-
-                        if(REMOTE_SERVER_TYPE === 'OPENCR') {
-                            searchPatientFromRemoteOpencrServer(searchText);
-                        } else {
-                            searchPatientFromRemoteOpenmrsServer(searchText);
-                        }
+                        searchPatientsFromRemoteServer(searchText);
                     } else if(lastSearchedText !== null) {
                         if(searchController !== null) {
                             searchController.abort();
