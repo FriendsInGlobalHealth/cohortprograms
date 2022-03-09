@@ -76,10 +76,7 @@ public class ImportHelperService {
 	private UserService userService;
 	
 	private ConcurrentMap<User, Map<String, Object>> importedUsersCache = new ConcurrentHashMap<>();
-	
-	//A map of user uuid to person uuid.
-	private ConcurrentMap<User, Map<String, String>> usersToBeUpdatedLater = new ConcurrentHashMap<>();
-	
+
 	public static final List<String> IGNORED_PERSON_ATTRIBUTE_TYPES = new ArrayList<String>();
 	
 	static {
@@ -282,8 +279,11 @@ public class ImportHelperService {
 		if (personMap.get("attributes") != null && ((List) personMap.get("attributes")).size() > 0) {
 			updatePersonAttributes(person);
 		}
-		
-		updateAuditInfo(person, (Map) personMap.get("auditInfo"));
+
+		if(personMap.get("auditInfo") != null) {
+			updateAuditInfo(person, (Map) personMap.get("auditInfo"));
+		}
+
 		return person;
 	}
 	
@@ -512,7 +512,6 @@ public class ImportHelperService {
 		if (changerMap != null) {
 			String changerUuid = (String) changerMap.get("uuid");
 			User changer = userService.getUserByUuid(changerUuid);
-			
 			if (changer == null) {
 				changer = importUserFromRemoteOpenmrsServer(changerUuid);
 			}
@@ -548,21 +547,13 @@ public class ImportHelperService {
 		LOGGER.info("Importing user with uuid {}", userUuid);
 		for(Map.Entry<User, Map<String, Object>> entry: importedUsersCache.entrySet()) {
 			if (userUuid.equals(entry.getKey().getUuid())) {
-				System.out.println("Cache HIT");
-				// We need to persist this user already, with a dummy person associated with it.
+				LOGGER.debug("importedUserCache HIT");
+				// We need to persist this user already, probably with a dummy person associated with it.
 				// Create a place holder user for creator/changer/retiree if provided and not yet filled
-				Person dummyPerson = new Person();
 				User cachedUser = entry.getKey();
 				Map cachedUserObject = entry.getValue();
 				if(cachedUser.getPerson() == null && cachedUserObject.containsKey("person")) {
-					cachedUser.setPerson(dummyPerson);
-					if(usersToBeUpdatedLater.containsKey(cachedUser)) {
-						usersToBeUpdatedLater.get(cachedUser).put("personUuid", (String) ((Map) cachedUserObject.get("person")).get("uuid"));
-					} else {
-						Map<String, String> actualUuidsOfFieldsToUpdate = new HashMap<>();
-						actualUuidsOfFieldsToUpdate.put("personUuid", (String) ((Map) cachedUserObject.get("person")).get("uuid"));
-						usersToBeUpdatedLater.put(cachedUser, actualUuidsOfFieldsToUpdate);
-					}
+					cachedUser.setPerson(getDummyPerson());
 				}
 
 				//Audit info
@@ -572,19 +563,8 @@ public class ImportHelperService {
 					User creator = userService.getUserByUuid(creatorUuid);
 					if (creator == null) {
 						cachedUser.setCreator(getPlaceholderUser());
-						if(usersToBeUpdatedLater.containsKey(cachedUser)) {
-							usersToBeUpdatedLater.get(cachedUser).put("creatorUuid", (String) ((Map) userAuditInfo.get("creator")).get("uuid"));
-						} else {
-							Map<String, String> actualUuidsOfFieldsToUpdate = new HashMap<>();
-							actualUuidsOfFieldsToUpdate.put("creatorUuid", (String) ((Map) userAuditInfo.get("creator")).get("uuid"));
-							usersToBeUpdatedLater.put(cachedUser, actualUuidsOfFieldsToUpdate);
-						}
 					} else {
 						cachedUser.setCreator(creator);
-						if(usersToBeUpdatedLater.containsKey(cachedUser)
-								&& creatorUuid.equals(usersToBeUpdatedLater.get(cachedUser).get("creatorUuid"))) {
-							usersToBeUpdatedLater.get(cachedUser).remove("creatorUuid");
-						}
 					}
 				}
 
@@ -593,19 +573,8 @@ public class ImportHelperService {
 					User changer = userService.getUserByUuid(changerUuid);
 					if (changer == null) {
 						cachedUser.setChangedBy(getPlaceholderUser());
-						if(usersToBeUpdatedLater.containsKey(cachedUser)) {
-							usersToBeUpdatedLater.get(cachedUser).put("changerUuid", changerUuid);
-						} else {
-							Map<String, String> actualUuidsOfFieldsToUpdate = new HashMap<>();
-							actualUuidsOfFieldsToUpdate.put("changerUuid", changerUuid);
-							usersToBeUpdatedLater.put(cachedUser, actualUuidsOfFieldsToUpdate);
-						}
 					} else {
 						cachedUser.setChangedBy(changer);
-						if(usersToBeUpdatedLater.containsKey(cachedUser)
-								&& changerUuid.equals(usersToBeUpdatedLater.get(cachedUser).get("changerUuid"))) {
-							usersToBeUpdatedLater.get(cachedUser).remove("changerUuid");
-						}
 					}
 				}
 
@@ -614,19 +583,8 @@ public class ImportHelperService {
 					User retiree = userService.getUserByUuid(retireeUuid);
 					if (retiree == null) {
 						cachedUser.setRetiredBy(getPlaceholderUser());
-						if(usersToBeUpdatedLater.containsKey(cachedUser)) {
-							usersToBeUpdatedLater.get(cachedUser).put("retireeUuid", retireeUuid);
-						} else {
-							Map<String, String> actualUuidsOfFieldsToUpdate = new HashMap<>();
-							actualUuidsOfFieldsToUpdate.put("retireeUuid", retireeUuid);
-							usersToBeUpdatedLater.put(cachedUser, actualUuidsOfFieldsToUpdate);
-						}
 					} else {
 						cachedUser.setRetiredBy(retiree);
-						if(usersToBeUpdatedLater.containsKey(cachedUser)
-								&& retireeUuid.equals(usersToBeUpdatedLater.get(cachedUser).get("retireeUuid"))) {
-							usersToBeUpdatedLater.get(cachedUser).remove("retireeUuid");
-						}
 					}
 				}
 
@@ -679,36 +637,17 @@ public class ImportHelperService {
 				if (fetchedUser.containsKey("userProperties") && fetchedUser.get("userProperties") != null) {
 					user.setUserProperties((Map) fetchedUser.get("userProperties"));
 				}
-				
 
 				updateAuditInfo(user, (Map) fetchedUser.get("auditInfo"));
-				user = userService.createUser(user, "alDICKldlala8040202dfewdaddl23423");
 
-				// Update the placeholders if the method is the first call
+				// Unfortunately createUser effectively is treated as an update statement if the user already exists which means the API
+				// will update changedBy to currently logged in user and dateChanged to now.
+				// TODO: Need to find a workaound to address this limitation.
+				user = userService.createUser(user, UUID.randomUUID().toString());
+
+
+				// Delete the dummyPerson and placeholder user if the method is the first call
 				if(--importUserCallCount == 0) {
-					if(usersToBeUpdatedLater.size() > 0) {
-						for(Map.Entry<User, Map<String, String>> entry: usersToBeUpdatedLater.entrySet()) {
-							User userToUpdate = entry.getKey();
-							for(Map.Entry<String, String> entryToUpdate: entry.getValue().entrySet()){
-								switch (entryToUpdate.getKey()) {
-									case "personUuid":
-										userToUpdate.setPerson(personService.getPersonByUuid(entryToUpdate.getValue()));
-										break;
-									case "creatorUuid":
-										userToUpdate.setCreator(userService.getUserByUuid(entryToUpdate.getValue()));
-										break;
-									case "changerUuid":
-										userToUpdate.setChangedBy(userService.getUserByUuid(entryToUpdate.getValue()));
-										break;
-									case "retireeUuid":
-										userToUpdate.setRetiredBy(userService.getUserByUuid(entryToUpdate.getValue()));
-										break;
-								}
-							}
-						}
-					}
-					usersToBeUpdatedLater.clear();
-					// Delete place holders & dummy.
 					if(placeholderUser != null) {
 						userService.purgeUser(placeholderUser);
 					}

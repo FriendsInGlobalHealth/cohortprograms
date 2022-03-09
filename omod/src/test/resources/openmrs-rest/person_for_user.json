@@ -1,0 +1,147 @@
+{
+  "uuid": "c6b9d8f1-57f7-40d2-9ad7-f6aecd58bdcf",
+  "display": "Given Middle Family",
+  "gender": "M",
+  "age": null,
+  "birthdate": null,
+  "birthdateEstimated": false,
+  "dead": false,
+  "deathDate": null,
+  "causeOfDeath": null,
+  "preferredName": {
+    "uuid": "f0195cd5-616b-4828-99b8-f231ed6c7704",
+    "display": "Given Middle Family",
+    "links": [
+      {
+        "rel": "self",
+        "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/c6b9d8f1-57f7-40d2-9ad7-f6aecd58bdcf/name/f0195cd5-616b-4828-99b8-f231ed6c7704",
+        "resourceAlias": "name"
+      }
+    ]
+  },
+  "preferredAddress":{
+    "display": "Conselho Cristão de Moçambique",
+    "uuid": "6d42118e-8125-11e0-a437-00242122a7a8",
+    "preferred": true,
+    "address1": "Conselho Cristão de Moçambique",
+    "address2": "Mopeia-sede",
+    "cityVillage": null,
+    "stateProvince": "Zambezia",
+    "country": "Moçambique",
+    "postalCode": null,
+    "countyDistrict": "Mopeia",
+    "address3": null,
+    "address4": null,
+    "address5": "Eduardo Mondlane",
+    "address6": null,
+    "startDate": null,
+    "endDate": null,
+    "latitude": null,
+    "longitude": null,
+    "voided": false,
+    "links": [
+      {
+        "rel": "self",
+        "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/6d24f374-8125-11e0-a437-00242122a7a8/address/6d42118e-8125-11e0-a437-00242122a7a8",
+        "resourceAlias": "address"
+      },
+      {
+        "rel": "full",
+        "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/6d24f374-8125-11e0-a437-00242122a7a8/address/6d42118e-8125-11e0-a437-00242122a7a8?v=full",
+        "resourceAlias": "address"
+      }
+    ],
+    "resourceVersion": "1.8"
+  },
+  "names":[ {
+    "uuid": "f0195cd5-616b-4828-99b8-f231ed6c7704",
+    "display": "Given Middle Family",
+    "links": [
+      {
+        "rel": "self",
+        "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/c6b9d8f1-57f7-40d2-9ad7-f6aecd58bdcf/name/f0195cd5-616b-4828-99b8-f231ed6c7704",
+        "resourceAlias": "name"
+      }
+    ]
+  }],
+  "addresses":[{
+    "display": "Conselho Cristão de Moçambique",
+    "uuid": "6d42118e-8125-11e0-a437-00242122a7a8",
+    "preferred": true,
+    "address1": "Conselho Cristão de Moçambique",
+    "address2": "Mopeia-sede",
+    "cityVillage": null,
+    "stateProvince": "Zambezia",
+    "country": "Moçambique",
+    "postalCode": null,
+    "countyDistrict": "Mopeia",
+    "address3": null,
+    "address4": null,
+    "address5": "Eduardo Mondlane",
+    "address6": null,
+    "startDate": null,
+    "endDate": null,
+    "latitude": null,
+    "longitude": null,
+    "voided": false,
+    "links": [
+      {
+        "rel": "self",
+        "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/6d24f374-8125-11e0-a437-00242122a7a8/address/6d42118e-8125-11e0-a437-00242122a7a8",
+        "resourceAlias": "address"
+      },
+      {
+        "rel": "full",
+        "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/6d24f374-8125-11e0-a437-00242122a7a8/address/6d42118e-8125-11e0-a437-00242122a7a8?v=full",
+        "resourceAlias": "address"
+      }
+    ],
+    "resourceVersion": "1.8"
+  }],
+  "attributes": [{
+    "display": "Race = Red blooded homo sapien",
+    "uuid": "7d09b927-cd1b-4707-8fd9-37b632b1a858",
+    "value": "Red blooded homo sapien",
+    "attributeType": {
+      "uuid": "b3b6d540-a32e-44c7-91b3-292d97667518",
+      "display": "Race",
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://localhost:8083/openmrs/ws/rest/v1/personattributetype/b3b6d540-a32e-44c7-91b3-292d97667518",
+          "resourceAlias": "personattributetype"
+        }
+      ]
+    },
+    "voided": false,
+    "links": [
+      {
+        "rel": "self",
+        "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/6d24f374-8125-11e0-a437-00242122a7a8/attribute/7d09b927-cd1b-4707-8fd9-37b632b1a858",
+        "resourceAlias": "attribute"
+      },
+      {
+        "rel": "full",
+        "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/6d24f374-8125-11e0-a437-00242122a7a8/attribute/7d09b927-cd1b-4707-8fd9-37b632b1a858?v=full",
+        "resourceAlias": "attribute"
+      }
+    ],
+    "resourceVersion": "1.8"
+  }],
+  "voided": false,
+  "birthtime": null,
+  "deathdateEstimated": false,
+  "links": [
+    {
+      "rel": "self",
+      "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/c6b9d8f1-57f7-40d2-9ad7-f6aecd58bdcf",
+      "resourceAlias": "person"
+    },
+    {
+      "rel": "full",
+      "uri": "http://localhost:8083/openmrs/ws/rest/v1/person/c6b9d8f1-57f7-40d2-9ad7-f6aecd58bdcf?v=full",
+      "resourceAlias": "person"
+    }
+  ],
+  "resourceVersion": "1.11"
+}

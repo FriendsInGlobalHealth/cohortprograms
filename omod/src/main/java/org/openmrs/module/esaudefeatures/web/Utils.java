@@ -130,4 +130,8 @@ public class Utils {
 		}
 		return ret;
 	}
+	
+	public static String formatDate(Date date) {
+		return DATE_FORMARTS[1].format(date);
+	}
 }

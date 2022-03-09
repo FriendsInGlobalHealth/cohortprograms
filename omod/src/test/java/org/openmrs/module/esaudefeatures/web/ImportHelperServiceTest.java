@@ -58,18 +58,6 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 	
 	private static final String OPENMRS_USER2_FILE = "/openmrs-rest/user2.json";
 	
-	private static final String PATIENT_IDENTIFIERS_FILE = "/openmrs-rest/patient_identifiers.json";
-	
-	private static final String PERSON_NAMES_FILE = "/openmrs-rest/person_names.json";
-	
-	private static final String PERSON_NAMES2_FILE = "/openmrs-rest/person_names2.json";
-	
-	private static final String PERSON_ADDRESSES_FILE = "/openmrs-rest/person_addresses.json";
-	
-	private static final String PERSON_ADDRESSES2_FILE = "/openmrs-rest/person_addresses2.json";
-	
-	private static final String PERSON_ATTRIBUTES_FILE = "/openmrs-rest/person_attributes.json";
-	
 	private static final String USERS_TEST_FILE = "org/openmrs/api/include/UserServiceTest.xml";
 	
 	private static final String USERNAME = "user1";
@@ -78,17 +66,23 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 	
 	private MockWebServer mockWebServer;
 	
-	final String PATIENT_IDENTIFIERS_JSON = IOUtils.toString(getClass().getResourceAsStream(PATIENT_IDENTIFIERS_FILE));
+	final String PATIENT_IDENTIFIERS_JSON = IOUtils.toString(getClass().getResourceAsStream(
+	    "/openmrs-rest/patient_identifiers.json"));
 	
-	final String PERSON_NAMES_JSON = IOUtils.toString(getClass().getResourceAsStream(PERSON_NAMES_FILE));
+	final String PERSON_NAMES_JSON = IOUtils.toString(getClass().getResourceAsStream("/openmrs-rest/person_names.json"));
 	
-	final String PERSON_NAMES2_JSON = IOUtils.toString(getClass().getResourceAsStream(PERSON_NAMES2_FILE));
+	final String PERSON_NAMES2_JSON = IOUtils.toString(getClass().getResourceAsStream("/openmrs-rest/person_names2.json"));
 	
-	final String PERSON_ADDRESSES_JSON = IOUtils.toString(getClass().getResourceAsStream(PERSON_ADDRESSES_FILE));
+	final String PERSON_ADDRESSES_JSON = IOUtils.toString(getClass().getResourceAsStream(
+	    "/openmrs-rest/person_addresses.json"));
 	
-	final String PERSON_ADDRESSES2_JSON = IOUtils.toString(getClass().getResourceAsStream(PERSON_ADDRESSES2_FILE));
+	final String PERSON_ADDRESSES2_JSON = IOUtils.toString(getClass().getResourceAsStream(
+	    "/openmrs-rest/person_addresses2.json"));
 	
-	final String PERSON_ATTRIBUTES_JSON = IOUtils.toString(getClass().getResourceAsStream(PERSON_ATTRIBUTES_FILE));
+	final String PERSON_ATTRIBUTES_JSON = IOUtils.toString(getClass().getResourceAsStream(
+	    "/openmrs-rest/person_attributes.json"));
+	
+	final String PERSON_FOR_USER = IOUtils.toString(getClass().getResourceAsStream("/openmrs-rest/person_for_user.json"));
 	
 	@Mock
 	private AdministrationService adminService;
@@ -246,6 +240,9 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
 		        .addHeader("Content-Type", "application/json").setBody(USER));
 		
+		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
+		        .addHeader("Content-Type", "application/json").setBody(PERSON_FOR_USER));
+		
 		setUpMockWebServerToReturnPersonPropertiesInRequiredOrder();
 		
 		String userUuid = userObject.get("uuid");
@@ -271,6 +268,9 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
 		        .addHeader("Content-Type", "application/json").setBody(USER));
+		
+		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
+		        .addHeader("Content-Type", "application/json").setBody(PERSON_FOR_USER));
 		
 		setUpMockWebServerToReturnPersonPropertiesInRequiredOrder();
 		
