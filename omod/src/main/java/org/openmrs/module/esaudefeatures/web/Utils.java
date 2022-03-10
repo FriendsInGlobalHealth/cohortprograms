@@ -8,10 +8,12 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
+import java.security.SecureRandom;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 2/17/22.
@@ -133,5 +135,30 @@ public class Utils {
 	
 	public static String formatDate(Date date) {
 		return DATE_FORMARTS[1].format(date);
+	}
+	
+	public static String generatePassword() {
+		int length = 10;
+		
+		final char[] lowercase = "abcdefghijklmnopqrstuvwxyz".toCharArray();
+		final char[] uppercase = "ABCDEFGJKLMNPRSTUVWXYZ".toCharArray();
+		final char[] numbers = "0123456789".toCharArray();
+		final char[] allAllowed = "abcdefghijklmnopqrstuvwxyzABCDEFGJKLMNPRSTUVWXYZ0123456789".toCharArray();
+		
+		//Use cryptographically secure random number generator
+		Random random = new SecureRandom();
+		
+		StringBuilder password = new StringBuilder();
+		
+		for (int i = 0; i < length - 4; i++) {
+			password.append(allAllowed[random.nextInt(allAllowed.length)]);
+		}
+		
+		//Ensure password policy is met by inserting required random chars in random positions
+		password.insert(random.nextInt(password.length()), lowercase[random.nextInt(lowercase.length)]);
+		password.insert(random.nextInt(password.length()), uppercase[random.nextInt(uppercase.length)]);
+		password.insert(random.nextInt(password.length()), numbers[random.nextInt(numbers.length)]);
+		
+		return password.toString();
 	}
 }

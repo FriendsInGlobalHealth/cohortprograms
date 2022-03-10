@@ -52,6 +52,7 @@ import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_URL_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_USERNAME_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.REMOTE_SERVER_SKIP_HOSTNAME_VERIFICATION_GP;
+import static org.openmrs.module.esaudefeatures.web.Utils.generatePassword;
 import static org.openmrs.module.esaudefeatures.web.Utils.parseDateString;
 
 /**
@@ -62,7 +63,7 @@ import static org.openmrs.module.esaudefeatures.web.Utils.parseDateString;
 public class ImportHelperService {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(ImportHelperService.class);
-	
+	private static final String DUPLICATE_USERNAME_OR_SYSTEMID_SUFFIX = "-CENTRAL";
 	private ConceptService conceptService;
 	
 	private AdministrationService adminService;
@@ -590,7 +591,7 @@ public class ImportHelperService {
 
 				importedUsersCache.remove(cachedUser);
 				--importUserCallCount;
-				return userService.createUser(cachedUser, UUID.randomUUID().toString());
+				return saveUserEnsuringUniqueUsername(cachedUser);
 			}
 		}
 
@@ -643,7 +644,7 @@ public class ImportHelperService {
 				// Unfortunately createUser effectively is treated as an update statement if the user already exists which means the API
 				// will update changedBy to currently logged in user and dateChanged to now.
 				// TODO: Need to find a workaound to address this limitation.
-				user = userService.createUser(user, UUID.randomUUID().toString());
+				user = saveUserEnsuringUniqueUsername(user);
 
 
 				// Delete the dummyPerson and placeholder user if the method is the first call
@@ -780,6 +781,8 @@ public class ImportHelperService {
 		
 		dummyPerson = new Person();
 		dummyPerson.setUuid(UUID.randomUUID().toString());
+		dummyPerson.addName(new PersonName("EsaudeFeatures", "Dummy", "Person"));
+		dummyPerson.setGender("F");
 		return personService.savePerson(dummyPerson);
 	}
 	
@@ -789,10 +792,31 @@ public class ImportHelperService {
 		}
 		
 		placeholderUser = new User();
-		placeholderUser.setSystemId("PLACE-HOLDER");
+		placeholderUser.setSystemId("PLACE-HOLDER-FOR-CENTRAL");
 		placeholderUser.setUuid(UUID.randomUUID().toString());
 		placeholderUser.setPerson(getDummyPerson());
 		placeholderUser.setCreator(userService.getUserByUsername("admin"));
-		return userService.createUser(placeholderUser, UUID.randomUUID().toString());
+		return userService.createUser(placeholderUser, generatePassword());
+	}
+
+	private User saveUserEnsuringUniqueUsername(final User user) {
+		//If user_id is not null then it is an update.
+		if(user.getUserId() == null) {
+			if (user.getUsername() != null) {
+				User userWithSameUsernameOrSystemId = userService.getUserByUsername(user.getUsername());
+				if (userWithSameUsernameOrSystemId != null) {
+					user.setUsername(user.getUsername().concat(DUPLICATE_USERNAME_OR_SYSTEMID_SUFFIX));
+				}
+			}
+
+			if (user.getSystemId() != null) {
+				String systemIdSql = String.format("select * from users where system_id = '%s'", user.getSystemId());
+				List<List<Object>> lists = adminService.executeSQL(systemIdSql, true);
+				if (!lists.isEmpty() && !lists.get(0).isEmpty()) {
+					user.setSystemId(user.getSystemId().concat(DUPLICATE_USERNAME_OR_SYSTEMID_SUFFIX));
+				}
+			}
+		}
+		return userService.createUser(user, generatePassword());
 	}
 }

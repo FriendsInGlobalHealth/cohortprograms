@@ -4,9 +4,7 @@ import org.openmrs.Location;
 import org.openmrs.Patient;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.LocationService;
-import org.openmrs.api.PatientService;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.esaudefeatures.web.ImportHelperService;
 import org.openmrs.module.esaudefeatures.web.RemoteOpenmrsSearchDelegate;
 import org.openmrs.module.esaudefeatures.web.RemoteOpenmrsSearchException;
 import org.openmrs.module.esaudefeatures.web.Utils;
@@ -20,16 +18,15 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.http.HttpServletResponse;
-
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.IMPORTED_PATIENT_LOCATION_UUID_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_PASSWORD_GP;
-import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.REMOTE_SERVER_TYPE_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_URL_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_USERNAME_GP;
+import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.REMOTE_SERVER_TYPE_GP;
 import static org.openmrs.util.OpenmrsConstants.OPENMRS_VERSION_SHORT;
 
 /**
@@ -41,10 +38,6 @@ public class OpenmrsSearchController {
 	private AdministrationService adminService;
 	
 	private RemoteOpenmrsSearchDelegate delegate;
-	
-	private ImportHelperService helperService;
-	
-	private PatientService patientService;
 	
 	private LocationService locationService;
 	
@@ -62,16 +55,6 @@ public class OpenmrsSearchController {
 	@Autowired
 	public void setDelegate(RemoteOpenmrsSearchDelegate delegate) {
 		this.delegate = delegate;
-	}
-	
-	@Autowired
-	public void setHelperService(ImportHelperService helperService) {
-		this.helperService = helperService;
-	}
-	
-	@Autowired
-	public void setPatientService(PatientService patientService) {
-		this.patientService = patientService;
 	}
 	
 	@Autowired
@@ -147,7 +130,8 @@ public class OpenmrsSearchController {
 	}
 	
 	@ResponseStatus(HttpStatus.CREATED)
-	@RequestMapping(method = RequestMethod.POST, value = "/module/esaudefeatures/openmrsPatient.json")
+	@RequestMapping(method = RequestMethod.POST, value = "/module/esaudefeatures/openmrsPatient.json", produces = { "application/json" })
+	@ResponseBody
 	public String importPatient(@RequestParam("uuid") String patientUuid) {
 		try {
 			Patient patient = delegate.importPatientWithUuid(patientUuid);

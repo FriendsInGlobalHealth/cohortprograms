@@ -438,6 +438,7 @@
                     patientDetailsTable += '<tr><td colspan="2"><input type="button" id="import-button-' + patient.uuid + '" value="' +
                         '<openmrs:message code="esaudefeatures.remote.patients.remote.import.patient"/>' +
                         '" onclick="importPatient(\'' + patient.uuid + '\', this.id)"/>' +
+                            '<span id="patience-message-' + patient.uuid + '" style="visibility:hidden;">(<openmrs:message code="esaudefeatures.remote.patients.remote.import.bePatient"/>)</span>' +
                         '<img class="import-busy-gif" src="${pageContext.request.contextPath}/moduleResources/esaudefeatures/images/loading.gif" style="visibility:hidden;"/></td></tr>';
                 }
             }
@@ -553,11 +554,13 @@
                     console.log("Importing patient with uuid: " + patientUuid);
                     var pressedButton = document.getElementById(pressedButtonId);
                     var busyGifImgs = document.getElementsByClassName('import-busy-gif');
+                    var patienceMessage = document.getElementById('patience-message-' + patientUuid);
+                    $j(patienceMessage).css('visibility', 'visible');
                     $j(busyGifImgs).css('visibility', 'visible');
                     $j(pressedButton).prop('disabled', true);
 
                     $j('#openmrs_msg').css('visibility', 'hidden');
-                    $j('#openmrs_msg').html(IMPORT_SUCCESS_MSG_PREFIX + '(' + patientName + ')');
+                    $j('#openmrs_msg').html(IMPORT_SUCCESS_MSG_PREFIX + ' (' + patientName + ')');
                     $j('#remote_patient_error_msg').css('visibility', 'hidden');
                     $j('#remote_patient_error_msg').html(IMPORT_ERROR_MSG_PREFIX);
 
@@ -569,33 +572,40 @@
                         headers: requestHeaders,
                     };
 
-                    var createPatientStatus = -1;
+                    var importOk = false;
                     fetch(importPatientUrl, requestOptions)
                         .then(response => {
-                            createPatientStatus = response.status;
-                            return response.json()
-                        })
-                        .then(patientResult => {
-                            if (createPatientStatus !== 201) {
-                                if (patientResult.error) {
-                                    $j('#remote_patient_error_msg').append("<br/>" + JSON.stringify(patientResult, null, 2));
-                                }
-                                $j('#remote_patient_error_msg').css('visibility', 'visible');
-                                $j(busyGifImgs).css('visibility', 'hidden');
-                                $j(pressedButton).prop('disabled', false);
+                            importOk = response.ok;
+                            if(response.ok) {
+                                return response.json();
                             } else {
-                                // TODO: Maybe Remove the remote patient from the list.
+                                return response.text();
+                            }
+                        })
+                        .then(result => {
+                            if (importOk) {
                                 $j('#openmrs_msg').css('visibility', 'visible');
                                 $j(busyGifImgs).css('visibility', 'hidden');
-
+                                refreshTable(patientTable, mapResults(foundPatientList));
                                 // Redirect
-                                window.location = localOpenmrsContextPath + '/patientDashboard.form?patientId=' + patientResult;
-//                                refreshTable(patientTable, mapResults(foundPatientList));
+                                setTimeout(function (patientId) {
+                                    window.location = localOpenmrsContextPath + '/patientDashboard.form?patientId=' + patientId;
+                                }, 2000, result)
+
+                            } else {
+                                $j('#remote_patient_error_msg').append(result);
+                                $j('#remote_patient_error_msg').css('visibility', 'visible');
+                                $j(patienceMessage).css('visibility', 'hidden');
+                                $j(busyGifImgs).css('visibility', 'hidden');
+                                $j(pressedButton).prop('disabled', false);
                             }
                         })
                         .catch(trouble => {
+                            $j('#remote_patient_error_msg').append(trouble.toString());
                             $j('#remote_patient_error_msg').css('visibility', 'visible');
+                            $j(patienceMessage).css('visibility', 'hidden');
                             $j('.import-busy-gif').css('visibility', 'hidden');
+                            $j(pressedButton).prop('disabled', false);
                             console.log('Error while importing patient record: ', trouble)
                         });
                 }

@@ -15,8 +15,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.openmrs.api.AdministrationService;
-import org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants;
-import org.openmrs.module.webservices.rest.SimpleObject;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;

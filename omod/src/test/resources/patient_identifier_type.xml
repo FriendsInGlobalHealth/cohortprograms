@@ -1,0 +1,3 @@
+<dataset>
+    <patient_identifier_type patient_identifier_type_id="100" name="OpenMRS Identification Number" description="Unique number used in OpenMRS" format="" check_digit="false" creator="1" date_created="2005-09-22 00:00:00.0" required="false" retired="false" uuid="05a29f94-c0ed-11e2-94be-8c13b969e334"/>
+</dataset>
