@@ -63,7 +63,6 @@ import static org.openmrs.module.esaudefeatures.web.Utils.parseDateString;
 public class ImportHelperService {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(ImportHelperService.class);
-	private static final String DUPLICATE_USERNAME_OR_SYSTEMID_SUFFIX = "-CENTRAL";
 	private ConceptService conceptService;
 	
 	private AdministrationService adminService;
@@ -591,7 +590,7 @@ public class ImportHelperService {
 
 				importedUsersCache.remove(cachedUser);
 				--importUserCallCount;
-				return saveUserEnsuringUniqueUsername(cachedUser);
+				return userService.createUser(cachedUser, generatePassword());
 			}
 		}
 
@@ -644,7 +643,7 @@ public class ImportHelperService {
 				// Unfortunately createUser effectively is treated as an update statement if the user already exists which means the API
 				// will update changedBy to currently logged in user and dateChanged to now.
 				// TODO: Need to find a workaound to address this limitation.
-				user = saveUserEnsuringUniqueUsername(user);
+				user = userService.createUser(user, generatePassword());
 
 
 				// Delete the dummyPerson and placeholder user if the method is the first call
@@ -797,26 +796,5 @@ public class ImportHelperService {
 		placeholderUser.setPerson(getDummyPerson());
 		placeholderUser.setCreator(userService.getUserByUsername("admin"));
 		return userService.createUser(placeholderUser, generatePassword());
-	}
-
-	private User saveUserEnsuringUniqueUsername(final User user) {
-		//If user_id is not null then it is an update.
-		if(user.getUserId() == null) {
-			if (user.getUsername() != null) {
-				User userWithSameUsernameOrSystemId = userService.getUserByUsername(user.getUsername());
-				if (userWithSameUsernameOrSystemId != null) {
-					user.setUsername(user.getUsername().concat(DUPLICATE_USERNAME_OR_SYSTEMID_SUFFIX));
-				}
-			}
-
-			if (user.getSystemId() != null) {
-				String systemIdSql = String.format("select * from users where system_id = '%s'", user.getSystemId());
-				List<List<Object>> lists = adminService.executeSQL(systemIdSql, true);
-				if (!lists.isEmpty() && !lists.get(0).isEmpty()) {
-					user.setSystemId(user.getSystemId().concat(DUPLICATE_USERNAME_OR_SYSTEMID_SUFFIX));
-				}
-			}
-		}
-		return userService.createUser(user, generatePassword());
 	}
 }
