@@ -6,7 +6,7 @@ import org.openmrs.api.AdministrationService;
 import org.openmrs.api.LocationService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.esaudefeatures.web.RemoteOpenmrsSearchDelegate;
-import org.openmrs.module.esaudefeatures.web.RemoteOpenmrsSearchException;
+import org.openmrs.module.esaudefeatures.web.exception.RemoteOpenmrsSearchException;
 import org.openmrs.module.esaudefeatures.web.Utils;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.slf4j.Logger;

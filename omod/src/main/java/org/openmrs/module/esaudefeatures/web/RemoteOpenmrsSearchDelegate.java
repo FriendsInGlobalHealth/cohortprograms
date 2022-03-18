@@ -3,10 +3,10 @@ package org.openmrs.module.esaudefeatures.web;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.apache.commons.lang.NotImplementedException;
 import org.openmrs.Patient;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.PatientService;
+import org.openmrs.module.esaudefeatures.web.exception.RemoteOpenmrsSearchException;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +60,7 @@ public class RemoteOpenmrsSearchDelegate {
 		patient = patientService.savePatient(patient);
 		return patient;
 	}
-	
+
 	public SimpleObject searchPatients(final String searchText) throws Exception {
 		String[] urlUsernamePassword = helperService.getRemoteOpenmrsHostUsernamePassword();
 		String remoteServerUrl = urlUsernamePassword[0];

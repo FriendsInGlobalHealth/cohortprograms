@@ -1,4 +1,4 @@
-package org.openmrs.module.esaudefeatures.web;
+package org.openmrs.module.esaudefeatures.web.exception;
 
 /**
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 11/25/21.

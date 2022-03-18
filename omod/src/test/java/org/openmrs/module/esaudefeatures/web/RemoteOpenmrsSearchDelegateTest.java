@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.openmrs.api.AdministrationService;
+import org.openmrs.module.esaudefeatures.web.exception.RemoteOpenmrsSearchException;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
