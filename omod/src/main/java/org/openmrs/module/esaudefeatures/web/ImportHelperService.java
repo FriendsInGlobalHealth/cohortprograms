@@ -23,6 +23,8 @@ import org.openmrs.PersonAddress;
 import org.openmrs.PersonAttribute;
 import org.openmrs.PersonAttributeType;
 import org.openmrs.PersonName;
+import org.openmrs.Relationship;
+import org.openmrs.RelationshipType;
 import org.openmrs.User;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.ConceptService;
@@ -30,13 +32,15 @@ import org.openmrs.api.LocationService;
 import org.openmrs.api.PatientService;
 import org.openmrs.api.PersonService;
 import org.openmrs.api.UserService;
-import org.openmrs.api.context.Context;
 import org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants;
+import org.openmrs.module.esaudefeatures.web.exception.RemoteImportException;
+import org.openmrs.module.esaudefeatures.web.exception.RemoteOpenmrsSearchException;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
@@ -329,12 +333,12 @@ public class ImportHelperService {
 				patient.setIdentifiers(identifiers);
 			} else {
 				LOGGER.error("Error when executing http request {} ", identifiersRequest);
-				throw new RemoteOpenmrsSearchException(errorMessage, response.code());
+				throw new RemoteImportException(errorMessage, HttpStatus.valueOf(response.code()));
 			}
 		}
 		catch (IOException e) {
 			LOGGER.error("Error when executing http request {} ", identifiersRequest);
-			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 		}
 	}
 	
@@ -375,10 +379,10 @@ public class ImportHelperService {
 			}
 			catch (IOException e) {
 				LOGGER.error("Error while reading response from server {}", urlUserPass[0], e);
-				throw new RemoteOpenmrsSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				throw new RemoteImportException(message, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 			}
 		}
-		throw new RemoteOpenmrsSearchException(response.message(), HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		throw new RemoteImportException(response.message(), HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 	}
 	
 	public Person getPersonFromOpenmrsRestRepresentation(Map personMap) {
@@ -455,7 +459,7 @@ public class ImportHelperService {
 		}
 		catch (Exception e) {
 			LOGGER.error("Could not create an http client", null, e);
-			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			throw new RemoteImportException(errorMessage, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 		}
 		
 		Response response;
@@ -510,28 +514,28 @@ public class ImportHelperService {
 				method.invoke(person, properties);
 			} else {
 				LOGGER.error("Error when executing http request {} ", namesRequest);
-				throw new RemoteOpenmrsSearchException(errorMessage, response.code());
+				throw new RemoteImportException(errorMessage, HttpStatus.valueOf(response.code()));
 			}
 		}
 		catch (IOException e) {
 			LOGGER.error("Error when executing http request {} ", namesRequest);
-			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 		}
 		catch (IllegalAccessException e) {
 			LOGGER.error("Error while attempting instantiation of {}", propretyClass, e);
-			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 		}
 		catch (InstantiationException e) {
 			LOGGER.error("Error instantiating class {}", propretyClass, e);
-			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 		}
 		catch (NoSuchMethodException e) {
 			LOGGER.error("Method {} not found on Person class", setterMethod, e);
-			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 		}
 		catch (InvocationTargetException e) {
 			LOGGER.error("Error invoking method {} on instance of org.openmrs.Person class", setterMethod, e);
-			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 		}
 	}
 	
@@ -611,12 +615,12 @@ public class ImportHelperService {
 				person.setAttributes(personAttributes);
 			} else {
 				LOGGER.error("Error when executing http request {} ", namesRequest);
-				throw new RemoteOpenmrsSearchException(errorMessage, response.code());
+				throw new RemoteImportException(errorMessage, HttpStatus.valueOf(response.code()));
 			}
 		}
 		catch (IOException e) {
 			LOGGER.error("Error when executing http request {} ", namesRequest);
-			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 		}
 	}
 	
@@ -751,7 +755,7 @@ public class ImportHelperService {
 		}
 		catch (Exception e) {
 			LOGGER.error("Could not create an http client", null, e);
-			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 		}
 		
 		Response response;
@@ -800,9 +804,9 @@ public class ImportHelperService {
 		}
 		catch (IOException e) {
 			LOGGER.error("Error when executing http request {} ", userRequest, e);
-			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 		}
-		throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		throw new RemoteImportException(errorMessage, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 	}
 	
 	public Location importLocationFromRemoteOpenmrsServer(String locationUuid) {
@@ -822,7 +826,7 @@ public class ImportHelperService {
 		}
 		catch (Exception e) {
 			LOGGER.error("Could not create http client", e);
-			throw new RemoteOpenmrsSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			throw new RemoteImportException(message, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 		}
 		
 		Response response;
@@ -831,7 +835,7 @@ public class ImportHelperService {
 		}
 		catch (IOException e) {
 			LOGGER.error("Error when executing http request {}", locRequest, e);
-			throw new RemoteOpenmrsSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			throw new RemoteImportException(message, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 		}
 		
 		if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
@@ -883,7 +887,7 @@ public class ImportHelperService {
 			}
 			return locationService.saveLocation(fetchedLocation);
 		}
-		throw new RemoteOpenmrsSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		throw new RemoteImportException(message, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 	}
 	
 	public String[] getRemoteOpenmrsHostUsernamePassword() throws RemoteOpenmrsSearchException {
@@ -1023,7 +1027,89 @@ public class ImportHelperService {
 
 		return openmrsPatient;
 	}
-	
+
+	public List<Relationship> importRelationshipForPerson(Person person) {
+		String[] urlUserPass = getRemoteOpenmrsHostUsernamePassword();
+		String message = String.format("Could not fetch relationships for person with uuid %s from server %s", person.getUuid(), urlUserPass[0]);
+		String[] locationPathSegments = { "ws/rest/v1/relationship" };
+		Map<String, String> queryParams = new HashMap<>();
+		queryParams.put("v", "full");
+		queryParams.put("person", person.getUuid());
+
+		Request relationshipRequest = Utils.createBasicAuthGetRequest(urlUserPass[0], urlUserPass[1], urlUserPass[2],
+				locationPathSegments, queryParams);
+		boolean skipHostnameVerification = Boolean.parseBoolean(adminService.getGlobalProperty(
+				REMOTE_SERVER_SKIP_HOSTNAME_VERIFICATION_GP, "FALSE"));
+		OkHttpClient httpClient;
+		try {
+			httpClient = Utils.createOkHttpClient(skipHostnameVerification);
+		}
+		catch (Exception e) {
+			LOGGER.error("Could not create http client", e);
+			throw new RemoteOpenmrsSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
+
+		Response response;
+		try {
+			response = httpClient.newCall(relationshipRequest).execute();
+		}
+		catch (IOException e) {
+			LOGGER.error("Error when executing http request {}", relationshipRequest, e);
+			throw new RemoteOpenmrsSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
+
+		if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
+			final SimpleObject fetchedRelationshipsObject;
+			try {
+				fetchedRelationshipsObject = SimpleObject.parseJson(response.body().string());
+			}
+			catch (IOException e) {
+				LOGGER.error("Error while reading response from server {}", urlUserPass[0], e);
+				throw new RemoteOpenmrsSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			}
+
+			List<Relationship> importedRelationships = new ArrayList<>();
+			if(fetchedRelationshipsObject.containsKey("results") && !((List)fetchedRelationshipsObject.get("results")).isEmpty()) {
+				List<Map<String, Object>> relationshipObjects = fetchedRelationshipsObject.get("results");
+				for(Map<String, Object> relationshipObject: relationshipObjects) {
+					Map<String, Object> personAObject = (Map) relationshipObject.get("personA");
+					Map<String, Object> personBObject = (Map) relationshipObject.get("personB");
+					String relationshipTypeUuid = (String)((Map<String, Object>) relationshipObject.get("relationshipType")).get("uuid");
+					RelationshipType relationshipType = personService.getRelationshipTypeByUuid(relationshipTypeUuid);
+
+					Relationship relationship = new Relationship();
+					relationship.setRelationshipType(relationshipType);
+
+					if(person.getUuid().equals(personAObject.get("uuid"))) {
+						relationship.setPersonA(person);
+
+						String personBUuid = (String)personBObject.get("uuid");
+						Person personB = personService.getPersonByUuid(personBUuid);
+						if(personB == null) {
+							personB = importPersonFromRemoteOpenmrsServer(personBUuid);
+						}
+
+						relationship.setPersonB(personB);
+					} else {
+						relationship.setPersonB(person);
+
+						String personAUuid = (String)personBObject.get("uuid");
+						Person personA = personService.getPersonByUuid(personAUuid);
+						if(personA == null) {
+							personA = importPersonFromRemoteOpenmrsServer(personAUuid);
+						}
+
+						relationship.setPersonA(personA);
+					}
+					relationship = personService.saveRelationship(relationship);
+					importedRelationships.add(relationship);
+				}
+			}
+			return importedRelationships;
+		}
+		throw new RemoteImportException(message, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+	}
+
 	private Person getDummyPerson() {
 		if (dummyPerson != null) {
 			return dummyPerson;
