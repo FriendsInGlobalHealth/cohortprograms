@@ -4,6 +4,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.openmrs.Patient;
+import org.openmrs.Person;
+import org.openmrs.Relationship;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.PatientService;
 import org.openmrs.module.esaudefeatures.web.exception.RemoteOpenmrsSearchException;
@@ -17,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.REMOTE_SERVER_SKIP_HOSTNAME_VERIFICATION_GP;
@@ -60,7 +63,12 @@ public class RemoteOpenmrsSearchDelegate {
 		patient = patientService.savePatient(patient);
 		return patient;
 	}
-
+	
+	@Transactional
+	public List<Relationship> importRelationshipsForPerson(Person person) {
+		return helperService.importRelationshipsForPerson(person);
+	}
+	
 	public SimpleObject searchPatients(final String searchText) throws Exception {
 		String[] urlUsernamePassword = helperService.getRemoteOpenmrsHostUsernamePassword();
 		String remoteServerUrl = urlUsernamePassword[0];

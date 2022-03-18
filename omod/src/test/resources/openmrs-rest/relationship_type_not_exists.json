@@ -1,0 +1,158 @@
+{
+  "results": [
+    {
+      "uuid": "3028708f-f06a-4593-928a-9bca2e09fcb8",
+      "display": "Sandra is the Sibling of Donna",
+      "personA": {
+        "uuid": "ba1b19c2-3ed6-4f63-b8c0-f762dc8d7562",
+        "display": "Sandra Turner",
+        "gender": "F",
+        "age": 75,
+        "birthdate": "1946-04-21T00:00:00.000+0000",
+        "birthdateEstimated": false,
+        "dead": false,
+        "deathDate": null,
+        "causeOfDeath": null,
+        "preferredName": {
+          "uuid": "1cf857bb-6d54-48ad-8d79-ff2ffc1a6ad5",
+          "display": "Sandra Turner",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://qa-refapp.openmrs.org/openmrs/ws/rest/v1/person/ba91f0ff-c992-4da3-9e11-e013014fa52d/name/1cf857bb-6d54-48ad-8d79-ff2ffc1a6ad5",
+              "resourceAlias": "name"
+            }
+          ]
+        },
+        "preferredAddress": {
+          "uuid": "3c2388b8-83c0-4d49-80ed-5032aee85248",
+          "display": "Address15127",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://qa-refapp.openmrs.org/openmrs/ws/rest/v1/person/ba91f0ff-c992-4da3-9e11-e013014fa52d/address/3c2388b8-83c0-4d49-80ed-5032aee85248",
+              "resourceAlias": "address"
+            }
+          ]
+        },
+        "attributes": [],
+        "voided": false,
+        "birthtime": null,
+        "deathdateEstimated": false,
+        "links": [
+          {
+            "rel": "self",
+            "uri": "http://qa-refapp.openmrs.org/openmrs/ws/rest/v1/person/ba91f0ff-c992-4da3-9e11-e013014fa52d",
+            "resourceAlias": "person"
+          },
+          {
+            "rel": "full",
+            "uri": "http://qa-refapp.openmrs.org/openmrs/ws/rest/v1/person/ba91f0ff-c992-4da3-9e11-e013014fa52d?v=full",
+            "resourceAlias": "person"
+          }
+        ],
+        "resourceVersion": "1.11"
+      },
+      "relationshipType": {
+        "uuid": "8d91a210-c2cc-11de-8d13-0010c6dffd0f",
+        "display": "Sibling/Sibling",
+        "description": "Relationship between brother/sister, brother/brother, and sister/sister",
+        "aIsToB": "Sibling",
+        "bIsToA": "Sibling",
+        "displayAIsToB": "Sibling",
+        "displayBIsToA": "Sibling",
+        "retired": false,
+        "links": [
+          {
+            "rel": "self",
+            "uri": "http://qa-refapp.openmrs.org/openmrs/ws/rest/v1/relationshiptype/8d91a01c-c2cc-11de-8d13-0010c6dffd0f",
+            "resourceAlias": "relationshiptype"
+          },
+          {
+            "rel": "full",
+            "uri": "http://qa-refapp.openmrs.org/openmrs/ws/rest/v1/relationshiptype/8d91a01c-c2cc-11de-8d13-0010c6dffd0f?v=full",
+            "resourceAlias": "relationshiptype"
+          }
+        ],
+        "resourceVersion": "1.8"
+      },
+      "personB": {
+        "uuid": "f2b7dd73-2d01-4e2b-8ebd-12d832eac8e4",
+        "display": "Donna Turner",
+        "gender": "F",
+        "age": 57,
+        "birthdate": "1964-04-18T00:00:00.000+0000",
+        "birthdateEstimated": false,
+        "dead": false,
+        "deathDate": null,
+        "causeOfDeath": null,
+        "preferredName": {
+          "uuid": "488bc4dc-5a57-4bb8-8eae-e6ebbec68089",
+          "display": "Donna Turner",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://qa-refapp.openmrs.org/openmrs/ws/rest/v1/person/84b52ecf-78a8-476f-9ee7-d343d9982ea3/name/488bc4dc-5a57-4bb8-8eae-e6ebbec68089",
+              "resourceAlias": "name"
+            }
+          ]
+        },
+        "preferredAddress": {
+          "uuid": "2d70a667-7ecb-4018-b7e4-42bcff416f14",
+          "display": "Address18787",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://qa-refapp.openmrs.org/openmrs/ws/rest/v1/person/84b52ecf-78a8-476f-9ee7-d343d9982ea3/address/2d70a667-7ecb-4018-b7e4-42bcff416f14",
+              "resourceAlias": "address"
+            }
+          ]
+        },
+        "attributes": [],
+        "voided": false,
+        "birthtime": null,
+        "deathdateEstimated": false,
+        "links": [
+          {
+            "rel": "self",
+            "uri": "http://qa-refapp.openmrs.org/openmrs/ws/rest/v1/person/84b52ecf-78a8-476f-9ee7-d343d9982ea3",
+            "resourceAlias": "person"
+          },
+          {
+            "rel": "full",
+            "uri": "http://qa-refapp.openmrs.org/openmrs/ws/rest/v1/person/84b52ecf-78a8-476f-9ee7-d343d9982ea3?v=full",
+            "resourceAlias": "person"
+          }
+        ],
+        "resourceVersion": "1.11"
+      },
+      "voided": false,
+      "auditInfo": {
+        "creator": {
+          "uuid": "06d05314-e132-11de-babe-001e378eb67e",
+          "display": "admin",
+          "links": [
+            {
+              "rel": "self",
+              "uri": "http://qa-refapp.openmrs.org/openmrs/ws/rest/v1/user/45ce6c2e-dd5a-11e6-9d9c-0242ac150002",
+              "resourceAlias": "user"
+            }
+          ]
+        },
+        "dateCreated": "2022-03-16T08:16:41.000+0000",
+        "changedBy": null,
+        "dateChanged": null
+      },
+      "startDate": "1999-04-21T00:00:00.000+0000",
+      "endDate": null,
+      "links": [
+        {
+          "rel": "self",
+          "uri": "http://qa-refapp.openmrs.org/openmrs/ws/rest/v1/relationship/3028708f-f06a-4593-928a-9bca2e09fcb8",
+          "resourceAlias": "relationship"
+        }
+      ],
+      "resourceVersion": "1.9"
+    }
+  ]
+}

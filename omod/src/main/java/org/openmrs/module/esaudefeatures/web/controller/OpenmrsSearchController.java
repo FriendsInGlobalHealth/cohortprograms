@@ -2,6 +2,7 @@ package org.openmrs.module.esaudefeatures.web.controller;
 
 import org.openmrs.Location;
 import org.openmrs.Patient;
+import org.openmrs.Relationship;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.LocationService;
 import org.openmrs.api.context.Context;
@@ -21,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.servlet.ModelAndView;
+
+import java.util.List;
 
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.IMPORTED_PATIENT_LOCATION_UUID_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_PASSWORD_GP;
@@ -135,6 +138,14 @@ public class OpenmrsSearchController {
 	public String importPatient(@RequestParam("uuid") String patientUuid) {
 		try {
 			Patient patient = delegate.importPatientWithUuid(patientUuid);
+			
+			try {
+				delegate.importRelationshipsForPerson(patient.getPerson());
+			}
+			catch (Exception e) {
+				// TODO: Tell the user that we failed.
+				LOGGER.warn("Could not import relationships for patient with uuid {}", patient.getUuid(), e);
+			}
 			return patient.getPatientId().toString();
 		}
 		catch (Exception e) {

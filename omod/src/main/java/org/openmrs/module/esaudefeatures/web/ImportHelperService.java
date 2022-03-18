@@ -5,11 +5,9 @@ import okhttp3.Request;
 import okhttp3.Response;
 import org.hl7.fhir.exceptions.FHIRException;
 import org.hl7.fhir.r4.model.Address;
-import org.hl7.fhir.r4.model.Base;
 import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.Identifier;
-import org.hl7.fhir.r4.model.Property;
 import org.hl7.fhir.r4.model.StringType;
 import org.openmrs.Auditable;
 import org.openmrs.BaseOpenmrsMetadata;
@@ -32,7 +30,6 @@ import org.openmrs.api.LocationService;
 import org.openmrs.api.PatientService;
 import org.openmrs.api.PersonService;
 import org.openmrs.api.UserService;
-import org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants;
 import org.openmrs.module.esaudefeatures.web.exception.RemoteImportException;
 import org.openmrs.module.esaudefeatures.web.exception.RemoteOpenmrsSearchException;
 import org.openmrs.module.webservices.rest.SimpleObject;
@@ -157,17 +154,7 @@ public class ImportHelperService {
 		for(HumanName opencrName: opencrPatient.getName()) {
 			PersonName openmrsName = new PersonName();
 			openmrsName.setUuid(opencrName.getId());
-			if(opencrName.hasUse() && HumanName.NameUse.OFFICIAL.equals(opencrName.getUse())) {
-				openmrsName.setPreferred(true);
-			}
-			openmrsName.setFamilyName(opencrName.getFamily());
-			if(opencrName.hasGiven()) {
-				List<StringType> opencrGiveNames = opencrName.getGiven();
-				openmrsName.setGivenName(opencrGiveNames.get(0).getValueNotNull());
-				if(opencrGiveNames.size() >= 2) {
-					openmrsName.setMiddleName(opencrGiveNames.get(1).getValueNotNull());
-				}
-			}
+			updatePersonNameWithOpencrDetails(openmrsName, opencrName);
 			openmrsName.setPerson(person);
 			person.addName(openmrsName);
 		}
@@ -191,72 +178,12 @@ public class ImportHelperService {
 		for(Address opencrAddress: opencrPatient.getAddress()) {
 			PersonAddress openmrsAddress = new PersonAddress();
 			openmrsAddress.setUuid(opencrAddress.getId());
-			if(opencrAddress.hasDistrict()) {
-				openmrsAddress.setCountyDistrict(opencrAddress.getDistrict());
-			}
-			if(opencrAddress.hasState()) {
-				openmrsAddress.setStateProvince(opencrAddress.getState());
-			}
-			if(opencrAddress.hasCountry()) {
-				openmrsAddress.setCountry(opencrAddress.getCountry());
-			}
-			if(opencrAddress.hasPostalCode()) {
-				openmrsAddress.setPostalCode(opencrAddress.getPostalCode());
-			}
-
-			/**
-			 * From Wyclif's email (confirmed by Eurico)
-			 line[0] -> address2
-			 line[1] -> address6
-			 line[2] -> address5
-			 line[3] -> address3
-			 line[4] -> address1
-			 */
-			if(opencrAddress.hasLine()) {
-				List<StringType> lines = opencrAddress.getLine();
-				for(int i=0; i < lines.size(); i++) {
-//							openmrsAddress.setAddress2(lines[i]);
-				}
-				openmrsAddress.setAddress2(lines.get(0).getValueNotNull());
-				if(lines.size() >= 2) {
-					openmrsAddress.setAddress6(lines.get(1).getValueNotNull());
-				}
-				if(lines.size() >= 3) {
-					openmrsAddress.setAddress5(lines.get(2).getValueNotNull());
-				}
-				if(lines.size() >= 4) {
-					openmrsAddress.setAddress3(lines.get(3).getValueNotNull());
-				}
-				if(lines.size() >= 5) {
-					openmrsAddress.setAddress1(lines.get(4).getValueNotNull());
-				}
-			}
-
+			updatePersonAddressWithOpencrDetails(openmrsAddress, opencrAddress);
 			openmrsAddress.setPerson(person);
 			openmrsPatient.addAddress(openmrsAddress);
 		}
 
-		PersonAttributeType homePhoneAttrType = personService.getPersonAttributeTypeByUuid(HOME_PHONE_PERSON_ATTR_TYPE_UUID);
-		PersonAttributeType mobilePhoneAttrType = personService.getPersonAttributeTypeByUuid(MOBILE_PHONE_PERSON_ATTR_TYPE_UUID);
-		for(ContactPoint contact: opencrPatient.getTelecom()) {
-			if(contact.hasUse()) {
-				if(ContactPoint.ContactPointUse.HOME.equals(contact.getUse())) {
-					PersonAttribute homePhone = openmrsPatient.getAttribute(homePhoneAttrType);
-					if (homePhone == null) {
-						openmrsPatient.addAttribute(new PersonAttribute(homePhoneAttrType, contact.getValue()));
-					} else {
-						homePhone.setValue(contact.getValue());
-					}
-				} else if(ContactPoint.ContactPointUse.MOBILE.equals(contact.getUse())) {
-					PersonAttribute mobilePhone = openmrsPatient.getAttribute(mobilePhoneAttrType);
-					if (mobilePhone == null) {
-						openmrsPatient.addAttribute(new PersonAttribute(mobilePhoneAttrType, contact.getValue()));
-					} else {
-						mobilePhone.setValue(contact.getValue());
-					}
-				}
-			}
-		}
+		updateOpenmrsPatientContactFromOpencrDetails(openmrsPatient, opencrPatient);
 
 		return openmrsPatient;
 	}
@@ -928,17 +855,7 @@ public class ImportHelperService {
 		for(HumanName opencrName: opencrPatient.getName()) {
 			for(PersonName openmrsName: openmrsPatient.getNames()) {
 				if(opencrName.getId().equals(openmrsName.getUuid())) {
-					if(opencrName.hasUse() && HumanName.NameUse.OFFICIAL.equals(opencrName.getUse())) {
-						openmrsName.setPreferred(true);
-					}
-					openmrsName.setFamilyName(opencrName.getFamily());
-					if(opencrName.hasGiven()) {
-						List<StringType> opencrGiveNames = opencrName.getGiven();
-						openmrsName.setGivenName(opencrGiveNames.get(0).getValueNotNull());
-						if(opencrGiveNames.size() >= 2) {
-							openmrsName.setMiddleName(opencrGiveNames.get(1).getValueNotNull());
-						}
-					}
+					updatePersonNameWithOpencrDetails(openmrsName, opencrName);
 					break;
 				}
 			}
@@ -958,77 +875,16 @@ public class ImportHelperService {
 
 		for(Address opencrAddress: opencrPatient.getAddress()) {
 			for(PersonAddress openmrsAddress: openmrsPatient.getAddresses()) {
-				if(opencrAddress.getId().equals(openmrsAddress.getUuid())) {
-					if(opencrAddress.hasDistrict()) {
-						openmrsAddress.setCountyDistrict(opencrAddress.getDistrict());
-					}
-					if(opencrAddress.hasState()) {
-						openmrsAddress.setStateProvince(opencrAddress.getState());
-					}
-					if(opencrAddress.hasCountry()) {
-						openmrsAddress.setCountry(opencrAddress.getCountry());
-					}
-					if(opencrAddress.hasPostalCode()) {
-						openmrsAddress.setPostalCode(opencrAddress.getPostalCode());
-					}
-
-					/**
-					 * From Wyclif's email (confirmed by Eurico)
-					 line[0] -> address2
-					 line[1] -> address6
-					 line[2] -> address5
-					 line[3] -> address3
-					 line[4] -> address1
-					 */
-					if(opencrAddress.hasLine()) {
-						List<StringType> lines = opencrAddress.getLine();
-						for(int i=0; i < lines.size(); i++) {
-//							openmrsAddress.setAddress2(lines[i]);
-						}
-						openmrsAddress.setAddress2(lines.get(0).getValueNotNull());
-						if(lines.size() >= 2) {
-							openmrsAddress.setAddress6(lines.get(1).getValueNotNull());
-						}
-						if(lines.size() >= 3) {
-							openmrsAddress.setAddress5(lines.get(2).getValueNotNull());
-						}
-						if(lines.size() >= 4) {
-							openmrsAddress.setAddress3(lines.get(3).getValueNotNull());
-						}
-						if(lines.size() >= 5) {
-							openmrsAddress.setAddress1(lines.get(4).getValueNotNull());
-						}
-					}
-				}
+				updatePersonAddressWithOpencrDetails(openmrsAddress, opencrAddress);
 			}
 		}
 
-		PersonAttributeType homePhoneAttrType = personService.getPersonAttributeTypeByUuid(HOME_PHONE_PERSON_ATTR_TYPE_UUID);
-		PersonAttributeType mobilePhoneAttrType = personService.getPersonAttributeTypeByUuid(MOBILE_PHONE_PERSON_ATTR_TYPE_UUID);
-		for(ContactPoint contact: opencrPatient.getTelecom()) {
-			if(contact.hasUse()) {
-				if(ContactPoint.ContactPointUse.HOME.equals(contact.getUse())) {
-					PersonAttribute homePhone = openmrsPatient.getAttribute(homePhoneAttrType);
-					if (homePhone == null) {
-						openmrsPatient.addAttribute(new PersonAttribute(homePhoneAttrType, contact.getValue()));
-					} else {
-						homePhone.setValue(contact.getValue());
-					}
-				} else if(ContactPoint.ContactPointUse.MOBILE.equals(contact.getUse())) {
-					PersonAttribute mobilePhone = openmrsPatient.getAttribute(mobilePhoneAttrType);
-					if (mobilePhone == null) {
-						openmrsPatient.addAttribute(new PersonAttribute(mobilePhoneAttrType, contact.getValue()));
-					} else {
-						mobilePhone.setValue(contact.getValue());
-					}
-				}
-			}
-		}
+		updateOpenmrsPatientContactFromOpencrDetails(openmrsPatient, opencrPatient);
 
 		return openmrsPatient;
 	}
 
-	public List<Relationship> importRelationshipForPerson(Person person) {
+	public List<Relationship> importRelationshipsForPerson(Person person) {
 		String[] urlUserPass = getRemoteOpenmrsHostUsernamePassword();
 		String message = String.format("Could not fetch relationships for person with uuid %s from server %s", person.getUuid(), urlUserPass[0]);
 		String[] locationPathSegments = { "ws/rest/v1/relationship" };
@@ -1079,6 +935,7 @@ public class ImportHelperService {
 
 					Relationship relationship = new Relationship();
 					relationship.setRelationshipType(relationshipType);
+					relationship.setUuid((String) relationshipObject.get("uuid"));
 
 					if(person.getUuid().equals(personAObject.get("uuid"))) {
 						relationship.setPersonA(person);
@@ -1101,6 +958,10 @@ public class ImportHelperService {
 
 						relationship.setPersonA(personA);
 					}
+
+					relationship.setStartDate(parseDateString((String) relationshipObject.get("startDate")));
+					relationship.setEndDate(parseDateString((String) relationshipObject.get("endDate")));
+					updateAuditInfo(relationship, (Map<String, Object>) relationshipObject.get("auditInfo"));
 					relationship = personService.saveRelationship(relationship);
 					importedRelationships.add(relationship);
 				}
@@ -1133,5 +994,88 @@ public class ImportHelperService {
 		placeholderUser.setPerson(getDummyPerson());
 		placeholderUser.setCreator(userService.getUserByUsername("admin"));
 		return userService.createUser(placeholderUser, generatePassword());
+	}
+
+	private void updatePersonAddressWithOpencrDetails(PersonAddress openmrsAddress, Address opencrAddress) {
+		if(opencrAddress.getId().equals(openmrsAddress.getUuid())) {
+			if(opencrAddress.hasDistrict()) {
+				openmrsAddress.setCountyDistrict(opencrAddress.getDistrict());
+			}
+			if(opencrAddress.hasState()) {
+				openmrsAddress.setStateProvince(opencrAddress.getState());
+			}
+			if(opencrAddress.hasCountry()) {
+				openmrsAddress.setCountry(opencrAddress.getCountry());
+			}
+			if(opencrAddress.hasPostalCode()) {
+				openmrsAddress.setPostalCode(opencrAddress.getPostalCode());
+			}
+
+			/**
+			 * From Wyclif's email (confirmed by Eurico)
+			 line[0] -> address2
+			 line[1] -> address6
+			 line[2] -> address5
+			 line[3] -> address3
+			 line[4] -> address1
+			 */
+			if(opencrAddress.hasLine()) {
+				List<StringType> lines = opencrAddress.getLine();
+				for(int i=0; i < lines.size(); i++) {
+//							openmrsAddress.setAddress2(lines[i]);
+				}
+				openmrsAddress.setAddress2(lines.get(0).getValueNotNull());
+				if(lines.size() >= 2) {
+					openmrsAddress.setAddress6(lines.get(1).getValueNotNull());
+				}
+				if(lines.size() >= 3) {
+					openmrsAddress.setAddress5(lines.get(2).getValueNotNull());
+				}
+				if(lines.size() >= 4) {
+					openmrsAddress.setAddress3(lines.get(3).getValueNotNull());
+				}
+				if(lines.size() >= 5) {
+					openmrsAddress.setAddress1(lines.get(4).getValueNotNull());
+				}
+			}
+		}
+	}
+
+	private void updateOpenmrsPatientContactFromOpencrDetails(Patient openmrsPatient, org.hl7.fhir.r4.model.Patient opencrPatient) {
+		PersonAttributeType homePhoneAttrType = personService.getPersonAttributeTypeByUuid(HOME_PHONE_PERSON_ATTR_TYPE_UUID);
+		PersonAttributeType mobilePhoneAttrType = personService.getPersonAttributeTypeByUuid(MOBILE_PHONE_PERSON_ATTR_TYPE_UUID);
+		for(ContactPoint contact: opencrPatient.getTelecom()) {
+			if(contact.hasUse()) {
+				if(ContactPoint.ContactPointUse.HOME.equals(contact.getUse())) {
+					PersonAttribute homePhone = openmrsPatient.getAttribute(homePhoneAttrType);
+					if (homePhone == null) {
+						openmrsPatient.addAttribute(new PersonAttribute(homePhoneAttrType, contact.getValue()));
+					} else {
+						homePhone.setValue(contact.getValue());
+					}
+				} else if(ContactPoint.ContactPointUse.MOBILE.equals(contact.getUse())) {
+					PersonAttribute mobilePhone = openmrsPatient.getAttribute(mobilePhoneAttrType);
+					if (mobilePhone == null) {
+						openmrsPatient.addAttribute(new PersonAttribute(mobilePhoneAttrType, contact.getValue()));
+					} else {
+						mobilePhone.setValue(contact.getValue());
+					}
+				}
+			}
+		}
+	}
+
+	private void updatePersonNameWithOpencrDetails(PersonName openmrsName, HumanName opencrName) {
+		if(opencrName.hasUse() && HumanName.NameUse.OFFICIAL.equals(opencrName.getUse())) {
+			openmrsName.setPreferred(true);
+		}
+		openmrsName.setFamilyName(opencrName.getFamily());
+		if(opencrName.hasGiven()) {
+			List<StringType> opencrGiveNames = opencrName.getGiven();
+			openmrsName.setGivenName(opencrGiveNames.get(0).getValueNotNull());
+			if(opencrGiveNames.size() >= 2) {
+				openmrsName.setMiddleName(opencrGiveNames.get(1).getValueNotNull());
+			}
+		}
 	}
 }

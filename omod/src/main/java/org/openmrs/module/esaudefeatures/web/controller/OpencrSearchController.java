@@ -2,10 +2,8 @@ package org.openmrs.module.esaudefeatures.web.controller;
 
 import org.hl7.fhir.r4.model.Bundle;
 import org.openmrs.Patient;
-import org.openmrs.module.esaudefeatures.web.OpencrImportException;
 import org.openmrs.module.esaudefeatures.web.OpencrSearchDelegate;
-import org.openmrs.module.esaudefeatures.web.OpencrSearchException;
-import org.openmrs.module.esaudefeatures.web.RemoteOpenmrsSearchException;
+import org.openmrs.module.esaudefeatures.web.exception.RemoteImportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +49,7 @@ public class OpencrSearchController {
 		}
 		catch (Exception e) {
 			LOGGER.error("An error occured while importing patient from opencr with fhirId {}", opencrPatientId, e);
-			throw new OpencrImportException(e.getMessage(), e, HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new RemoteImportException(e.getMessage(), e, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 }

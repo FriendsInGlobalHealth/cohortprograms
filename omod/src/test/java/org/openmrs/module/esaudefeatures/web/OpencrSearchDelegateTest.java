@@ -19,6 +19,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants;
 import org.openmrs.module.esaudefeatures.web.controller.OpencrAuthenticationException;
+import org.openmrs.module.esaudefeatures.web.exception.OpencrSearchException;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;

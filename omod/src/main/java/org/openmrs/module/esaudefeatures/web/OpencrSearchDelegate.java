@@ -16,6 +16,7 @@ import org.openmrs.api.AdministrationService;
 import org.openmrs.api.PatientService;
 import org.openmrs.module.esaudefeatures.web.controller.OpencrAuthenticationException;
 import org.openmrs.module.esaudefeatures.web.dto.TokenDTO;
+import org.openmrs.module.esaudefeatures.web.exception.OpencrSearchException;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

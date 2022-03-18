@@ -19,11 +19,14 @@ import org.openmrs.Person;
 import org.openmrs.PersonAddress;
 import org.openmrs.PersonAttribute;
 import org.openmrs.PersonName;
+import org.openmrs.Relationship;
 import org.openmrs.User;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.LocationService;
+import org.openmrs.api.PersonService;
 import org.openmrs.api.UserService;
 import org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants;
+import org.openmrs.module.esaudefeatures.web.exception.RemoteImportException;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.web.test.BaseModuleWebContextSensitiveTest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -103,6 +106,9 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 	
 	@Autowired
 	private UserService userService;
+	
+	@Autowired
+	private PersonService personService;
 	
 	private IParser parser = FhirContext.forR4().newJsonParser();
 	
@@ -466,6 +472,38 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		assertEquals("Bariadi", personAddress.getCountyDistrict());
 		assertEquals("Simiyu", personAddress.getStateProvince());
 		assertEquals("Tanzania", personAddress.getCountry());
+	}
+	
+	@Test
+	public void importRelationshipsForPersonShouldImport() throws Exception {
+		final String PERSON_UUID = "ba1b19c2-3ed6-4f63-b8c0-f762dc8d7562";
+		final String RELATIONSHIPS_JSON = IOUtils
+		        .toString(getClass().getResourceAsStream("/openmrs-rest/relationship.json"));
+		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
+		        .addHeader("Content-Type", "application/json").setBody(RELATIONSHIPS_JSON));
+		
+		Person person = personService.getPersonByUuid(PERSON_UUID);
+		List<Relationship> imported = helperService.importRelationshipsForPerson(person);
+		
+		assertEquals(1, imported.size());
+		Relationship importedRelationship = imported.get(0);
+		
+		assertEquals("3028708f-f06a-4593-928a-9bca2e09fcb8", importedRelationship.getUuid());
+		assertEquals(Utils.parseDateString("1999-04-21T00:00:00.000+0000"), importedRelationship.getStartDate());
+		assertEquals(Utils.parseDateString("2022-03-16T08:16:41.000+0000"), importedRelationship.getDateCreated());
+		assertEquals("2a5f4ff4-a179-4b8a-aa4c-40f71956eabc", importedRelationship.getRelationshipType().getUuid());
+	}
+	
+	@Test(expected = Exception.class)
+	public void importRelationshipsForPersonShouldThrowExceptionIfRelationshipTypeDoesNotExist() throws Exception {
+		final String PERSON_UUID = "ba1b19c2-3ed6-4f63-b8c0-f762dc8d7562";
+		final String RELATIONSHIPS_JSON = IOUtils.toString(getClass().getResourceAsStream(
+		    "/openmrs-rest/relationship_type_not_exists.json"));
+		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
+		        .addHeader("Content-Type", "application/json").setBody(RELATIONSHIPS_JSON));
+		
+		Person person = personService.getPersonByUuid(PERSON_UUID);
+		helperService.importRelationshipsForPerson(person);
 	}
 	
 	private void setUpMockWebServerToReturnPersonPropertiesInRequiredOrder() {
