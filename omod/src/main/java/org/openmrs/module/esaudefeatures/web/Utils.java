@@ -5,6 +5,8 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.apache.commons.lang3.StringUtils;
+import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.Identifier;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
@@ -160,5 +162,20 @@ public class Utils {
 		password.insert(random.nextInt(password.length()), numbers[random.nextInt(numbers.length)]);
 		
 		return password.toString();
+	}
+	
+	public static String getOpenmrsIdentifierTypeUuid(final Identifier identifier, final String identifyTypeConceptMappings) {
+		String[] maps = identifyTypeConceptMappings.split(",");
+		for (String map : maps) {
+			if (identifier.hasType() && identifier.getType().hasCoding()) {
+				String[] mapParts = map.split(":");
+				for (Coding coding : identifier.getType().getCoding()) {
+					if (coding.hasCode() && coding.getCode().equalsIgnoreCase(mapParts[1])) {
+						return mapParts[0];
+					}
+				}
+			}
+		}
+		return null;
 	}
 }

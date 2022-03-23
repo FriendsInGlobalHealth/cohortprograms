@@ -3,12 +3,21 @@ package org.openmrs.module.esaudefeatures.web;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.hl7.fhir.exceptions.FHIRException;
+import org.hl7.fhir.r4.model.Address;
+import org.hl7.fhir.r4.model.Base;
+import org.hl7.fhir.r4.model.ContactPoint;
+import org.hl7.fhir.r4.model.HumanName;
+import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.r4.model.Property;
+import org.hl7.fhir.r4.model.StringType;
 import org.openmrs.Auditable;
 import org.openmrs.BaseOpenmrsMetadata;
 import org.openmrs.Concept;
 import org.openmrs.Location;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
+import org.openmrs.PatientIdentifierType;
 import org.openmrs.Person;
 import org.openmrs.PersonAddress;
 import org.openmrs.PersonAttribute;
@@ -21,6 +30,8 @@ import org.openmrs.api.LocationService;
 import org.openmrs.api.PatientService;
 import org.openmrs.api.PersonService;
 import org.openmrs.api.UserService;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +59,9 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.HOME_PHONE_PERSON_ATTR_TYPE_UUID;
+import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.MOBILE_PHONE_PERSON_ATTR_TYPE_UUID;
+import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENCR_IDENTIFIER_TYPE_CONCEPT_MAPPINGS_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_PASSWORD_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_URL_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_USERNAME_GP;
@@ -117,7 +131,132 @@ public class ImportHelperService {
 	public void setUserService(UserService userService) {
 		this.userService = userService;
 	}
-	
+
+	public Patient getPatientFromOpencrPatientResource(org.hl7.fhir.r4.model.Patient opencrPatient) {
+		Person person = new Person();
+		person.setUuid(opencrPatient.getId());
+		Patient openmrsPatient = new Patient(person);
+
+		openmrsPatient.setBirthdate(opencrPatient.getBirthDate());
+		if(opencrPatient.hasGender()) {
+			openmrsPatient.setGender(String.valueOf(opencrPatient.getGender().getDefinition().charAt(0)));
+		}
+
+		if(opencrPatient.hasDeceasedDateTimeType()) {
+			try {
+				openmrsPatient.setDeathDate(opencrPatient.getDeceasedDateTimeType().getValue());
+			} catch (FHIRException e) {
+				e.printStackTrace();
+			}
+		}
+
+		for(HumanName opencrName: opencrPatient.getName()) {
+			PersonName openmrsName = new PersonName();
+			openmrsName.setUuid(opencrName.getId());
+			if(opencrName.hasUse() && HumanName.NameUse.OFFICIAL.equals(opencrName.getUse())) {
+				openmrsName.setPreferred(true);
+			}
+			openmrsName.setFamilyName(opencrName.getFamily());
+			if(opencrName.hasGiven()) {
+				List<StringType> opencrGiveNames = opencrName.getGiven();
+				openmrsName.setGivenName(opencrGiveNames.get(0).getValueNotNull());
+				if(opencrGiveNames.size() >= 2) {
+					openmrsName.setMiddleName(opencrGiveNames.get(1).getValueNotNull());
+				}
+			}
+			openmrsName.setPerson(person);
+			person.addName(openmrsName);
+		}
+
+		String identifyTypeConceptMappings = adminService.getGlobalProperty(OPENCR_IDENTIFIER_TYPE_CONCEPT_MAPPINGS_GP);
+		for(Identifier identifier: opencrPatient.getIdentifier()) {
+			String openmrsIdentifierTypeUuid = Utils.getOpenmrsIdentifierTypeUuid(identifier, identifyTypeConceptMappings);
+			if(openmrsIdentifierTypeUuid != null) {
+				PatientIdentifier patientIdentifier = new PatientIdentifier();
+				patientIdentifier.setPatient(openmrsPatient);
+				patientIdentifier.setIdentifier(identifier.getValue());
+
+				PatientIdentifierType identifierType = patientService.getPatientIdentifierTypeByUuid(openmrsIdentifierTypeUuid);
+				if(PatientIdentifierType.LocationBehavior.REQUIRED.equals(identifierType.getLocationBehavior())) {
+					patientIdentifier.setLocation(locationService.getDefaultLocation());
+				}
+				openmrsPatient.addIdentifier(patientIdentifier);
+			}
+		}
+
+		for(Address opencrAddress: opencrPatient.getAddress()) {
+			PersonAddress openmrsAddress = new PersonAddress();
+			openmrsAddress.setUuid(opencrAddress.getId());
+			if(opencrAddress.hasDistrict()) {
+				openmrsAddress.setCountyDistrict(opencrAddress.getDistrict());
+			}
+			if(opencrAddress.hasState()) {
+				openmrsAddress.setStateProvince(opencrAddress.getState());
+			}
+			if(opencrAddress.hasCountry()) {
+				openmrsAddress.setCountry(opencrAddress.getCountry());
+			}
+			if(opencrAddress.hasPostalCode()) {
+				openmrsAddress.setPostalCode(opencrAddress.getPostalCode());
+			}
+
+			/**
+			 * From Wyclif's email (confirmed by Eurico)
+			 line[0] -> address2
+			 line[1] -> address6
+			 line[2] -> address5
+			 line[3] -> address3
+			 line[4] -> address1
+			 */
+			if(opencrAddress.hasLine()) {
+				List<StringType> lines = opencrAddress.getLine();
+				for(int i=0; i < lines.size(); i++) {
+//							openmrsAddress.setAddress2(lines[i]);
+				}
+				openmrsAddress.setAddress2(lines.get(0).getValueNotNull());
+				if(lines.size() >= 2) {
+					openmrsAddress.setAddress6(lines.get(1).getValueNotNull());
+				}
+				if(lines.size() >= 3) {
+					openmrsAddress.setAddress5(lines.get(2).getValueNotNull());
+				}
+				if(lines.size() >= 4) {
+					openmrsAddress.setAddress3(lines.get(3).getValueNotNull());
+				}
+				if(lines.size() >= 5) {
+					openmrsAddress.setAddress1(lines.get(4).getValueNotNull());
+				}
+			}
+
+			openmrsAddress.setPerson(person);
+			openmrsPatient.addAddress(openmrsAddress);
+		}
+
+		PersonAttributeType homePhoneAttrType = personService.getPersonAttributeTypeByUuid(HOME_PHONE_PERSON_ATTR_TYPE_UUID);
+		PersonAttributeType mobilePhoneAttrType = personService.getPersonAttributeTypeByUuid(MOBILE_PHONE_PERSON_ATTR_TYPE_UUID);
+		for(ContactPoint contact: opencrPatient.getTelecom()) {
+			if(contact.hasUse()) {
+				if(ContactPoint.ContactPointUse.HOME.equals(contact.getUse())) {
+					PersonAttribute homePhone = openmrsPatient.getAttribute(homePhoneAttrType);
+					if (homePhone == null) {
+						openmrsPatient.addAttribute(new PersonAttribute(homePhoneAttrType, contact.getValue()));
+					} else {
+						homePhone.setValue(contact.getValue());
+					}
+				} else if(ContactPoint.ContactPointUse.MOBILE.equals(contact.getUse())) {
+					PersonAttribute mobilePhone = openmrsPatient.getAttribute(mobilePhoneAttrType);
+					if (mobilePhone == null) {
+						openmrsPatient.addAttribute(new PersonAttribute(mobilePhoneAttrType, contact.getValue()));
+					} else {
+						mobilePhone.setValue(contact.getValue());
+					}
+				}
+			}
+		}
+
+		return openmrsPatient;
+	}
+
 	public Patient getPatientFromOpenmrsRestPayload(SimpleObject patientObject) throws Exception {
 		Person person = getPersonFromOpenmrsRestRepresentation((Map) patientObject.get("person"));
 		Patient patient = new Patient(person);
@@ -768,9 +907,121 @@ public class ImportHelperService {
 		return new String[] { remoteServerUrl, remoteServerUsername, remoteServerPassword };
 	}
 	
-	public void updateOpenmrsPatientWithMPIData(Patient openmrsPatient, org.hl7.fhir.r4.model.Patient opencrPatient) {
-		//TODO: Implement this method to update the passed Openmrs Patient object with info from opencr patient
-		// Update names.
+	public Patient updateOpenmrsPatientWithMPIData(Patient openmrsPatient, org.hl7.fhir.r4.model.Patient opencrPatient) {
+		openmrsPatient.setBirthdate(opencrPatient.getBirthDate());
+		if(opencrPatient.hasGender()) {
+			openmrsPatient.setGender(String.valueOf(opencrPatient.getGender().getDefinition().charAt(0)));
+		}
+
+		if(opencrPatient.hasDeceasedDateTimeType()) {
+			try {
+				openmrsPatient.setDeathDate(opencrPatient.getDeceasedDateTimeType().getValue());
+			} catch (FHIRException e) {
+				e.printStackTrace();
+			}
+		}
+
+		for(HumanName opencrName: opencrPatient.getName()) {
+			for(PersonName openmrsName: openmrsPatient.getNames()) {
+				if(opencrName.getId().equals(openmrsName.getUuid())) {
+					if(opencrName.hasUse() && HumanName.NameUse.OFFICIAL.equals(opencrName.getUse())) {
+						openmrsName.setPreferred(true);
+					}
+					openmrsName.setFamilyName(opencrName.getFamily());
+					if(opencrName.hasGiven()) {
+						List<StringType> opencrGiveNames = opencrName.getGiven();
+						openmrsName.setGivenName(opencrGiveNames.get(0).getValueNotNull());
+						if(opencrGiveNames.size() >= 2) {
+							openmrsName.setMiddleName(opencrGiveNames.get(1).getValueNotNull());
+						}
+					}
+					break;
+				}
+			}
+		}
+
+		String identifyTypeConceptMappings = adminService.getGlobalProperty(OPENCR_IDENTIFIER_TYPE_CONCEPT_MAPPINGS_GP);
+		for(Identifier identifier: opencrPatient.getIdentifier()) {
+			String openmrsIdentifierTypeUuid = Utils.getOpenmrsIdentifierTypeUuid(identifier, identifyTypeConceptMappings);
+			if(openmrsIdentifierTypeUuid != null) {
+				for(PatientIdentifier patientIdentifier: openmrsPatient.getIdentifiers()) {
+					if(openmrsIdentifierTypeUuid.equals(patientIdentifier.getIdentifierType().getUuid())) {
+						patientIdentifier.setIdentifier(identifier.getValue());
+					}
+				}
+			}
+		}
+
+		for(Address opencrAddress: opencrPatient.getAddress()) {
+			for(PersonAddress openmrsAddress: openmrsPatient.getAddresses()) {
+				if(opencrAddress.getId().equals(openmrsAddress.getUuid())) {
+					if(opencrAddress.hasDistrict()) {
+						openmrsAddress.setCountyDistrict(opencrAddress.getDistrict());
+					}
+					if(opencrAddress.hasState()) {
+						openmrsAddress.setStateProvince(opencrAddress.getState());
+					}
+					if(opencrAddress.hasCountry()) {
+						openmrsAddress.setCountry(opencrAddress.getCountry());
+					}
+					if(opencrAddress.hasPostalCode()) {
+						openmrsAddress.setPostalCode(opencrAddress.getPostalCode());
+					}
+
+					/**
+					 * From Wyclif's email (confirmed by Eurico)
+					 line[0] -> address2
+					 line[1] -> address6
+					 line[2] -> address5
+					 line[3] -> address3
+					 line[4] -> address1
+					 */
+					if(opencrAddress.hasLine()) {
+						List<StringType> lines = opencrAddress.getLine();
+						for(int i=0; i < lines.size(); i++) {
+//							openmrsAddress.setAddress2(lines[i]);
+						}
+						openmrsAddress.setAddress2(lines.get(0).getValueNotNull());
+						if(lines.size() >= 2) {
+							openmrsAddress.setAddress6(lines.get(1).getValueNotNull());
+						}
+						if(lines.size() >= 3) {
+							openmrsAddress.setAddress5(lines.get(2).getValueNotNull());
+						}
+						if(lines.size() >= 4) {
+							openmrsAddress.setAddress3(lines.get(3).getValueNotNull());
+						}
+						if(lines.size() >= 5) {
+							openmrsAddress.setAddress1(lines.get(4).getValueNotNull());
+						}
+					}
+				}
+			}
+		}
+
+		PersonAttributeType homePhoneAttrType = personService.getPersonAttributeTypeByUuid(HOME_PHONE_PERSON_ATTR_TYPE_UUID);
+		PersonAttributeType mobilePhoneAttrType = personService.getPersonAttributeTypeByUuid(MOBILE_PHONE_PERSON_ATTR_TYPE_UUID);
+		for(ContactPoint contact: opencrPatient.getTelecom()) {
+			if(contact.hasUse()) {
+				if(ContactPoint.ContactPointUse.HOME.equals(contact.getUse())) {
+					PersonAttribute homePhone = openmrsPatient.getAttribute(homePhoneAttrType);
+					if (homePhone == null) {
+						openmrsPatient.addAttribute(new PersonAttribute(homePhoneAttrType, contact.getValue()));
+					} else {
+						homePhone.setValue(contact.getValue());
+					}
+				} else if(ContactPoint.ContactPointUse.MOBILE.equals(contact.getUse())) {
+					PersonAttribute mobilePhone = openmrsPatient.getAttribute(mobilePhoneAttrType);
+					if (mobilePhone == null) {
+						openmrsPatient.addAttribute(new PersonAttribute(mobilePhoneAttrType, contact.getValue()));
+					} else {
+						mobilePhone.setValue(contact.getValue());
+					}
+				}
+			}
+		}
+
+		return openmrsPatient;
 	}
 	
 	private Person getDummyPerson() {

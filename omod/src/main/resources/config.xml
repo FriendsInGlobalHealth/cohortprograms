@@ -115,6 +115,24 @@
 			This property tells the system whether to skip hostname verification during the SSL handshake. It can be for self signed
 			SSL certificates, otherwise this should never be set to true. Set to TRUE if you know what you are doing.
 		</description>
+	<globalProperty>
+		<property>@MODULE_ID@.opencr.identifier.type.concept.mappings</property>
+		<defaultValue>
+			8d793bee-c2cc-11de-8d13-0010c6dffd0f:OpenMRS_ID_NUM:OpenMRS ID Number,e2b966d0-1d5f-11e0-b929-000c29ad1d07:NID_TARV:NID SERVICO TARV,
+			e2b9682e-1d5f-11e0-b929-000c29ad1d07:BI:BILHETE DE IDENTIDADE,e2b9698c-1d5f-11e0-b929-000c29ad1d07:CDG_ATS:CODIGO ATS/UATS,
+			e2b96ad6-1d5f-11e0-b929-000c29ad1d07:CDG_PTV_PRE_NATAL:CODIGO PTV PRE-NATAL,e2b96c16-1d5f-11e0-b929-000c29ad1d07:CDG_ITS:CODIGO ITS,
+			e2b96d56-1d5f-11e0-b929-000c29ad1d07:CDG_PTV_MATERNIDADE:CODIGO PTV (MATERNIDADE),e2b97b70-1d5f-11e0-b929-000c29ad1d07:NID_CCR:NID (CCR),
+			e2b97cec-1d5f-11e0-b929-000c29ad1d07:PCR_NUM_REG:PCR (NUMERO DE REGISTO),e2b97e40-1d5f-11e0-b929-000c29ad1d07:NIT_TB:NIT (SECTOR DE TB),
+			e2b97f8a-1d5f-11e0-b929-000c29ad1d07:NUM_CANCRO_CERVICAL:NUMERO CANCRO CERVICAL,e89c8925-35cc-4a29-9002-6b36bf3fd47f:NUIC:NUIC,
+			79ad599a-50df-48f8-865c-0095ec9a9d01:NID_DISA:NID DISA,1c72703d-fb55-439e-af4f-ef39a1049e19:CRAM_ID:CRAM ID,
+			bce7c891-27e9-42ec-abb0-aec3a641175e:NID_PREP:NID PREP,a5d38e09-efcb-4d91-a526-50ce1ba5011a:OpenEMPI_ID:OpenEMPI ID,
+			05a29f94-c0ed-11e2-94be-8c13b969e334:OpenMRS_ID:OpenMRS ID
+		</defaultValue>
+		<description>
+			The identifier type to concept mapping used for mapping the identifier types to associated concept definition. The mapping in this property
+			contains the uuid of the identifier type as the first segment. The module uses these to get the corresponding UUIDs from the code stored
+			in OpenCR server.
+		</description>
 	</globalProperty>
 
 	<!--

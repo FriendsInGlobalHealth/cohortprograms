@@ -618,7 +618,7 @@
             } else {
                 // OpenCR
                 var opencrPatient = foundPatientList.find(patient => patient.resource.id === patientUuid);
-                var importPatientUrl = localOpenmrsContextPath + '/module/esaudefeatures/opencrPatient.json?uuid=' + patientUuid;
+                var importPatientUrl = localOpenmrsContextPath + '/module/esaudefeatures/opencrPatient.json?patientId=' + patientUuid;
                 _importWork(opencrPatient.resource.fullname, importPatientUrl);
             }
         }

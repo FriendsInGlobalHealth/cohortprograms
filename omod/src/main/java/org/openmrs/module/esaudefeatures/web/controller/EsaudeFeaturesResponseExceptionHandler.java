@@ -1,6 +1,7 @@
 package org.openmrs.module.esaudefeatures.web.controller;
 
 import org.openmrs.api.APIAuthenticationException;
+import org.openmrs.module.esaudefeatures.web.OpencrImportException;
 import org.openmrs.module.esaudefeatures.web.OpencrSearchException;
 import org.openmrs.module.esaudefeatures.web.RemoteOpenmrsSearchException;
 import org.springframework.http.HttpHeaders;
@@ -30,6 +31,11 @@ public class EsaudeFeaturesResponseExceptionHandler extends ResponseEntityExcept
 	public final ResponseEntity<Object> handleRemoteOpenmrsExceptions(RemoteOpenmrsSearchException ex, WebRequest request) {
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.valueOf(ex.getStatusCode()),
 		    request);
+	}
+	
+	@ExceptionHandler({ OpencrImportException.class })
+	public final ResponseEntity<Object> handleOpencrImportException(OpencrImportException ex, WebRequest request) {
+		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), ex.getStatus(), request);
 	}
 	
 	@ExceptionHandler({ SSLException.class, SocketException.class })

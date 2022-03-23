@@ -1,0 +1,4 @@
+<dataset>
+    <person_attribute_type person_attribute_type_id="97" name="Home Telephone" description="Home phone" format="java.lang.String" searchable="false" creator="1" date_created="2007-05-04 09:59:23.0" retired="false" uuid="e6c97a9d-a77b-401f-b06e-81900e21ed1d" sort_weight="3"/>
+    <person_attribute_type person_attribute_type_id="101" name="Mobile Telephone" description="Mobile phone" format="java.lang.String" searchable="false" creator="1" date_created="2008-08-15 15:53:36.0" retired="false" uuid="e2e3fd64-1d5f-11e0-b929-000c29ad1d07" sort_weight="2"/>
+</dataset>

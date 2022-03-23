@@ -1,8 +1,11 @@
 package org.openmrs.module.esaudefeatures.web;
 
+import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.parser.IParser;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.apache.commons.io.IOUtils;
+import org.hl7.fhir.r4.model.Identifier;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,6 +37,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -84,6 +88,9 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 	
 	final String PERSON_FOR_USER = IOUtils.toString(getClass().getResourceAsStream("/openmrs-rest/person_for_user.json"));
 	
+	final String OPENMRS_PATIENT_JSON = IOUtils
+	        .toString(getClass().getResourceAsStream("/openmrs-rest/single_patient.json"));
+	
 	@Mock
 	private AdministrationService adminService;
 	
@@ -97,12 +104,15 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 	@Autowired
 	private UserService userService;
 	
+	private IParser parser = FhirContext.forR4().newJsonParser();
+	
 	public ImportHelperServiceTest() throws IOException {
 	}
 	
 	@Before
 	public void setup() throws Exception {
 		executeDataSet(USERS_TEST_FILE);
+		executeDataSet("person_attribute_types.xml");
 		mockWebServer = new MockWebServer();
 		mockWebServer.start();
 		Mockito.when(adminService.getGlobalProperty(EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_URL_GP)).thenReturn(
@@ -120,13 +130,11 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 	
 	@Test
 	public void getPatientFromOpenmrsPayloadShouldReturnTheCorrectObject() throws Exception {
-		final String PATIENT_JSON = IOUtils.toString(getClass().getResourceAsStream("/openmrs-rest/single_patient.json"));
-		
 		setUpMockWebServerToReturnPersonPropertiesInRequiredOrder();
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
 		        .addHeader("Content-Type", "application/json").setBody(PATIENT_IDENTIFIERS_JSON));
 		
-		SimpleObject patientObject = SimpleObject.parseJson(PATIENT_JSON);
+		SimpleObject patientObject = SimpleObject.parseJson(OPENMRS_PATIENT_JSON);
 		Map personObject = patientObject.get("person");
 		Map<String, Object> auditInfo = patientObject.get("auditInfo");
 		Boolean voided = patientObject.get("voided");
@@ -315,7 +323,6 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		final String SINGLE_PERSON = IOUtils.toString(getClass().getResourceAsStream("/openmrs-rest/single_person.json"));
 		
 		SimpleObject userObject = SimpleObject.parseJson(SELF_REFERENCING_USER_JSON);
-		SimpleObject personObject = SimpleObject.parseJson(SINGLE_PERSON);
 		
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
 		        .addHeader("Content-Type", "application/json").setBody(SELF_REFERENCING_USER_JSON));
@@ -403,6 +410,62 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		assertNotNull(grandParentLocation);
 		assertEquals(parentLocation, location.getParentLocation());
 		assertEquals(grandParentLocation, parentLocation.getParentLocation());
+	}
+	
+	@Test
+	public void updateOpenmrsPatientWithMPIDataShouldUpdateValuesCorrectly() throws Exception {
+		SimpleObject openmrsPatientObject = SimpleObject.parseJson(OPENMRS_PATIENT_JSON);
+		final String FHIR_PATIENT = IOUtils.toString(getClass().getResourceAsStream("/opencr/single_patient.json"));
+		final Integer HOME_PHONE_PAT_ATTR_ID = 97;
+		final Integer MOBILE_PHONE_PAT_ATTR_ID = 101;
+		
+		Mockito.when(adminService.getGlobalProperty(EsaudeFeaturesConstants.OPENCR_IDENTIFIER_TYPE_CONCEPT_MAPPINGS_GP))
+		        .thenReturn("b0d10dc0-d8ce-11e3-9c1a-0800200c9a66:NID_TARV:NID SERVICO TARV");
+		
+		setUpMockWebServerToReturnPersonPropertiesInRequiredOrder();
+		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
+		        .addHeader("Content-Type", "application/json").setBody(PATIENT_IDENTIFIERS_JSON));
+		Patient openmrsPatient = helperService.getPatientFromOpenmrsRestPayload(openmrsPatientObject);
+		org.hl7.fhir.r4.model.Patient opencrPatient = parser
+		        .parseResource(org.hl7.fhir.r4.model.Patient.class, FHIR_PATIENT);
+		
+		assertNotEquals(openmrsPatient.getBirthdate(), opencrPatient.getBirthDate());
+		assertNotEquals(openmrsPatient.getGender(), String.valueOf(opencrPatient.getGender().getDefinition().charAt(0)));
+		assertNotEquals(openmrsPatient.getPatientIdentifier().getIdentifier(), opencrPatient.getIdentifierFirstRep()
+		        .getValue());
+		assertNull(openmrsPatient.getAttribute(HOME_PHONE_PAT_ATTR_ID));
+		assertNull(openmrsPatient.getAttribute(MOBILE_PHONE_PAT_ATTR_ID));
+		assertEquals("Family", openmrsPatient.getFamilyName());
+		assertEquals("PCT", openmrsPatient.getGivenName());
+		assertEquals("Madrid", openmrsPatient.getMiddleName());
+		
+		PersonAddress personAddress = openmrsPatient.getAddresses().iterator().next();
+		assertEquals("Mopeia", personAddress.getCountyDistrict());
+		assertEquals("Zambezia", personAddress.getStateProvince());
+		assertEquals("Mozambique", personAddress.getCountry());
+		
+		openmrsPatient = helperService.updateOpenmrsPatientWithMPIData(openmrsPatient, opencrPatient);
+		
+		assertEquals(openmrsPatient.getBirthdate(), opencrPatient.getBirthDate());
+		Identifier NID_TARV = null;
+		for (Identifier identifier : opencrPatient.getIdentifier()) {
+			if ("42153b73-6f22-1000-9281-8f1ee524029e".equals(identifier.getId())) {
+				NID_TARV = identifier;
+				break;
+			}
+		}
+		assertEquals(openmrsPatient.getPatientIdentifier().getIdentifier(), NID_TARV.getValue());
+		assertEquals(openmrsPatient.getGender(), String.valueOf(opencrPatient.getGender().getDefinition().charAt(0)));
+		assertNull(openmrsPatient.getAttribute(HOME_PHONE_PAT_ATTR_ID));
+		assertNotNull(openmrsPatient.getAttribute(MOBILE_PHONE_PAT_ATTR_ID));
+		assertEquals("Manara", openmrsPatient.getFamilyName());
+		assertEquals("Haji", openmrsPatient.getGivenName());
+		assertEquals("Sunday", openmrsPatient.getMiddleName());
+		
+		personAddress = openmrsPatient.getAddresses().iterator().next();
+		assertEquals("Bariadi", personAddress.getCountyDistrict());
+		assertEquals("Simiyu", personAddress.getStateProvince());
+		assertEquals("Tanzania", personAddress.getCountry());
 	}
 	
 	private void setUpMockWebServerToReturnPersonPropertiesInRequiredOrder() {

@@ -2,11 +2,7 @@ package org.openmrs.module.esaudefeatures.web;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
-import okhttp3.Call;
 import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -24,8 +20,6 @@ import org.openmrs.api.AdministrationService;
 import org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants;
 import org.openmrs.module.esaudefeatures.web.controller.OpencrAuthenticationException;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSession;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collection;
@@ -45,9 +39,9 @@ public class OpencrSearchDelegateTest {
 	
 	private static final FhirContext FHIR_CONTEXT = FhirContext.forR4();
 	
-	private static final String MATCHED_PATIENT_LIST_FILE_NAME = "/opencr_matched_patient_list.json";
+	private static final String MATCHED_PATIENT_LIST_FILE_NAME = "/opencr/opencr_matched_patient_list.json";
 	
-	private static final String IDENTIFIER_MATCHED_PATIENT = "/opencr_identifier_matched_patient.json";
+	private static final String IDENTIFIER_MATCHED_PATIENT = "/opencr/opencr_identifier_matched_patient.json";
 	
 	private static final String EXPECTED_PATIENT_PATH = "/ocrux/fhir/Patient";
 	

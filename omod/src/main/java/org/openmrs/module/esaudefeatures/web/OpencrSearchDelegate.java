@@ -8,7 +8,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import org.apache.commons.lang.NotImplementedException;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Patient;
@@ -22,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import javax.net.ssl.HostnameVerifier;
@@ -37,7 +37,7 @@ import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.REMOTE_S
 /**
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 2/17/22.
  */
-@Component("esaudefeatures.openCRSearchDelegate")
+@Component("esaudefeatures.opencrSearchDelegate")
 public class OpencrSearchDelegate {
 	
 	private static String cachedToken;
@@ -85,8 +85,58 @@ public class OpencrSearchDelegate {
 		this.patientService = patientService;
 	}
 	
-	public Patient getPatientByFhirId(final String id) {
-		throw new NotImplementedException("not yet");
+	public Patient fetchPatientFromOpencrServerByFhirId(final String id) throws Exception {
+		IParser parser = FHIR_CONTEXT.newJsonParser();
+		String remoteServerUrl = adminService.getGlobalProperty(OPENCR_REMOTE_SERVER_URL_GP);
+		if (StringUtils.isEmpty(remoteServerUrl)) {
+			String message = String.format("Could not perform the search, Global property %s not set",
+			    OPENCR_REMOTE_SERVER_URL_GP);
+			LOGGER.warn(message);
+			throw new OpencrSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
+		
+		HttpUrl.Builder urlBuilder = HttpUrl.parse(remoteServerUrl).newBuilder().addPathSegments(OPENCR_FHIR_PATIENT_PATH)
+		        .addPathSegment(id);
+		
+		LOGGER.trace("Remote OpenCR URL for searching is {} ", urlBuilder.toString());
+		
+		String authToken = getServerJWTAuthenticationToken();
+		
+		String bearerToken = "Bearer ".concat(authToken);
+		Request clientRequest = new Request.Builder().url(urlBuilder.build()).addHeader("Authorization", bearerToken)
+		        .build();
+		
+		OkHttpClient okHttpClient = createOkHttpClient();
+		Response opencrResponse = okHttpClient.newCall(clientRequest).execute();
+		if (opencrResponse.isSuccessful() && opencrResponse.code() == HttpServletResponse.SC_OK) {
+			return parser.parseResource(Patient.class, opencrResponse.body().string());
+		} else if (opencrResponse.code() == HttpServletResponse.SC_UNAUTHORIZED) {
+			// Deal with authentication error.
+			if (opencrResponse.body().string().contains("Token expired")) {
+				LOGGER.info("Server returned unauthorized, attempting re-authentication");
+				try {
+					authToken = reAuthenticate();
+				}
+				catch (OpencrAuthenticationException e) {
+					LOGGER.error(e.getMessage());
+					throw new OpencrSearchException(e.getMessage(), HttpServletResponse.SC_EXPECTATION_FAILED);
+				}
+				clientRequest = new Request.Builder().url(urlBuilder.build())
+				        .addHeader("Authorization", "Bearer ".concat(authToken)).build();
+				opencrResponse = okHttpClient.newCall(clientRequest).execute();
+				if (opencrResponse.isSuccessful() && opencrResponse.code() == HttpServletResponse.SC_OK) {
+					return parser.parseResource(Patient.class, opencrResponse.body().string());
+				} else {
+					// Return error to the client.
+					LOGGER.error("Response from {} server: {}", remoteServerUrl, opencrResponse.body().string());
+					throw new OpencrSearchException(opencrResponse.body().string(), opencrResponse.code());
+				}
+			} else {
+				LOGGER.error("Response from {} server: {}", remoteServerUrl, opencrResponse.body().string());
+				throw new OpencrSearchException(opencrResponse.body().string(), opencrResponse.code());
+			}
+		}
+		throw new OpencrSearchException(opencrResponse.body().string(), opencrResponse.code());
 	}
 	
 	public Bundle searchOpencrForPatients(final String searchText) throws Exception {
@@ -174,38 +224,41 @@ public class OpencrSearchDelegate {
 		throw new OpencrSearchException(opencrResponse.body().string(), opencrResponse.code());
 	}
 	
-	public boolean importOpencrPatient(final String fhirPatientId) {
+	@Transactional
+	public org.openmrs.Patient importOpencrPatient(final String fhirPatientId) throws Exception {
 		//Check if patient is in cache.
 		Bundle.BundleEntryComponent patientEntry = PATIENTS_CACHE.get(fhirPatientId);
+		Patient patient = null;
 		if (patientEntry == null) {
 			// Get it from openCR server (this means the cache expired already)
+			patient = fetchPatientFromOpencrServerByFhirId(fhirPatientId);
+		} else {
+			patient = (Patient) patientEntry.getResource();
 		}
 		
-		if (patientEntry != null) {
-			return importOpencrPatient((Patient) patientEntry.getResource());
+		if (patient != null) {
+			return importOpencrPatient(patient);
 		}
-		return false;
+		return null;
 	}
 	
-	public boolean importOpencrPatient(final Patient patientResource) {
+	@Transactional
+	public org.openmrs.Patient importOpencrPatient(final Patient patientResource) throws Exception {
 		//Find the corresponding patient from the central server.
 		String openmrsUuid = getOpenmrsUuid(patientResource.getIdentifier());
 		
 		if (openmrsUuid != null) {
 			// Fetch patient from central server.
-			try {
-				SimpleObject patientObject = openmrsSearchDelegate.getRemotePatientByUuid(openmrsUuid);
-				org.openmrs.Patient opPatient = helperService.getPatientFromOpenmrsRestPayload(patientObject);
-				// Apply changes from OpenCR server
-				helperService.updateOpenmrsPatientWithMPIData(opPatient, patientResource);
-				patientService.savePatient(opPatient);
-				return true;
-			}
-			catch (Exception e) {
-				e.printStackTrace();
-			}
+			SimpleObject patientObject = openmrsSearchDelegate.getRemotePatientByUuid(openmrsUuid);
+			org.openmrs.Patient opPatient = helperService.getPatientFromOpenmrsRestPayload(patientObject);
+			// Apply changes from OpenCR server
+			helperService.updateOpenmrsPatientWithMPIData(opPatient, patientResource);
+			return patientService.savePatient(opPatient);
+		} else {
+			// Just import as new.
+			org.openmrs.Patient opPatient = helperService.getPatientFromOpencrPatientResource(patientResource);
+			return patientService.savePatient(opPatient);
 		}
-		return false;
 	}
 	
 	public String reAuthenticate() throws Exception {

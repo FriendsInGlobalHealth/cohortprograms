@@ -1,0 +1,93 @@
+{
+  "resourceType": "Patient",
+  "id": "c0a19a75-4135-4bfb-81af-28ad9da7b279",
+  "meta": {
+    "versionId": "2",
+    "lastUpdated": "2022-03-23T06:43:26.985+00:00",
+    "source": "#3g57rY7XHvikYgt7",
+    "tag": [
+      {
+        "system": "http://openclientregistry.org/fhir/clientid",
+        "code": "openmrs",
+        "display": "OpenMRS"
+      }
+    ]
+  },
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><div class=\"hapiHeaderText\">Filomena <b>MANARA </b></div><table class=\"hapiPropertyTable\"><tbody><tr><td>Identifier</td><td>42153b6f-6f22-1000-9281-8f1ee524029e</td></tr><tr><td>Address</td><td><span>null </span><br/><span>null </span><br/><span>Pedreira </span><br/><span>perto do mercadinho de carvao, perto da moagem do </span><br/><span>null </span><br/><span>Zambézia </span><span>Moçambique </span></td></tr><tr><td>Date of birth</td><td><span>07 December 1963</span></td></tr></tbody></table></div>"
+  },
+  "identifier": [
+    {
+      "type": {
+        "coding": [
+          {
+            "system": "http://metadata.epts.e-saude.net/dictionary/patient-identifiers",
+            "code": "OpenMRS_PATIENT_UUID",
+            "display": "OpenMRS Patient UUID"
+          }
+        ],
+        "text": "OpenMRS Internal UUID"
+      },
+      "system": "http://metadata.epts.e-saude.net/dictionary/patient-uuid",
+      "value": "6d24f374-8125-11e0-a437-00242122a7a8"
+    },
+    {
+      "id": "42153b73-6f22-1000-9281-8f1ee524029e",
+      "type": {
+        "coding": [
+          {
+            "system": "http://metadata.epts.e-saude.net/dictionary/patient-identifiers",
+            "code": "NID_TARV",
+            "display": "NID SERVICO TARV"
+          }
+        ],
+        "text": "NID (SERVICO TARV)"
+      },
+      "system": "http://metadata.epts.e-saude.net/dictionary/patient-identifiers/nid-tarv",
+      "value": "0102100001/2009/00349"
+    }
+  ],
+  "active": true,
+  "name": [
+    {
+      "id": "6d8982e4-8125-11e0-a437-00242122a7a8",
+      "use": "official",
+      "family": "Manara",
+      "given": [
+        "Haji",
+        "Sunday"
+      ]
+    }
+  ],
+  "telecom": [
+    {
+      "id": "42153b71-6f22-1000-9281-8f1ee524029e",
+      "system": "phone",
+      "value": "822991300",
+      "use": "mobile"
+    }
+  ],
+  "gender": "male",
+  "birthDate": "1963-12-07",
+  "address": [
+    {
+      "id": "6d42118e-8125-11e0-a437-00242122a7a8",
+      "line": [
+        "Pedreira",
+        "perto do mercadinho de carvao, perto da moagem do"
+      ],
+      "district": "Bariadi",
+      "state": "Simiyu",
+      "country": "Tanzania"
+    }
+  ],
+  "link": [
+    {
+      "other": {
+        "reference": "Patient/b252adf6-59be-41ba-b053-bb6dec113a45"
+      },
+      "type": "refer"
+    }
+  ]
+}
