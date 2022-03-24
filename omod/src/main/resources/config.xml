@@ -95,13 +95,6 @@
 		</description>
 	</globalProperty>
 	<globalProperty>
-		<property>@MODULE_ID@.imported.patient.location.uuid</property>
-		<defaultValue></defaultValue>
-		<description>
-			The UUID of the location that will replace the location an imported patient demographic. Used for things like identifier location
-		</description>
-	</globalProperty>
-	<globalProperty>
 		<property>@MODULE_ID@.remote.server.type</property>
 		<defaultValue>OPENCR</defaultValue>
 		<description>
@@ -115,6 +108,7 @@
 			This property tells the system whether to skip hostname verification during the SSL handshake. It can be for self signed
 			SSL certificates, otherwise this should never be set to true. Set to TRUE if you know what you are doing.
 		</description>
+	</globalProperty>
 	<globalProperty>
 		<property>@MODULE_ID@.opencr.identifier.type.concept.mappings</property>
 		<defaultValue>
