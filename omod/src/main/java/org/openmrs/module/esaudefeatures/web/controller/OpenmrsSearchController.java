@@ -1,14 +1,11 @@
 package org.openmrs.module.esaudefeatures.web.controller;
 
-import org.openmrs.Location;
 import org.openmrs.Patient;
-import org.openmrs.Relationship;
 import org.openmrs.api.AdministrationService;
-import org.openmrs.api.LocationService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.esaudefeatures.web.RemoteOpenmrsSearchDelegate;
-import org.openmrs.module.esaudefeatures.web.exception.RemoteOpenmrsSearchException;
 import org.openmrs.module.esaudefeatures.web.Utils;
+import org.openmrs.module.esaudefeatures.web.exception.RemoteOpenmrsSearchException;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,9 +20,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.List;
-
-import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.IMPORTED_PATIENT_LOCATION_UUID_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_PASSWORD_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_URL_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_USERNAME_GP;
@@ -42,8 +36,6 @@ public class OpenmrsSearchController {
 	
 	private RemoteOpenmrsSearchDelegate delegate;
 	
-	private LocationService locationService;
-	
 	private static final Logger LOGGER = LoggerFactory.getLogger(OpenmrsSearchController.class);
 	
 	public static final String ROOT_PATH = "/module/esaudefeatures/findRemotePatients.form";
@@ -58,11 +50,6 @@ public class OpenmrsSearchController {
 	@Autowired
 	public void setDelegate(RemoteOpenmrsSearchDelegate delegate) {
 		this.delegate = delegate;
-	}
-	
-	@Autowired
-	public void setLocationService(LocationService locationService) {
-		this.locationService = locationService;
 	}
 	
 	@RequestMapping(method = RequestMethod.GET, value = { ROOT_PATH, ALT_ROOT_PATH })
@@ -99,19 +86,6 @@ public class OpenmrsSearchController {
 		
 		if (StringUtils.isEmpty(remoteServerPassword)) {
 			LOGGER.warn("Global property {} not set", OPENMRS_REMOTE_SERVER_PASSWORD_GP);
-		}
-		
-		String importedPatientLocationUuid = adminService.getGlobalProperty(IMPORTED_PATIENT_LOCATION_UUID_GP);
-		if (StringUtils.hasText(importedPatientLocationUuid)) {
-			Location location = locationService.getLocationByUuid(importedPatientLocationUuid);
-			if (location == null) {
-				LOGGER.warn("The {} global property value is not valid because no location with {} exists in the system",
-				    IMPORTED_PATIENT_LOCATION_UUID_GP, importedPatientLocationUuid);
-			} else {
-				modelAndView.getModelMap().addAttribute("importedPatientLocationUuid", importedPatientLocationUuid);
-			}
-		} else {
-			LOGGER.warn("Global property {} not set", IMPORTED_PATIENT_LOCATION_UUID_GP);
 		}
 		
 		// if there's an authenticated user, put them, and their patient set, in the model

@@ -23,8 +23,6 @@ public class EsaudeFeaturesConstants {
 	
 	public static final String OPENCR_REMOTE_SERVER_PASSWORD_GP = "esaudefeatures.opencr.remote.server.password";
 	
-	public static final String IMPORTED_PATIENT_LOCATION_UUID_GP = "esaudefeatures.imported.patient.location.uuid";
-	
 	public static final String OPENCR_IDENTIFIER_TYPE_CONCEPT_MAPPINGS_GP = "esaudefeatures.opencr.identifier.type.concept.mappings";
 	
 	public static final String HOME_PHONE_PERSON_ATTR_TYPE_UUID = "e6c97a9d-a77b-401f-b06e-81900e21ed1d";
