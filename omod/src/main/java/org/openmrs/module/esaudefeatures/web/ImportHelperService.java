@@ -63,6 +63,7 @@ import java.util.concurrent.ConcurrentMap;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.HOME_PHONE_PERSON_ATTR_TYPE_UUID;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.MOBILE_PHONE_PERSON_ATTR_TYPE_UUID;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENCR_IDENTIFIER_TYPE_CONCEPT_MAPPINGS_GP;
+import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENCR_PATIENT_UUID_CONCEPT_MAP_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_PASSWORD_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_URL_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_USERNAME_GP;
@@ -135,9 +136,15 @@ public class ImportHelperService {
 
 	public Patient getPatientFromOpencrPatientResource(org.hl7.fhir.r4.model.Patient opencrPatient) {
 		Person person = new Person();
-		person.setUuid(opencrPatient.getId());
+		String patientUuidConceptMap = adminService.getGlobalProperty(OPENCR_PATIENT_UUID_CONCEPT_MAP_GP);
+		String opencrPatientUuidCode = patientUuidConceptMap.split(":")[0];
+		String openmrsUuid = Utils.getOpenmrsUuidFromOpencrIdentifiers(opencrPatient.getIdentifier(), opencrPatientUuidCode);
+		if(openmrsUuid != null) {
+			person.setUuid(openmrsUuid);
+		} else {
+			person.setUuid(opencrPatient.getIdElement().getIdPart());
+		}
 		Patient openmrsPatient = new Patient(person);
-
 		openmrsPatient.setBirthdate(opencrPatient.getBirthDate());
 		if(opencrPatient.hasGender()) {
 			openmrsPatient.setGender(String.valueOf(opencrPatient.getGender().getDefinition().charAt(0)));
@@ -168,6 +175,7 @@ public class ImportHelperService {
 				patientIdentifier.setIdentifier(identifier.getValue());
 
 				PatientIdentifierType identifierType = patientService.getPatientIdentifierTypeByUuid(openmrsIdentifierTypeUuid);
+				patientIdentifier.setIdentifierType(identifierType);
 				if(PatientIdentifierType.LocationBehavior.REQUIRED.equals(identifierType.getLocationBehavior())) {
 					patientIdentifier.setLocation(locationService.getDefaultLocation());
 				}
@@ -224,7 +232,7 @@ public class ImportHelperService {
 			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
 		
-		Response response;
+		Response response = null;
 		try {
 			response = httpClient.newCall(identifiersRequest).execute();
 			if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
@@ -266,6 +274,10 @@ public class ImportHelperService {
 		catch (IOException e) {
 			LOGGER.error("Error when executing http request {} ", identifiersRequest);
 			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+		} finally {
+			if(response != null) {
+				response.close();
+			}
 		}
 	}
 	
@@ -297,19 +309,24 @@ public class ImportHelperService {
 			LOGGER.error("Error when executing http request {}", personRequest, e);
 			throw new RemoteOpenmrsSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
-		
-		if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
-			try {
-				SimpleObject fetchedPersonObject = SimpleObject.parseJson(response.body().string());
-				Person person = getPersonFromOpenmrsRestRepresentation(fetchedPersonObject);
-				return personService.savePerson(person);
+
+		try {
+			if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
+				try {
+					SimpleObject fetchedPersonObject = SimpleObject.parseJson(response.body().string());
+					Person person = getPersonFromOpenmrsRestRepresentation(fetchedPersonObject);
+					return personService.savePerson(person);
+				} catch (IOException e) {
+					LOGGER.error("Error while reading response from server {}", urlUserPass[0], e);
+					throw new RemoteImportException(message, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+				}
 			}
-			catch (IOException e) {
-				LOGGER.error("Error while reading response from server {}", urlUserPass[0], e);
-				throw new RemoteImportException(message, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+			throw new RemoteImportException(response.message(), HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+		} finally {
+			if(response != null) {
+				response.close();
 			}
 		}
-		throw new RemoteImportException(response.message(), HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 	}
 	
 	public Person getPersonFromOpenmrsRestRepresentation(Map personMap) {
@@ -389,7 +406,7 @@ public class ImportHelperService {
 			throw new RemoteImportException(errorMessage, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 		}
 		
-		Response response;
+		Response response = null;
 		try {
 			response = httpClient.newCall(namesRequest).execute();
 			if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
@@ -463,6 +480,10 @@ public class ImportHelperService {
 		catch (InvocationTargetException e) {
 			LOGGER.error("Error invoking method {} on instance of org.openmrs.Person class", setterMethod, e);
 			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+		} finally {
+			if(response != null) {
+				response.close();
+			}
 		}
 	}
 	
@@ -490,7 +511,7 @@ public class ImportHelperService {
 			throw new RemoteOpenmrsSearchException(errorMessage, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
 		
-		Response response;
+		Response response = null;
 		try {
 			response = httpClient.newCall(namesRequest).execute();
 			if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
@@ -548,6 +569,10 @@ public class ImportHelperService {
 		catch (IOException e) {
 			LOGGER.error("Error when executing http request {} ", namesRequest);
 			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+		} finally {
+			if(response != null) {
+				response.close();
+			}
 		}
 	}
 	
@@ -685,7 +710,7 @@ public class ImportHelperService {
 			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 		}
 		
-		Response response;
+		Response response = null;
 		try {
 			response = httpClient.newCall(userRequest).execute();
 			if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
@@ -728,14 +753,18 @@ public class ImportHelperService {
 				}
 				return user;
 			}
+			throw new RemoteImportException(errorMessage, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 		}
 		catch (IOException e) {
 			LOGGER.error("Error when executing http request {} ", userRequest, e);
 			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+		} finally {
+			if(response != null) {
+				response.close();
+			}
 		}
-		throw new RemoteImportException(errorMessage, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 	}
-	
+
 	public Location importLocationFromRemoteOpenmrsServer(String locationUuid) {
 		String[] urlUserPass = getRemoteOpenmrsHostUsernamePassword();
 		String message = String.format("Could not fetch location with uuid %s from server %s", locationUuid, urlUserPass[0]);
@@ -764,57 +793,62 @@ public class ImportHelperService {
 			LOGGER.error("Error when executing http request {}", locRequest, e);
 			throw new RemoteImportException(message, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 		}
-		
-		if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
-			final SimpleObject fetchedLocationObject;
-			try {
-				fetchedLocationObject = SimpleObject.parseJson(response.body().string());
-			}
-			catch (IOException e) {
-				LOGGER.error("Error while reading response from server {}", urlUserPass[0], e);
-				throw new RemoteOpenmrsSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			}
-			// TODO: Currently location tags and attributes are not being used so we can ignore them. However a complete solution will have to take
-			// these into account.
-			
-			final Location fetchedLocation = new Location();
-			ReflectionUtils.doWithFields(Location.class, new ReflectionUtils.FieldCallback() {
-				
-				@Override
-				public void doWith(Field field) throws IllegalArgumentException, IllegalAccessException {
-					field.setAccessible(true);
-					field.set(fetchedLocation, fetchedLocationObject.get(field.getName()));
-					field.setAccessible(false);
+
+		try {
+			if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
+				final SimpleObject fetchedLocationObject;
+				try {
+					fetchedLocationObject = SimpleObject.parseJson(response.body().string());
+				} catch (IOException e) {
+					LOGGER.error("Error while reading response from server {}", urlUserPass[0], e);
+					throw new RemoteOpenmrsSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				}
-			}, new ReflectionUtils.FieldFilter() {
-				
-				@Override
-				public boolean matches(Field field) {
-					if (Arrays.asList("tags", "parentLocation", "childLocations", "attributes").contains(field.getName())) {
-						return false;
+				// TODO: Currently location tags and attributes are not being used so we can ignore them. However a complete solution will have to take
+				// these into account.
+
+				final Location fetchedLocation = new Location();
+				ReflectionUtils.doWithFields(Location.class, new ReflectionUtils.FieldCallback() {
+
+					@Override
+					public void doWith(Field field) throws IllegalArgumentException, IllegalAccessException {
+						field.setAccessible(true);
+						field.set(fetchedLocation, fetchedLocationObject.get(field.getName()));
+						field.setAccessible(false);
 					}
-					int modifiers = field.getModifiers();
-					return (!Modifier.isFinal(modifiers) && !Modifier.isStatic(modifiers));
+				}, new ReflectionUtils.FieldFilter() {
+
+					@Override
+					public boolean matches(Field field) {
+						if (Arrays.asList("tags", "parentLocation", "childLocations", "attributes").contains(field.getName())) {
+							return false;
+						}
+						int modifiers = field.getModifiers();
+						return (!Modifier.isFinal(modifiers) && !Modifier.isStatic(modifiers));
+					}
+				});
+
+				if (fetchedLocationObject.containsKey("auditInfo")) {
+					updateAuditInfo(fetchedLocation, (Map) fetchedLocationObject.get("auditInfo"));
 				}
-			});
-			
-			if (fetchedLocationObject.containsKey("auditInfo")) {
-				updateAuditInfo(fetchedLocation, (Map) fetchedLocationObject.get("auditInfo"));
-			}
-			
-			if (fetchedLocationObject.containsKey("parentLocation") && fetchedLocationObject.get("parentLocation") != null) {
-				// Check if this location exists locally
-				String parentLocationUuid = (String) ((Map) fetchedLocationObject.get("parentLocation")).get("uuid");
-				Location parentLocation = locationService.getLocationByUuid(parentLocationUuid);
-				
-				if (parentLocation == null) {
-					parentLocation = importLocationFromRemoteOpenmrsServer(parentLocationUuid);
+
+				if (fetchedLocationObject.containsKey("parentLocation") && fetchedLocationObject.get("parentLocation") != null) {
+					// Check if this location exists locally
+					String parentLocationUuid = (String) ((Map) fetchedLocationObject.get("parentLocation")).get("uuid");
+					Location parentLocation = locationService.getLocationByUuid(parentLocationUuid);
+
+					if (parentLocation == null) {
+						parentLocation = importLocationFromRemoteOpenmrsServer(parentLocationUuid);
+					}
+					fetchedLocation.setParentLocation(parentLocation);
 				}
-				fetchedLocation.setParentLocation(parentLocation);
+				return locationService.saveLocation(fetchedLocation);
 			}
-			return locationService.saveLocation(fetchedLocation);
+			throw new RemoteImportException(message, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+		} finally {
+			if(response != null) {
+				response.close();
+			}
 		}
-		throw new RemoteImportException(message, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 	}
 	
 	public String[] getRemoteOpenmrsHostUsernamePassword() throws RemoteOpenmrsSearchException {
@@ -914,61 +948,66 @@ public class ImportHelperService {
 			throw new RemoteOpenmrsSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
 
-		if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
-			final SimpleObject fetchedRelationshipsObject;
-			try {
-				fetchedRelationshipsObject = SimpleObject.parseJson(response.body().string());
-			}
-			catch (IOException e) {
-				LOGGER.error("Error while reading response from server {}", urlUserPass[0], e);
-				throw new RemoteOpenmrsSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			}
-
-			List<Relationship> importedRelationships = new ArrayList<>();
-			if(fetchedRelationshipsObject.containsKey("results") && !((List)fetchedRelationshipsObject.get("results")).isEmpty()) {
-				List<Map<String, Object>> relationshipObjects = fetchedRelationshipsObject.get("results");
-				for(Map<String, Object> relationshipObject: relationshipObjects) {
-					Map<String, Object> personAObject = (Map) relationshipObject.get("personA");
-					Map<String, Object> personBObject = (Map) relationshipObject.get("personB");
-					String relationshipTypeUuid = (String)((Map<String, Object>) relationshipObject.get("relationshipType")).get("uuid");
-					RelationshipType relationshipType = personService.getRelationshipTypeByUuid(relationshipTypeUuid);
-
-					Relationship relationship = new Relationship();
-					relationship.setRelationshipType(relationshipType);
-					relationship.setUuid((String) relationshipObject.get("uuid"));
-
-					if(person.getUuid().equals(personAObject.get("uuid"))) {
-						relationship.setPersonA(person);
-
-						String personBUuid = (String)personBObject.get("uuid");
-						Person personB = personService.getPersonByUuid(personBUuid);
-						if(personB == null) {
-							personB = importPersonFromRemoteOpenmrsServer(personBUuid);
-						}
-
-						relationship.setPersonB(personB);
-					} else {
-						relationship.setPersonB(person);
-
-						String personAUuid = (String)personBObject.get("uuid");
-						Person personA = personService.getPersonByUuid(personAUuid);
-						if(personA == null) {
-							personA = importPersonFromRemoteOpenmrsServer(personAUuid);
-						}
-
-						relationship.setPersonA(personA);
-					}
-
-					relationship.setStartDate(parseDateString((String) relationshipObject.get("startDate")));
-					relationship.setEndDate(parseDateString((String) relationshipObject.get("endDate")));
-					updateAuditInfo(relationship, (Map<String, Object>) relationshipObject.get("auditInfo"));
-					relationship = personService.saveRelationship(relationship);
-					importedRelationships.add(relationship);
+		try {
+			if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
+				final SimpleObject fetchedRelationshipsObject;
+				try {
+					fetchedRelationshipsObject = SimpleObject.parseJson(response.body().string());
+				} catch (IOException e) {
+					LOGGER.error("Error while reading response from server {}", urlUserPass[0], e);
+					throw new RemoteOpenmrsSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				}
+
+				List<Relationship> importedRelationships = new ArrayList<>();
+				if (fetchedRelationshipsObject.containsKey("results") && !((List) fetchedRelationshipsObject.get("results")).isEmpty()) {
+					List<Map<String, Object>> relationshipObjects = fetchedRelationshipsObject.get("results");
+					for (Map<String, Object> relationshipObject : relationshipObjects) {
+						Map<String, Object> personAObject = (Map) relationshipObject.get("personA");
+						Map<String, Object> personBObject = (Map) relationshipObject.get("personB");
+						String relationshipTypeUuid = (String) ((Map<String, Object>) relationshipObject.get("relationshipType")).get("uuid");
+						RelationshipType relationshipType = personService.getRelationshipTypeByUuid(relationshipTypeUuid);
+
+						Relationship relationship = new Relationship();
+						relationship.setRelationshipType(relationshipType);
+						relationship.setUuid((String) relationshipObject.get("uuid"));
+
+						if (person.getUuid().equals(personAObject.get("uuid"))) {
+							relationship.setPersonA(person);
+
+							String personBUuid = (String) personBObject.get("uuid");
+							Person personB = personService.getPersonByUuid(personBUuid);
+							if (personB == null) {
+								personB = importPersonFromRemoteOpenmrsServer(personBUuid);
+							}
+
+							relationship.setPersonB(personB);
+						} else {
+							relationship.setPersonB(person);
+
+							String personAUuid = (String) personBObject.get("uuid");
+							Person personA = personService.getPersonByUuid(personAUuid);
+							if (personA == null) {
+								personA = importPersonFromRemoteOpenmrsServer(personAUuid);
+							}
+
+							relationship.setPersonA(personA);
+						}
+
+						relationship.setStartDate(parseDateString((String) relationshipObject.get("startDate")));
+						relationship.setEndDate(parseDateString((String) relationshipObject.get("endDate")));
+						updateAuditInfo(relationship, (Map<String, Object>) relationshipObject.get("auditInfo"));
+						relationship = personService.saveRelationship(relationship);
+						importedRelationships.add(relationship);
+					}
+				}
+				return importedRelationships;
 			}
-			return importedRelationships;
+			throw new RemoteImportException(message, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+		} finally {
+			if(response != null) {
+				response.close();
+			}
 		}
-		throw new RemoteImportException(message, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
 	}
 
 	private Person getDummyPerson() {

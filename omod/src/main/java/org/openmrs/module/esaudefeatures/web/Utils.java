@@ -7,6 +7,7 @@ import okhttp3.Request;
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Identifier;
+import org.openmrs.api.AdministrationService;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
@@ -14,8 +15,11 @@ import java.security.SecureRandom;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
+
+import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENCR_PATIENT_UUID_CONCEPT_MAP_GP;
 
 /**
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 2/17/22.
@@ -172,6 +176,20 @@ public class Utils {
 				for (Coding coding : identifier.getType().getCoding()) {
 					if (coding.hasCode() && coding.getCode().equalsIgnoreCase(mapParts[1])) {
 						return mapParts[0];
+					}
+				}
+			}
+		}
+		return null;
+	}
+	
+	public static String getOpenmrsUuidFromOpencrIdentifiers(List<Identifier> identifiers, String opencrPatientUuidCode) {
+		for (int i = 0; i < identifiers.size(); i++) {
+			Identifier identifier = identifiers.get(i);
+			if (identifier.hasType() && identifier.getType().hasCoding()) {
+				for (Coding coding : identifier.getType().getCoding()) {
+					if (opencrPatientUuidCode.equalsIgnoreCase(coding.getCode())) {
+						return identifier.getValue();
 					}
 				}
 			}

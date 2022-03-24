@@ -40,6 +40,8 @@
         const ERROR_DURING_SEARCH_MSG_PREFIX = '<openmrs:message code="esaudefeatures.remote.patients.search.error"/>'
         const IMPORT_CONFIRM_MSG_PREFIX = '<openmrs:message code="esaudefeatures.remote.patients.import.confirmation"/>';
         const REMOTE_SERVER_TYPE = "${remoteServerType}";
+        const OPENCR_NID_CODE = 'NID_TARV';
+        const OPENCR_PERSON_UUID_CODE = 'OpenMRS_PATIENT_UUID';
 
         class HttpError extends Error {
             constructor(response) {
@@ -194,13 +196,14 @@
                 var NID_REGEX = /^\d+\/{1,3}\d+\/{1,3}\d+$/;
 
                 return results.map(result => {
-                    var NID = result.resource.identifier.find(ident => NID_REGEX.test(ident.value));
+                    var NID = result.resource.identifier.find(ident => ident.type.coding.find(coding => OPENCR_NID_CODE == coding.code));
                     var NIDDisplay = '';
                     if(NID) {
                         NIDDisplay = NID.value;
                     }
-                    var openmrsUuid = result.resource.identifier.find(ident => /openmrs/.test(ident.system));
-                    var mapped = [openmrsUuid.value, NIDDisplay, _fullname(result.resource.name), result.resource.gender]
+                    var openmrsUuid = result.resource.identifier.find(ident => ident.type.coding.find(coding => OPENCR_PERSON_UUID_CODE == coding.code));
+                    var openmrsUuidDisplay = openmrsUuid ? openmrsUuid.value : '';
+                    var mapped = [openmrsUuidDisplay, NIDDisplay, _fullname(result.resource.name), result.resource.gender]
                     var birthDate = new Date(result.resource.birthDate);
                     mapped.push(birthDate.toLocaleDateString('pt', DATE_DISPLAY_OPTIONS));
                     mapped.push(_age(birthDate));
@@ -289,7 +292,8 @@
                         if(REMOTE_SERVER_TYPE === 'OPENMRS') {
                             return patient.uuid === patientUuid;
                         }
-                        return patient.resource.identifier.find(ident => /openmrs/.test(ident.system)).value === patientUuid;
+                        var UUID = patient.resource.identifier.find(ident => ident.type.coding.find(coding => OPENCR_PERSON_UUID_CODE == coding.code));
+                        return UUID != null && UUID.value === patientUuid;
                     });
                     var remotePatientDetailsTitle ='<openmrs:message code="esaudefeatures.remote.patients.remote.patient.details"/>';
                     if(REMOTE_SERVER_TYPE === 'OPENMRS') {
@@ -469,7 +473,7 @@
                     mergedPatientDetailsTable += '<openmrs:message code="esaudefeatures.remote.patients.identifiers"/></td></tr>';
                     if(Array.isArray(patient.resource.identifier) && patient.resource.identifier.length > 0) {
                         for(let identifier of patient.resource.identifier) {
-                            mergedPatientDetailsTable += '<tr><td>' + identifier.system + ':</td><td>' + identifier.value + '</td>';
+                            mergedPatientDetailsTable += '<tr><td>' + identifier.type.text + ':</td><td>' + identifier.value + '</td>';
                         }
                     } else {
                         mergedPatientDetailsTable += '<tr><td colspan="2"><openmrs:message code="esaudefeatures.remote.patients.no.identifiers"/> </td></tr>';
@@ -502,7 +506,7 @@
             patientDetailsTable += '<openmrs:message code="esaudefeatures.remote.patients.identifiers"/></td></tr>';
             if(Array.isArray(patient.resource.identifier) && patient.resource.identifier.length > 0) {
                 for(let identifier of patient.resource.identifier) {
-                    patientDetailsTable += '<tr><td>' + identifier.system + ':</td><td>' + identifier.value + '</td>';
+                    patientDetailsTable += '<tr><td>' + identifier.type.text + ':</td><td>' + identifier.value + '</td>';
                 }
             } else {
                 patientDetailsTable += '<tr><td colspan="2"><openmrs:message code="esaudefeatures.remote.patients.no.identifiers"/> </td></tr>';

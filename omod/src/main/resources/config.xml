@@ -128,6 +128,13 @@
 			in OpenCR server.
 		</description>
 	</globalProperty>
+	<globalProperty>
+		<property>>@MODULE_ID@.opencr.patient.uuid.concept.map</property>
+		<defaultValue>OpenMRS_PATIENT_UUID:OpenMRS Patient UUID</defaultValue>
+		<description>
+			The concept mapping indicating the code used to represent the patient/person UUID in Opencr/FHIR coding system.
+		</description>
+	</globalProperty>
 
 	<!--
 	<dwr>

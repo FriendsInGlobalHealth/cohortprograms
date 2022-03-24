@@ -25,6 +25,8 @@ public class EsaudeFeaturesConstants {
 	
 	public static final String OPENCR_IDENTIFIER_TYPE_CONCEPT_MAPPINGS_GP = "esaudefeatures.opencr.identifier.type.concept.mappings";
 	
+	public static final String OPENCR_PATIENT_UUID_CONCEPT_MAP_GP = "esaudefeatures.opencr.patient.uuid.concept.map";
+	
 	public static final String HOME_PHONE_PERSON_ATTR_TYPE_UUID = "e6c97a9d-a77b-401f-b06e-81900e21ed1d";
 	
 	public static final String MOBILE_PHONE_PERSON_ATTR_TYPE_UUID = "e2e3fd64-1d5f-11e0-b929-000c29ad1d07";

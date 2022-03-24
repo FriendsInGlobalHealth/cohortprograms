@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.servlet.ModelAndView;
 
+import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENCR_REMOTE_SERVER_URL_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_PASSWORD_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_URL_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_USERNAME_GP;
@@ -58,11 +59,13 @@ public class OpenmrsSearchController {
 			modelAndView = new ModelAndView();
 		}
 		
-		String remoteServerUrl = adminService.getGlobalProperty(OPENMRS_REMOTE_SERVER_URL_GP);
-		if (StringUtils.hasText(remoteServerUrl)) {
-			modelAndView.getModelMap().addAttribute("remoteServerUrl", remoteServerUrl);
+		String serverType = adminService.getGlobalProperty(REMOTE_SERVER_TYPE_GP, "OPENMRS");
+		if ("OPENMRS".equalsIgnoreCase(serverType)) {
+			modelAndView.getModelMap().addAttribute("remoteServerUrl",
+			    adminService.getGlobalProperty(OPENMRS_REMOTE_SERVER_URL_GP));
 		} else {
-			LOGGER.warn("Global property {} not set", OPENMRS_REMOTE_SERVER_URL_GP);
+			modelAndView.getModelMap().addAttribute("remoteServerUrl",
+			    adminService.getGlobalProperty(OPENCR_REMOTE_SERVER_URL_GP));
 		}
 		
 		modelAndView.getModelMap().addAttribute("remoteServerType",

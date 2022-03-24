@@ -87,14 +87,20 @@ public class RemoteOpenmrsSearchDelegate {
 		OkHttpClient okHttpClient = Utils.createOkHttpClient(skipHostnameVerification);
 		
 		Response response = okHttpClient.newCall(fetchRequest).execute();
-		
-		if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
-			return parseServerResponse(response);
+		try {
+			if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
+				return parseServerResponse(response);
+			}
+			String errorMessage = String.format("Error fetching response from server %s (%s)", remoteServerUrl,
+			    response.message());
+			LOGGER.error(errorMessage);
+			throw new RemoteOpenmrsSearchException(errorMessage, response.code());
 		}
-		String errorMessage = String.format("Error fetching response from server %s (%s)", remoteServerUrl,
-		    response.message());
-		LOGGER.error(errorMessage);
-		throw new RemoteOpenmrsSearchException(errorMessage, response.code());
+		finally {
+			if (response != null) {
+				response.close();
+			}
+		}
 	}
 	
 	public SimpleObject getRemotePatientByUuid(final String uuid) throws Exception {
@@ -115,16 +121,23 @@ public class RemoteOpenmrsSearchDelegate {
 		
 		Response response = okHttpClient.newCall(fetchRequest).execute();
 		
-		if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
-			return parseServerResponse(response);
-		} else if (response.code() == HttpServletResponse.SC_NOT_FOUND) {
-			LOGGER.debug("Patient with uuid {} does not exist on the server {}", uuid, remoteServerUrl);
-			return null;
+		try {
+			if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
+				return parseServerResponse(response);
+			} else if (response.code() == HttpServletResponse.SC_NOT_FOUND) {
+				LOGGER.debug("Patient with uuid {} does not exist on the server {}", uuid, remoteServerUrl);
+				return null;
+			}
+			String errorMessage = String.format("Error fetching response from server %s (%s)", remoteServerUrl,
+			    response.message());
+			LOGGER.error(errorMessage);
+			throw new RemoteOpenmrsSearchException(errorMessage, response.code());
 		}
-		String errorMessage = String.format("Error fetching response from server %s (%s)", remoteServerUrl,
-		    response.message());
-		LOGGER.error(errorMessage);
-		throw new RemoteOpenmrsSearchException(errorMessage, response.code());
+		finally {
+			if (response != null) {
+				response.close();
+			}
+		}
 	}
 	
 	private SimpleObject parseServerResponse(Response response) {

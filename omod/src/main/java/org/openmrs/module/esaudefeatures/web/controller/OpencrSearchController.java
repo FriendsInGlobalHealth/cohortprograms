@@ -19,10 +19,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 11/22/21.
  */
 @Controller("esaudefeatures.opencrSearchController")
-@RequestMapping(OpencrSearchController.ROOT_PATH)
 public class OpencrSearchController {
-	
-	public static final String ROOT_PATH = "/module/esaudefeatures/opencrRemotePatients.json";
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(OpencrSearchController.class);
 	
@@ -34,7 +31,8 @@ public class OpencrSearchController {
 	}
 	
 	@ResponseBody
-	@RequestMapping(method = RequestMethod.GET, produces = { "application/json", "application/json+fhir" })
+	@RequestMapping(method = RequestMethod.GET, value = "/module/esaudefeatures/opencrRemotePatients.json", produces = {
+	        "application/json", "application/json+fhir" })
 	public Bundle searchOpencrForPatient(@RequestParam("text") String searchText) throws Exception {
 		return opencrSearchDelegate.searchOpencrForPatients(searchText);
 	}
