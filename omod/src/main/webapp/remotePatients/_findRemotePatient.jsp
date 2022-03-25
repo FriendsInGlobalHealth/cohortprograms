@@ -535,6 +535,7 @@
                     patientDetailsTable += '<tr><td colspan="2"><input type="button" id="import-button-' + patient.uuid + '" value="' +
                         '<openmrs:message code="esaudefeatures.remote.patients.remote.import.patient"/>' +
                         '" onclick="importPatient(\'' + patient.resource.id + '\', this.id)"/>' +
+                        '<span id="patience-message-' + patient.resource.id + '" style="visibility:hidden;">(<openmrs:message code="esaudefeatures.remote.patients.remote.import.bePatient"/>)</span>' +
                         '<img class="import-busy-gif" src="${pageContext.request.contextPath}/moduleResources/esaudefeatures/images/loading.gif" style="visibility:hidden;"/></td></tr>';
                 }
             }

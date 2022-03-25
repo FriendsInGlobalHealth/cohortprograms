@@ -3,6 +3,7 @@ package org.openmrs.module.esaudefeatures.web.controller;
 import org.hl7.fhir.r4.model.Bundle;
 import org.openmrs.Patient;
 import org.openmrs.module.esaudefeatures.web.OpencrSearchDelegate;
+import org.openmrs.module.esaudefeatures.web.RemoteOpenmrsSearchDelegate;
 import org.openmrs.module.esaudefeatures.web.exception.RemoteImportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,9 +26,16 @@ public class OpencrSearchController {
 	
 	private OpencrSearchDelegate opencrSearchDelegate;
 	
+	private RemoteOpenmrsSearchDelegate openmrsSearchDelegate;
+	
 	@Autowired
 	public void setOpencrSearchDelegate(OpencrSearchDelegate opencrSearchDelegate) {
 		this.opencrSearchDelegate = opencrSearchDelegate;
+	}
+	
+	@Autowired
+	public void setOpenmrsSearchDelegate(RemoteOpenmrsSearchDelegate openmrsSearchDelegate) {
+		this.openmrsSearchDelegate = openmrsSearchDelegate;
 	}
 	
 	@ResponseBody
@@ -43,6 +51,14 @@ public class OpencrSearchController {
 	public String importPatient(@RequestParam("patientId") String opencrPatientId) {
 		try {
 			Patient patient = opencrSearchDelegate.importOpencrPatient(opencrPatientId);
+			
+			try {
+				openmrsSearchDelegate.importRelationshipsForPerson(patient.getPerson());
+			}
+			catch (Exception e) {
+				// TODO: Tell the user that we failed. (Challenging since we don't fail the patient import based on status of relationship import)
+				LOGGER.warn("Could not import relationships for patient with uuid {}", patient.getUuid(), e);
+			}
 			return patient.getPatientId().toString();
 		}
 		catch (Exception e) {

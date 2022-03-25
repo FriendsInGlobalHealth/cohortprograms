@@ -273,7 +273,7 @@ public class ImportHelperService {
 		}
 		catch (IOException e) {
 			LOGGER.error("Error when executing http request {} ", identifiersRequest);
-			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+			throw new RemoteImportException(errorMessage, e, HttpStatus.INTERNAL_SERVER_ERROR);
 		} finally {
 			if(response != null) {
 				response.close();
@@ -318,10 +318,10 @@ public class ImportHelperService {
 					return personService.savePerson(person);
 				} catch (IOException e) {
 					LOGGER.error("Error while reading response from server {}", urlUserPass[0], e);
-					throw new RemoteImportException(message, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+					throw new RemoteImportException(message, e, HttpStatus.INTERNAL_SERVER_ERROR);
 				}
 			}
-			throw new RemoteImportException(response.message(), HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+			throw new RemoteImportException(response.message(), HttpStatus.INTERNAL_SERVER_ERROR);
 		} finally {
 			if(response != null) {
 				response.close();
@@ -403,7 +403,7 @@ public class ImportHelperService {
 		}
 		catch (Exception e) {
 			LOGGER.error("Could not create an http client", null, e);
-			throw new RemoteImportException(errorMessage, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+			throw new RemoteImportException(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		
 		Response response = null;
@@ -463,23 +463,23 @@ public class ImportHelperService {
 		}
 		catch (IOException e) {
 			LOGGER.error("Error when executing http request {} ", namesRequest);
-			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+			throw new RemoteImportException(errorMessage, e, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		catch (IllegalAccessException e) {
 			LOGGER.error("Error while attempting instantiation of {}", propretyClass, e);
-			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+			throw new RemoteImportException(errorMessage, e, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		catch (InstantiationException e) {
 			LOGGER.error("Error instantiating class {}", propretyClass, e);
-			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+			throw new RemoteImportException(errorMessage, e, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		catch (NoSuchMethodException e) {
 			LOGGER.error("Method {} not found on Person class", setterMethod, e);
-			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+			throw new RemoteImportException(errorMessage, e, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		catch (InvocationTargetException e) {
 			LOGGER.error("Error invoking method {} on instance of org.openmrs.Person class", setterMethod, e);
-			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+			throw new RemoteImportException(errorMessage, e, HttpStatus.INTERNAL_SERVER_ERROR);
 		} finally {
 			if(response != null) {
 				response.close();
@@ -568,7 +568,7 @@ public class ImportHelperService {
 		}
 		catch (IOException e) {
 			LOGGER.error("Error when executing http request {} ", namesRequest);
-			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+			throw new RemoteImportException(errorMessage, e, HttpStatus.INTERNAL_SERVER_ERROR);
 		} finally {
 			if(response != null) {
 				response.close();
@@ -630,7 +630,7 @@ public class ImportHelperService {
 				}
 				metadata.setRetiredBy(retirer);
 				metadata.setRetired(true);
-				metadata.setRetireReason((String) retireeMap.get("retireReason"));
+				metadata.setRetireReason((String) auditInfo.get("retireReason"));
 			}
 		}
 	}
@@ -707,7 +707,7 @@ public class ImportHelperService {
 		}
 		catch (Exception e) {
 			LOGGER.error("Could not create an http client", null, e);
-			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+			throw new RemoteImportException(errorMessage, e, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		
 		Response response = null;
@@ -745,19 +745,21 @@ public class ImportHelperService {
 				if(--importUserCallCount == 0) {
 					if(placeholderUser != null) {
 						userService.purgeUser(placeholderUser);
+						placeholderUser = null;
 					}
 
 					if(dummyPerson != null) {
 						personService.purgePerson(dummyPerson);
+						dummyPerson = null;
 					}
 				}
 				return user;
 			}
-			throw new RemoteImportException(errorMessage, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+			throw new RemoteImportException(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		catch (IOException e) {
 			LOGGER.error("Error when executing http request {} ", userRequest, e);
-			throw new RemoteImportException(errorMessage, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+			throw new RemoteImportException(errorMessage, e, HttpStatus.INTERNAL_SERVER_ERROR);
 		} finally {
 			if(response != null) {
 				response.close();
@@ -782,7 +784,7 @@ public class ImportHelperService {
 		}
 		catch (Exception e) {
 			LOGGER.error("Could not create http client", e);
-			throw new RemoteImportException(message, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+			throw new RemoteImportException(message, e, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		
 		Response response;
@@ -791,7 +793,7 @@ public class ImportHelperService {
 		}
 		catch (IOException e) {
 			LOGGER.error("Error when executing http request {}", locRequest, e);
-			throw new RemoteImportException(message, e, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+			throw new RemoteImportException(message, e, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 
 		try {
@@ -843,7 +845,7 @@ public class ImportHelperService {
 				}
 				return locationService.saveLocation(fetchedLocation);
 			}
-			throw new RemoteImportException(message, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+			throw new RemoteImportException(message, HttpStatus.INTERNAL_SERVER_ERROR);
 		} finally {
 			if(response != null) {
 				response.close();
@@ -1002,7 +1004,7 @@ public class ImportHelperService {
 				}
 				return importedRelationships;
 			}
-			throw new RemoteImportException(message, HttpStatus.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+			throw new RemoteImportException(message, HttpStatus.INTERNAL_SERVER_ERROR);
 		} finally {
 			if(response != null) {
 				response.close();
@@ -1017,7 +1019,9 @@ public class ImportHelperService {
 		
 		dummyPerson = new Person();
 		dummyPerson.setUuid(UUID.randomUUID().toString());
-		dummyPerson.addName(new PersonName("EsaudeFeatures", "Dummy", "Person"));
+		PersonName dummyName = new PersonName("EsaudeFeatures", "DUMMY", "PLACEHOLDER");
+		dummyName.setPerson(dummyPerson);
+		dummyPerson.addName(dummyName);
 		dummyPerson.setGender("F");
 		return personService.savePerson(dummyPerson);
 	}
