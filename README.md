@@ -68,13 +68,19 @@ Both the client and server needs to be configured.
 
 #### Client Machine Configuration
 1. Client machine is configured with the following parameters as global properties. (See the following screenshot for clarity)
-    1. `Remote server URL`.
-    2. `Remote server username` which is the username the system will use to login into the remote system when performing the search.
-    3. `Remote server password` which is the corresponding password to the username above.
-    4. `Imported patient Location UUID` representing the location uuid of the location to be used as an identifier location when importing patients with 
-    identifiers with locations and the corresponding location do not exist in the local OpenMRS instance.
-    5. `Remote server type` which specifies whether the remote server is of type OPENMRS or OPENCR.
-![Remote server configuration parameters as global properties](images/remote_server_global_properties.png)
+    1. `Opencr Identifier Type Concept Mappings` which mirrors the corresponding MPI (OpenCR) property defined by EIP module. The property tells the module the OpenMR UUIDs 
+    corresponding to the identify types stored in MPI server.
+    2. `Opencr Patient Uuid Concept Map` which is used to identify the code used for OpenMRS person/patient UUID in MPI.
+    3. `Opencr Remote Server Password` which is the password for the OpenCR MPI server username.
+    4. `Opencr Remote Server Url` which is the URL of the OpenCR MPI server from which to search for patients.
+    5. `Opencr Remote Server Username` which is the user who has privilege to view patients on the OpenCR MPI server.
+    6. `Openmrs Remote Server Password` which is the password for the remote OpenMRS server username.
+    7. `Openmrs Remote Server Url` which is the URL of the OpenMRS server from which to search for patients
+    8. `Openmrs Remote Server Username` which is the Username of the user who has privilege to view patients on the OpenMRS remote server.
+    9. `Remote Server Skip Hostname Verification` which is the property tells the system whether to skip hostname verification during the SSL handshake.
+    It can be for self signed SSL certificates, otherwise this should never be set to true. Set to TRUE if you know what you are doing.
+    10. `Remote server type` which specifies whether the remote server is of type OPENMRS or OPENCR.
+![Remote server configuration parameters as global properties](images/global_properties.png)
 
 2. Client machine needs to be running rest webservices module version 2.29+
 3. When searching against an OpenCR server with a self signed certificate, the client java running the OpenMRS instance should be configured to trust the self signed
@@ -87,57 +93,6 @@ $ sudo keytool -importcert -file <path-to-self-signed-certificate>/server_cert.p
 
 #### OpenMRS Remote/Central Server Configuration
 1. Server need to be running rest webservices module version 2.29+
-2. Server need to be configured to support CORS.
-
-**Note:** _No special configuration is required for an OpenCR server type._
-
-##### CORS Configuration for Tomcat server.
-[The information below is created from this page](http://software.dzhuvinov.com/cors-filter-installation.html)
-
-1. Download the cors-filter-\<version>.jar file and its java-property-utils-\<version>.jar and put them into the CLASSPATH of Tomcat server by copying them into the director `$CATALINA_HOME/lib`.
-2. Add CORS configuration (shown below) to the server `web.xml` file which is usually located in `$CATALINA_HOME/WEB_INF`
-
-```
-<filter>
-		<!-- The CORS filter with parameters -->
-		<filter-name>CORS</filter-name>
-		<filter-class>com.thetransactioncompany.cors.CORSFilter</filter-class>
-		
-		<!-- Note: All parameters are options, if omitted the CORS 
-		     Filter will fall back to the respective default values.
-		  -->
-		<init-param>
-			<param-name>cors.allowOrigin</param-name>
-			<param-value>*</param-value>
-		</init-param>
-		
-        <init-param>
-			<param-name>cors.allowGenericHttpRequests</param-name>
-			<param-value>true</param-value>
-		</init-param>
-
-		<init-param>
-			<param-name>cors.allowSubdomains</param-name>
-			<param-value>false</param-value>
-		</init-param>
-		
-		<init-param>
-			<param-name>cors.supportedMethods</param-name>
-			<param-value>GET, OPTIONS</param-value>
-		</init-param>
-		
-		<init-param>
-			<param-name>cors.supportedHeaders</param-name>
-			<param-value>*</param-value>
-		</init-param>
-	</filter>
-
-	<filter-mapping>
-		<!-- CORS Filter mapping -->
-		<filter-name>CORS</filter-name>
-		<url-pattern>/*</url-pattern>
-	</filter-mapping>
-```
 
 ### Using Remote Patient Search
 1. To access it use the menu "Remote Patients" On the Gutter as shown below.
