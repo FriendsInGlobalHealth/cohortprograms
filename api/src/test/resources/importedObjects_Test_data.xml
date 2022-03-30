@@ -1,0 +1,9 @@
+<dataset>
+    <esaudefeatures_imported_object imported_object_id="1" type="org.openmrs.Person" importer="1" date_imported="2022-03-20 09:33:30" object_uuid="8616c37c-aff3-11ec-bcdf-0242ac110003"/>
+    <esaudefeatures_imported_object imported_object_id="2" type="org.openmrs.Patient" importer="1" date_imported="2022-03-30 09:33:31" object_uuid="a5641694-aff3-11ec-bcdf-0242ac110003"/>
+    <esaudefeatures_imported_object imported_object_id="3" type="org.openmrs.Location" importer="1" date_imported="2022-03-30 09:34:23" object_uuid="af2ce379-aff3-11ec-bcdf-0242ac110003"/>
+    <esaudefeatures_imported_object imported_object_id="4" type="org.openmrs.Person" importer="1" date_imported="2022-04-30 10:34:17" object_uuid="e9b4b526-aff3-11ec-bcdf-0242ac110003"/>
+    <esaudefeatures_imported_object imported_object_id="5" type="org.openmrs.PersonName" importer="501" date_imported="2022-05-30 10:40:10" object_uuid="f5437fca-aff3-11ec-bcdf-0242ac110003"/>
+    <esaudefeatures_imported_object imported_object_id="6" type="org.openmrs.PersonAddress" importer="501" date_imported="2022-06-30 11:04:20" object_uuid="fd5896b3-aff3-11ec-bcdf-0242ac110003"/>
+    <esaudefeatures_imported_object imported_object_id="7" type="org.openmrs.PersonAttribute" importer="501" date_imported="2022-07-30 11:10:40" object_uuid="050034f3-aff4-11ec-bcdf-0242ac110003"/>
+</dataset>

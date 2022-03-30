@@ -32,6 +32,24 @@
         </property>
     </bean>
 
+    <bean id="esaudefeatures.ImportedObjectService"
+            class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+        <property name="transactionManager">
+            <ref bean="transactionManager" />
+        </property>
+        <property name="target">
+            <bean class="org.openmrs.module.esaudefeatures.api.impl.ImportObjectServiceImpl">
+                <property name="dao" ref="esaudefeatures.importedObjectDao" />
+            </bean>
+        </property>
+        <property name="preInterceptors">
+            <ref bean="serviceInterceptors" />
+        </property>
+        <property name="transactionAttributeSource">
+            <ref bean="transactionAttributeSource" />
+        </property>
+    </bean>
+
     <!-- Adds CohortProgramsService to OpenMRS context so it can be accessed
     calling Context.getService(CohortProgramsService.class) -->
     <bean parent="serviceContext">
@@ -39,6 +57,8 @@
             <list>
                 <value>org.openmrs.module.esaudefeatures.api.CohortProgramsService</value>
                 <ref bean="esaudefeatures.CohortProgramsService" />
+                <value>org.openmrs.module.esaudefeatures.api.ImportedObjectService</value>
+                <ref bean="esaudefeatures.ImportedObjectService" />
             </list>
         </property>
     </bean>

@@ -58,4 +58,41 @@
                                  constraintName="esaudefeatures_program_cohort_cohort_fk"
                                  referencedTableName="cohort" referencedColumnNames="cohort_id"/>
     </changeSet>
+
+    <changeSet id="esaudefeatures-2023-03-30-08:33" author="Willa Mhawila">
+        <preConditions onError="MARK_RAN">
+            <not><tableExists tableName="esaudefeatures_imported_object"/></not>
+        </preConditions>
+        <comment>
+            Creating esaudefeatures_imported_object table
+        </comment>
+        <createTable tableName="esaudefeatures_imported_object">
+            <column name="imported_object_id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="type" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="importer" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_imported" type="datetime">
+                <constraints nullable="false"/>
+            </column>
+            <column name="object_uuid" type="char(38)"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="esaudefeatures-2022-03-30-08:42" author="Willa Mhawila">
+        <preConditions onFail="MARK_RAN">
+            <not><foreignKeyConstraintExists foreignKeyName="esaudefeatures_imported_object_user_fk"/></not>
+        </preConditions>
+        <comment>
+            Adding foreign key esaudefeatures_imported_object_user_fk
+        </comment>
+        <addForeignKeyConstraint baseTableName="esaudefeatures_imported_object"
+                                 baseColumnNames="user_id"
+                                 constraintName="esaudefeatures_imported_object_user_fk"
+                                 referencedTableName="users" referencedColumnNames="user_id"/>
+    </changeSet>
 </databaseChangeLog>
