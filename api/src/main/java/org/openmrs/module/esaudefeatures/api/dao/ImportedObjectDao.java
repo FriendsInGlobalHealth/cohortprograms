@@ -20,64 +20,60 @@ import java.util.List;
  */
 @Repository("esaudefeatures.importedObjectDao")
 public class ImportedObjectDao {
-
-    @Autowired
-    DbSessionFactory sessionFactory;
-
-    private DbSession getSession() {
-        return sessionFactory.getCurrentSession();
-    }
-
-    public ImportedObject saveImportedObject(ImportedObject importedObject) {
-        getSession().saveOrUpdate(importedObject);
-        return importedObject;
-    }
-
-    public ImportedObject getImportedObjectById(@NotNull Integer id) {
-        return (ImportedObject) getSession()
-                .createCriteria(ImportedObject.class)
-                .add(Restrictions.eq("id", id))
-                .uniqueResult();
-    }
-
-    public ImportedObject getImportedObjectByObjectUuid(@NotNull String objectUuid) {
-        return (ImportedObject) getSession()
-                .createCriteria(ImportedObject.class)
-                .add(Restrictions.eq("objectUuid", objectUuid))
-                .uniqueResult();
-    }
-
-    public Long getCountOfImportedObject(User importer,Date startDate, Date endDate) {
-        return (Long) buildCriteria(importer, startDate, endDate, null, null)
-                .setProjection(Projections.rowCount())
-                .uniqueResult();
-    }
-
-    public List<ImportedObject> getImportedObjects(User importer, Date startDate, Date endDate, Integer startIndex, Integer pageSize) {
-        return (List<ImportedObject>) buildCriteria(importer, startDate, endDate, startIndex, pageSize).list();
-    }
-
-    private Criteria buildCriteria(User importer,Date startDate, Date endDate, Integer startIndex, Integer pageSize) {
-        Criteria criteria = getSession().createCriteria(ImportedObject.class);
-        if(importer != null) {
-            criteria.add(Restrictions.eq("importer", importer));
-        }
-        if(startDate != null) {
-            criteria.add(Restrictions.ge("dateImported", startDate));
-        }
-        if(endDate != null) {
-            criteria.add(Restrictions.lt("dateImported", endDate));
-        }
-        if(startIndex != null) {
-            criteria.setFirstResult(startIndex);
-        }
-        if(pageSize != null) {
-            criteria.setMaxResults(pageSize);
-        }
-
-        if(startIndex != null || pageSize != null) {
-            criteria.addOrder(Order.asc("dateImported"));
-        }
-        return criteria;
-    }
+	
+	@Autowired
+	DbSessionFactory sessionFactory;
+	
+	private DbSession getSession() {
+		return sessionFactory.getCurrentSession();
+	}
+	
+	public ImportedObject saveImportedObject(ImportedObject importedObject) {
+		getSession().saveOrUpdate(importedObject);
+		return importedObject;
+	}
+	
+	public ImportedObject getImportedObjectById(@NotNull Integer id) {
+		return (ImportedObject) getSession().createCriteria(ImportedObject.class).add(Restrictions.eq("id", id))
+		        .uniqueResult();
+	}
+	
+	public ImportedObject getImportedObjectByObjectUuid(@NotNull String objectUuid) {
+		return (ImportedObject) getSession().createCriteria(ImportedObject.class)
+		        .add(Restrictions.eq("objectUuid", objectUuid)).uniqueResult();
+	}
+	
+	public Long getCountOfImportedObject(User importer, Date startDate, Date endDate) {
+		return (Long) buildCriteria(importer, startDate, endDate, null, null).setProjection(Projections.rowCount())
+		        .uniqueResult();
+	}
+	
+	public List<ImportedObject> getImportedObjects(User importer, Date startDate, Date endDate, Integer startIndex,
+	        Integer pageSize) {
+		return (List<ImportedObject>) buildCriteria(importer, startDate, endDate, startIndex, pageSize).list();
+	}
+	
+	private Criteria buildCriteria(User importer, Date startDate, Date endDate, Integer startIndex, Integer pageSize) {
+		Criteria criteria = getSession().createCriteria(ImportedObject.class);
+		if (importer != null) {
+			criteria.add(Restrictions.eq("importer", importer));
+		}
+		if (startDate != null) {
+			criteria.add(Restrictions.ge("dateImported", startDate));
+		}
+		if (endDate != null) {
+			criteria.add(Restrictions.lt("dateImported", endDate));
+		}
+		if (startIndex != null) {
+			criteria.setFirstResult(startIndex);
+		}
+		if (pageSize != null) {
+			criteria.setMaxResults(pageSize);
+		}
+		
+		if (startIndex != null || pageSize != null) {
+			criteria.addOrder(Order.asc("dateImported"));
+		}
+		return criteria;
+	}
 }

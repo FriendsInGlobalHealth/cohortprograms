@@ -5,9 +5,6 @@
 </div>
 
 <br />
-<c:if test="${not empty remoteServerUrl}">
-    <h3><openmrs:message code="esaudefeatures.remote.server.url" scope="page"/>: ${remoteServerUrl}</h3>
-</c:if>
 <c:if test="${authenticatedUser == null}">
     <h2>Auth is null, but why?</h2>
 </c:if>
@@ -27,7 +24,6 @@
 
     <script type="text/javascript">
         var localOpenmrsContextPath = '${pageContext.request.contextPath}';
-        var importedPatientLocationUuid = "${importedPatientLocationUuid}";
         var patientTable = null;
         var lastSearchedText = null;
         var foundPatientList = null;
@@ -660,6 +656,14 @@
         });
 
     </script>
+
+    <div>
+        <a href="${pageContext.request.contextPath}/module/esaudefeatures/remoteImportLog.htm">View Import Log</a>
+    </div>
+
+    <c:if test="${not empty remoteServerUrl}">
+        <h3><openmrs:message code="esaudefeatures.remote.server.url" scope="page"/>: ${remoteServerUrl}</h3>
+    </c:if>
 
     <div>
         <b class="boxHeader"><openmrs:message code="esaudefeatures.remote.patients.search"/></b>

@@ -71,26 +71,6 @@ public class OpenmrsSearchController {
 		modelAndView.getModelMap().addAttribute("remoteServerType",
 		    adminService.getGlobalProperty(REMOTE_SERVER_TYPE_GP, "OPENMRS"));
 		
-		String remoteServerUsername = adminService.getGlobalProperty(OPENMRS_REMOTE_SERVER_USERNAME_GP);
-		String remoteServerPassword = adminService.getGlobalProperty(OPENMRS_REMOTE_SERVER_PASSWORD_GP);
-		if (StringUtils.hasText(remoteServerUsername) && StringUtils.hasText(remoteServerPassword)) {
-			String remoteServerBasicAuth = new StringBuilder(remoteServerUsername).append(":").append(remoteServerPassword)
-			        .toString();
-			byte[] byteArray = remoteServerBasicAuth.getBytes();
-			String base64encoded = Utils.byteArrayToBase64(remoteServerBasicAuth.getBytes(), 0, byteArray.length);
-			modelAndView.getModelMap().addAttribute("remoteServerUsername", remoteServerUsername);
-			modelAndView.getModelMap().addAttribute("remoteServerPassword", remoteServerPassword);
-			modelAndView.getModelMap().addAttribute("remoteServerAuth", base64encoded);
-		}
-		
-		if (StringUtils.isEmpty(remoteServerUsername)) {
-			LOGGER.warn("Global property {} not set", OPENMRS_REMOTE_SERVER_USERNAME_GP);
-		}
-		
-		if (StringUtils.isEmpty(remoteServerPassword)) {
-			LOGGER.warn("Global property {} not set", OPENMRS_REMOTE_SERVER_PASSWORD_GP);
-		}
-		
 		// if there's an authenticated user, put them, and their patient set, in the model
 		if (Context.getAuthenticatedUser() != null) {
 			modelAndView.getModelMap().addAttribute("authenticatedUser", Context.getAuthenticatedUser());
