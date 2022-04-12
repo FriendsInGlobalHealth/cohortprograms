@@ -28,7 +28,7 @@
             </thead>
             <tbody>
                 <c:if test="${not empty importedObjects}">
-                    <c:forEach var="importedObject" items="importedObjects" varStatus="loop">
+                    <c:forEach var="importedObject" items="${importedObjects}" varStatus="loop">
                         <tr>
                             <td>${loop.count}</td>
                             <td>${importedObject.type}</td>

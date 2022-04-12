@@ -82,6 +82,14 @@ public class ImportedObject {
 		this.importer = importer;
 	}
 	
+	public String getObjectUuid() {
+		return objectUuid;
+	}
+	
+	public void setObjectUuid(String objectUuid) {
+		this.objectUuid = objectUuid;
+	}
+	
 	@Override
 	public boolean equals(Object o) {
 		if (this == o)

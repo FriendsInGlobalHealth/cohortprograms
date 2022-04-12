@@ -15,6 +15,9 @@ import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.PatientService;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.esaudefeatures.ImportedObject;
+import org.openmrs.module.esaudefeatures.api.ImportedObjectService;
 import org.openmrs.module.esaudefeatures.web.controller.OpencrAuthenticationException;
 import org.openmrs.module.esaudefeatures.web.dto.TokenDTO;
 import org.openmrs.module.esaudefeatures.web.exception.OpencrSearchException;
@@ -30,6 +33,7 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
+import java.util.Date;
 import java.util.List;
 
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENCR_PATIENT_UUID_CONCEPT_MAP_GP;
@@ -67,6 +71,8 @@ public class OpencrSearchDelegate {
 	
 	private PatientService patientService;
 	
+	private ImportedObjectService importedObjectService;
+	
 	@Autowired
 	public void setAdminService(AdministrationService adminService) {
 		this.adminService = adminService;
@@ -85,6 +91,11 @@ public class OpencrSearchDelegate {
 	@Autowired
 	public void setPatientService(PatientService patientService) {
 		this.patientService = patientService;
+	}
+	
+	@Autowired
+	public void setImportedObjectService(ImportedObjectService importedObjectService) {
+		this.importedObjectService = importedObjectService;
 	}
 	
 	public Patient fetchPatientFromOpencrServerByFhirId(final String id) throws Exception {
@@ -272,7 +283,11 @@ public class OpencrSearchDelegate {
 		if (opPatient == null) {
 			opPatient = helperService.getPatientFromOpencrPatientResource(patientResource);
 		}
-		return patientService.savePatient(opPatient);
+		opPatient = patientService.savePatient(opPatient);
+		ImportedObject importedPatient = new ImportedObject(opPatient.getClass().getName(), Context.getAuthenticatedUser(),
+		        new Date(), opPatient.getUuid());
+		importedObjectService.saveImportedObject(importedPatient);
+		return opPatient;
 	}
 	
 	public String reAuthenticate() throws Exception {

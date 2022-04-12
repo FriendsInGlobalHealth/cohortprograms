@@ -31,6 +31,8 @@ import org.openmrs.api.PatientService;
 import org.openmrs.api.PersonService;
 import org.openmrs.api.UserService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.esaudefeatures.ImportedObject;
+import org.openmrs.module.esaudefeatures.api.ImportedObjectService;
 import org.openmrs.module.esaudefeatures.web.exception.RemoteImportException;
 import org.openmrs.module.esaudefeatures.web.exception.RemoteOpenmrsSearchException;
 import org.openmrs.module.webservices.rest.SimpleObject;
@@ -53,6 +55,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,6 +96,8 @@ public class ImportHelperService {
 	private PersonService personService;
 	
 	private UserService userService;
+
+	private ImportedObjectService importedObjectService;
 	
 	private ConcurrentMap<User, Map<String, Object>> importedUsersCache = new ConcurrentHashMap<>();
 
@@ -138,6 +143,11 @@ public class ImportHelperService {
 	@Autowired
 	public void setUserService(UserService userService) {
 		this.userService = userService;
+	}
+
+	@Autowired
+	public void setImportedObjectService(ImportedObjectService importedObjectService) {
+		this.importedObjectService = importedObjectService;
 	}
 
 	public Patient getPatientFromOpencrPatientResource(org.hl7.fhir.r4.model.Patient opencrPatient) {
@@ -321,7 +331,11 @@ public class ImportHelperService {
 				try {
 					SimpleObject fetchedPersonObject = SimpleObject.parseJson(response.body().string());
 					Person person = getPersonFromOpenmrsRestRepresentation(fetchedPersonObject);
-					return personService.savePerson(person);
+					person = personService.savePerson(person);
+					ImportedObject importedPerson =
+							new ImportedObject(Person.class.getName(), Context.getAuthenticatedUser(), new Date(), person.getUuid());
+					importedObjectService.saveImportedObject(importedPerson);
+					return person;
 				} catch (IOException e) {
 					LOGGER.error("Error while reading response from server {}", urlUserPass[0], e);
 					throw new RemoteImportException(message, e, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -654,7 +668,11 @@ public class ImportHelperService {
 				}
 				metadata.setRetiredBy(retirer);
 				metadata.setRetired(true);
-				metadata.setRetireReason((String) auditInfo.get("retireReason"));
+				String retireReason = (String) auditInfo.get("retireReason");
+				if(StringUtils.isEmpty(retireReason)) {
+					retireReason = "ESAUDE FEATURES MODULE FILLED THIS BECAUSE IT WAS NOT PROVIDED BY SOURCE";
+				}
+				metadata.setRetireReason(retireReason);
 			}
 		}
 	}
@@ -829,7 +847,11 @@ public class ImportHelperService {
 					}
 					fetchedLocation.setParentLocation(parentLocation);
 				}
-				return locationService.saveLocation(fetchedLocation);
+				Location savedLocation = locationService.saveLocation(fetchedLocation);
+				ImportedObject importedObject =
+						new ImportedObject(Location.class.getName(), Context.getAuthenticatedUser(),new Date(), savedLocation.getUuid());
+				importedObjectService.saveImportedObject(importedObject);
+				return savedLocation;
 			}
 			throw new RemoteImportException(message, HttpStatus.INTERNAL_SERVER_ERROR);
 		} finally {
@@ -985,6 +1007,9 @@ public class ImportHelperService {
 						relationship.setEndDate(parseDateString((String) relationshipObject.get("endDate")));
 						updateAuditInfo(relationship, (Map<String, Object>) relationshipObject.get("auditInfo"));
 						relationship = personService.saveRelationship(relationship);
+						ImportedObject importedObject =
+								new ImportedObject(Relationship.class.getName(), Context.getAuthenticatedUser(), new Date(), relationship.getUuid());
+						importedObjectService.saveImportedObject(importedObject);
 						importedRelationships.add(relationship);
 					}
 				}
