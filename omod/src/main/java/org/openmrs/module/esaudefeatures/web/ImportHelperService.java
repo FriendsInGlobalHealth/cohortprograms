@@ -33,6 +33,8 @@ import org.openmrs.api.UserService;
 import org.openmrs.module.esaudefeatures.web.exception.RemoteImportException;
 import org.openmrs.module.esaudefeatures.web.exception.RemoteOpenmrsSearchException;
 import org.openmrs.module.webservices.rest.SimpleObject;
+import org.openmrs.util.DatabaseUpdater;
+import org.openmrs.util.OpenmrsUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +51,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -70,6 +73,7 @@ import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.REMOTE_SERVER_SKIP_HOSTNAME_VERIFICATION_GP;
 import static org.openmrs.module.esaudefeatures.web.Utils.generatePassword;
 import static org.openmrs.module.esaudefeatures.web.Utils.parseDateString;
+import static org.openmrs.util.OpenmrsConstants.OPENMRS_VERSION_SHORT;
 
 /**
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 2/20/22.
@@ -685,7 +689,7 @@ public class ImportHelperService {
 
 				importedUsersCache.remove(cachedUser);
 				--importUserCallCount;
-				return userService.createUser(cachedUser, generatePassword());
+				return persistUser(cachedUser);
 			}
 		}
 
@@ -735,25 +739,11 @@ public class ImportHelperService {
 
 				updateAuditInfo(user, (Map) fetchedUser.get("auditInfo"));
 
-				// Unfortunately createUser effectively is treated as an update statement if the user already exists which means the API
-				// will update changedBy to currently logged in user and dateChanged to now.
+				// Unfortunately if the user already exists the API will update changedBy to currently logged in user and dateChanged to now.
+				// User can exists if they are imported with placeholder values in circular dependencies where the same user is referenced in another
+				// nested openmrs object being imported before being imported.
 				// TODO: Need to find a workaound to address this limitation.
-				user = userService.createUser(user, generatePassword());
-
-
-				// Delete the dummyPerson and placeholder user if the method is the first call
-				if(--importUserCallCount == 0) {
-					if(placeholderUser != null) {
-						userService.purgeUser(placeholderUser);
-						placeholderUser = null;
-					}
-
-					if(dummyPerson != null) {
-						personService.purgePerson(dummyPerson);
-						dummyPerson = null;
-					}
-				}
-				return user;
+				return persistUser(user);
 			}
 			throw new RemoteImportException(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
@@ -761,6 +751,18 @@ public class ImportHelperService {
 			LOGGER.error("Error when executing http request {} ", userRequest, e);
 			throw new RemoteImportException(errorMessage, e, HttpStatus.INTERNAL_SERVER_ERROR);
 		} finally {
+			// Delete the dummyPerson and placeholder user if the method is the first call
+			if(--importUserCallCount == 0) {
+				if(placeholderUser != null) {
+					userService.purgeUser(placeholderUser);
+					placeholderUser = null;
+				}
+
+				if(dummyPerson != null) {
+					personService.purgePerson(dummyPerson);
+					dummyPerson = null;
+				}
+			}
 			if(response != null) {
 				response.close();
 			}
@@ -1025,18 +1027,42 @@ public class ImportHelperService {
 		dummyPerson.setGender("F");
 		return personService.savePerson(dummyPerson);
 	}
-	
+
 	private User getPlaceholderUser() {
 		if (placeholderUser != null) {
 			return placeholderUser;
 		}
-		
+
 		placeholderUser = new User();
 		placeholderUser.setSystemId("PLACE-HOLDER-FOR-CENTRAL");
 		placeholderUser.setUuid(UUID.randomUUID().toString());
 		placeholderUser.setPerson(getDummyPerson());
 		placeholderUser.setCreator(userService.getUserByUsername("admin"));
 		return userService.createUser(placeholderUser, generatePassword());
+	}
+
+	private User persistUser(User user) {
+		if (OPENMRS_VERSION_SHORT.startsWith("1")) {
+			return userService.saveUser(user, generatePassword());
+		} else {
+			if(user.getUserId() != null) {
+				// Reflectively get saveUser(User.class) method.
+				try {
+					Method saveUserMethod = UserService.class.getMethod("saveUser", User.class);
+					saveUserMethod.invoke(userService, user);
+					return user;
+				} catch (NoSuchMethodException e) {
+					LOGGER.error("Error persisting user", e);
+					throw new RemoteImportException(e.getMessage(), e, HttpStatus.INTERNAL_SERVER_ERROR);
+				} catch (IllegalAccessException e) {
+					throw new RemoteImportException(e.getMessage(), e, HttpStatus.INTERNAL_SERVER_ERROR);
+				} catch (InvocationTargetException e) {
+					throw new RemoteImportException(e.getMessage(), e, HttpStatus.INTERNAL_SERVER_ERROR);
+				}
+			} else {
+				return userService.createUser(user, generatePassword());
+			}
+		}
 	}
 
 	private void updatePersonAddressWithOpencrDetails(PersonAddress openmrsAddress, Address opencrAddress) {
