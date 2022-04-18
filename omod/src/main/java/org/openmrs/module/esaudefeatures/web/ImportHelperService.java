@@ -30,11 +30,14 @@ import org.openmrs.api.LocationService;
 import org.openmrs.api.PatientService;
 import org.openmrs.api.PersonService;
 import org.openmrs.api.UserService;
+import org.openmrs.api.context.Context;
 import org.openmrs.module.esaudefeatures.web.exception.RemoteImportException;
 import org.openmrs.module.esaudefeatures.web.exception.RemoteOpenmrsSearchException;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.util.DatabaseUpdater;
+import org.openmrs.util.OpenmrsConstants;
 import org.openmrs.util.OpenmrsUtil;
+import org.openmrs.util.PrivilegeConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -754,13 +757,23 @@ public class ImportHelperService {
 			// Delete the dummyPerson and placeholder user if the method is the first call
 			if(--importUserCallCount == 0) {
 				if(placeholderUser != null) {
-					userService.purgeUser(placeholderUser);
-					placeholderUser = null;
+					try {
+						Context.addProxyPrivilege(PrivilegeConstants.PURGE_USERS);
+						userService.purgeUser(placeholderUser);
+						placeholderUser = null;
+					} finally {
+						Context.removeProxyPrivilege(PrivilegeConstants.PURGE_USERS);
+					}
 				}
 
 				if(dummyPerson != null) {
-					personService.purgePerson(dummyPerson);
-					dummyPerson = null;
+					try {
+						Context.addProxyPrivilege(PrivilegeConstants.PURGE_PERSONS);
+						personService.purgePerson(dummyPerson);
+						dummyPerson = null;
+					} finally {
+						Context.removeProxyPrivilege(PrivilegeConstants.PURGE_PERSONS);
+					}
 				}
 			}
 			if(response != null) {
@@ -1042,26 +1055,32 @@ public class ImportHelperService {
 	}
 
 	private User persistUser(User user) {
-		if (OPENMRS_VERSION_SHORT.startsWith("1")) {
-			return userService.saveUser(user, generatePassword());
-		} else {
-			if(user.getUserId() != null) {
-				// Reflectively get saveUser(User.class) method.
-				try {
-					Method saveUserMethod = UserService.class.getMethod("saveUser", User.class);
-					saveUserMethod.invoke(userService, user);
-					return user;
-				} catch (NoSuchMethodException e) {
-					LOGGER.error("Error persisting user", e);
-					throw new RemoteImportException(e.getMessage(), e, HttpStatus.INTERNAL_SERVER_ERROR);
-				} catch (IllegalAccessException e) {
-					throw new RemoteImportException(e.getMessage(), e, HttpStatus.INTERNAL_SERVER_ERROR);
-				} catch (InvocationTargetException e) {
-					throw new RemoteImportException(e.getMessage(), e, HttpStatus.INTERNAL_SERVER_ERROR);
-				}
+		try {
+			// Elevate the user temporarily
+			Context.addProxyPrivilege(PrivilegeConstants.EDIT_USERS);
+			if (OPENMRS_VERSION_SHORT.startsWith("1")) {
+				return userService.saveUser(user, generatePassword());
 			} else {
-				return userService.createUser(user, generatePassword());
+				if (user.getUserId() != null) {
+					// Reflectively get saveUser(User.class) method.
+					try {
+						Method saveUserMethod = UserService.class.getMethod("saveUser", User.class);
+						saveUserMethod.invoke(userService, user);
+						return user;
+					} catch (NoSuchMethodException e) {
+						LOGGER.error("Error persisting user", e);
+						throw new RemoteImportException(e.getMessage(), e, HttpStatus.INTERNAL_SERVER_ERROR);
+					} catch (IllegalAccessException e) {
+						throw new RemoteImportException(e.getMessage(), e, HttpStatus.INTERNAL_SERVER_ERROR);
+					} catch (InvocationTargetException e) {
+						throw new RemoteImportException(e.getMessage(), e, HttpStatus.INTERNAL_SERVER_ERROR);
+					}
+				} else {
+					return userService.createUser(user, generatePassword());
+				}
 			}
+		} finally {
+			Context.removeProxyPrivilege(PrivilegeConstants.EDIT_USERS);
 		}
 	}
 
@@ -1090,9 +1109,6 @@ public class ImportHelperService {
 			 */
 			if(opencrAddress.hasLine()) {
 				List<StringType> lines = opencrAddress.getLine();
-				for(int i=0; i < lines.size(); i++) {
-//							openmrsAddress.setAddress2(lines[i]);
-				}
 				openmrsAddress.setAddress2(lines.get(0).getValueNotNull());
 				if(lines.size() >= 2) {
 					openmrsAddress.setAddress6(lines.get(1).getValueNotNull());
