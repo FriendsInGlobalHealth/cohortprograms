@@ -26,11 +26,10 @@ import org.openmrs.api.LocationService;
 import org.openmrs.api.PersonService;
 import org.openmrs.api.UserService;
 import org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants;
-import org.openmrs.module.esaudefeatures.web.exception.RemoteImportException;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.web.test.BaseModuleWebContextSensitiveTest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.test.context.web.WebAppConfiguration;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -48,7 +47,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 2/20/22.
  */
-@Component
+@WebAppConfiguration
 public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 	
 	private static final String OPENMRS_LOCATION_FILE = "/openmrs-rest/location.json";
