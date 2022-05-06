@@ -60,11 +60,13 @@
                         console.log('error', message);
                         $j('#remote_patient_error_msg').html(ERROR_DURING_SEARCH_MSG_PREFIX + ': ' + message);
                         $j('#remote_patient_error_msg').css('visibility', 'visible');
+                        $j('#search-busy-gif').css("visibility", "hidden");
                     })
                 } else {
                     console.log('error', error);
                     $j('#remote_patient_error_msg').html(ERROR_DURING_SEARCH_MSG_PREFIX + ': ' + error);
                     $j('#remote_patient_error_msg').css('visibility', 'visible');
+                    $j('#search-busy-gif').css("visibility", "hidden");
                 }
             } else {
                 console.log('error', error);
