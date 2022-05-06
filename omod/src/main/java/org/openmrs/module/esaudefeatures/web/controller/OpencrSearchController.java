@@ -1,5 +1,7 @@
 package org.openmrs.module.esaudefeatures.web.controller;
 
+import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.parser.IParser;
 import org.hl7.fhir.r4.model.Bundle;
 import org.openmrs.Patient;
 import org.openmrs.module.esaudefeatures.web.OpencrSearchDelegate;
@@ -28,6 +30,8 @@ public class OpencrSearchController {
 	
 	private RemoteOpenmrsSearchDelegate openmrsSearchDelegate;
 	
+	private IParser parser = FhirContext.forR4().newJsonParser();
+	
 	@Autowired
 	public void setOpencrSearchDelegate(OpencrSearchDelegate opencrSearchDelegate) {
 		this.opencrSearchDelegate = opencrSearchDelegate;
@@ -41,8 +45,9 @@ public class OpencrSearchController {
 	@ResponseBody
 	@RequestMapping(method = RequestMethod.GET, value = "/module/esaudefeatures/opencrRemotePatients.json", produces = {
 	        "application/json", "application/json+fhir" })
-	public Bundle searchOpencrForPatient(@RequestParam("text") String searchText) throws Exception {
-		return opencrSearchDelegate.searchOpencrForPatients(searchText);
+	public String searchOpencrForPatient(@RequestParam("text") String searchText) throws Exception {
+		Bundle bundle = opencrSearchDelegate.searchOpencrForPatients(searchText);
+		return parser.encodeResourceToString(bundle);
 	}
 	
 	@ResponseStatus(HttpStatus.CREATED)

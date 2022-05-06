@@ -34,9 +34,6 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.esaudefeatures.web.exception.RemoteImportException;
 import org.openmrs.module.esaudefeatures.web.exception.RemoteOpenmrsSearchException;
 import org.openmrs.module.webservices.rest.SimpleObject;
-import org.openmrs.util.DatabaseUpdater;
-import org.openmrs.util.OpenmrsConstants;
-import org.openmrs.util.OpenmrsUtil;
 import org.openmrs.util.PrivilegeConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +51,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -110,7 +106,10 @@ public class ImportHelperService {
 	private Person dummyPerson;
 	
 	private User placeholderUser;
-	
+	private List<User> usersReferencingDummyPerson = new ArrayList<>();
+	private List<User> usersReferencingPlaceholderUser = new ArrayList<>();
+
+
 	@Autowired
 	public void setConceptService(ConceptService conceptService) {
 		this.conceptService = conceptService;
@@ -600,12 +599,18 @@ public class ImportHelperService {
 			String creatorUuid = (String) creatorMap.get("uuid");
 			User creator = userService.getUserByUuid(creatorUuid);
 			if (creator == null) {
-				creator = importUserFromRemoteOpenmrsServer(creatorUuid);
+				creator = searchAndImportUserFromImportedUsersCache(creatorUuid);
+				if(creator == null) {
+					creator = importUserFromRemoteOpenmrsServer(creatorUuid);
+				}
 			}
 			
 			if (openmrsObject instanceof Person) {
 				((Person) openmrsObject).setPersonCreator(creator);
 			} else {
+				if(openmrsObject instanceof User && placeholderUser != null && placeholderUser.equals(openmrsObject.getCreator())) {
+					usersReferencingPlaceholderUser.remove(openmrsObject);
+				}
 				openmrsObject.setCreator(creator);
 			}
 		}
@@ -615,12 +620,18 @@ public class ImportHelperService {
 			String changerUuid = (String) changerMap.get("uuid");
 			User changer = userService.getUserByUuid(changerUuid);
 			if (changer == null) {
-				changer = importUserFromRemoteOpenmrsServer(changerUuid);
+				changer = searchAndImportUserFromImportedUsersCache(changerUuid);
+				if(changer == null) {
+					changer = importUserFromRemoteOpenmrsServer(changerUuid);
+				}
 			}
 			
 			if (openmrsObject instanceof Person) {
 				((Person) openmrsObject).setPersonChangedBy(changer);
 			} else {
+				if(openmrsObject instanceof User && placeholderUser != null && placeholderUser.equals(openmrsObject.getChangedBy())) {
+					usersReferencingPlaceholderUser.remove(openmrsObject);
+				}
 				openmrsObject.setChangedBy(changer);
 			}
 		}
@@ -633,7 +644,13 @@ public class ImportHelperService {
 				User retirer = userService.getUserByUuid(retirerUuid);
 				
 				if (retirer == null) {
-					retirer = importUserFromRemoteOpenmrsServer(retirerUuid);
+					retirer = searchAndImportUserFromImportedUsersCache(retirerUuid);
+					if(retirer == null) {
+						retirer = importUserFromRemoteOpenmrsServer(retirerUuid);
+					}
+				}
+				if(metadata instanceof User && placeholderUser != null && placeholderUser.equals(metadata.getRetiredBy())) {
+					usersReferencingPlaceholderUser.remove(openmrsObject);
 				}
 				metadata.setRetiredBy(retirer);
 				metadata.setRetired(true);
@@ -645,56 +662,7 @@ public class ImportHelperService {
 	private int importUserCallCount = 0;
 	
 	public User importUserFromRemoteOpenmrsServer(String userUuid) {
-		++importUserCallCount;
 		LOGGER.info("Importing user with uuid {}", userUuid);
-		for(Map.Entry<User, Map<String, Object>> entry: importedUsersCache.entrySet()) {
-			if (userUuid.equals(entry.getKey().getUuid())) {
-				LOGGER.debug("importedUserCache HIT");
-				// We need to persist this user already, probably with a dummy person associated with it.
-				// Create a place holder user for creator/changer/retiree if provided and not yet filled
-				User cachedUser = entry.getKey();
-				Map cachedUserObject = entry.getValue();
-				if(cachedUser.getPerson() == null && cachedUserObject.containsKey("person")) {
-					cachedUser.setPerson(getDummyPerson());
-				}
-
-				//Audit info
-				Map userAuditInfo = (Map) cachedUserObject.get("auditInfo");
-				if(userAuditInfo.get("creator") != null && cachedUser.getCreator() == null) {
-					String creatorUuid = (String) ((Map) userAuditInfo.get("creator")).get("uuid");
-					User creator = userService.getUserByUuid(creatorUuid);
-					if (creator == null) {
-						cachedUser.setCreator(getPlaceholderUser());
-					} else {
-						cachedUser.setCreator(creator);
-					}
-				}
-
-				if(userAuditInfo.get("changedBy") != null && cachedUser.getChangedBy() == null) {
-					String changerUuid = (String) ((Map) userAuditInfo.get("changedBy")).get("uuid");
-					User changer = userService.getUserByUuid(changerUuid);
-					if (changer == null) {
-						cachedUser.setChangedBy(getPlaceholderUser());
-					} else {
-						cachedUser.setChangedBy(changer);
-					}
-				}
-
-				if(userAuditInfo.get("retiredBy") != null && cachedUser.getRetiredBy() == null) {
-					String retireeUuid = (String) ((Map) userAuditInfo.get("retiredBy")).get("uuid");
-					User retiree = userService.getUserByUuid(retireeUuid);
-					if (retiree == null) {
-						cachedUser.setRetiredBy(getPlaceholderUser());
-					} else {
-						cachedUser.setRetiredBy(retiree);
-					}
-				}
-
-				importedUsersCache.remove(cachedUser);
-				--importUserCallCount;
-				return persistUser(cachedUser);
-			}
-		}
 
 		String[] urlUserPass = getRemoteOpenmrsHostUsernamePassword();
 		String errorMessage = String.format("Could not fetch user with uuid %s from server %s", userUuid, urlUserPass[0]);
@@ -734,6 +702,11 @@ public class ImportHelperService {
 				if (person == null) {
 					person = importPersonFromRemoteOpenmrsServer(personUuid);
 				}
+
+				if(dummyPerson != null && dummyPerson.equals(user.getPerson())) {
+					usersReferencingDummyPerson.remove(user);
+				}
+
 				user.setPerson(person);
 				
 				if (fetchedUser.containsKey("userProperties") && fetchedUser.get("userProperties") != null) {
@@ -755,25 +728,23 @@ public class ImportHelperService {
 			throw new RemoteImportException(errorMessage, e, HttpStatus.INTERNAL_SERVER_ERROR);
 		} finally {
 			// Delete the dummyPerson and placeholder user if the method is the first call
-			if(--importUserCallCount == 0) {
-				if(placeholderUser != null) {
-					try {
-						Context.addProxyPrivilege(PrivilegeConstants.PURGE_USERS);
-						userService.purgeUser(placeholderUser);
-						placeholderUser = null;
-					} finally {
-						Context.removeProxyPrivilege(PrivilegeConstants.PURGE_USERS);
-					}
+			if(placeholderUser != null && usersReferencingPlaceholderUser.isEmpty()) {
+				try {
+					Context.addProxyPrivilege(PrivilegeConstants.PURGE_USERS);
+					userService.purgeUser(placeholderUser);
+					placeholderUser = null;
+				} finally {
+					Context.removeProxyPrivilege(PrivilegeConstants.PURGE_USERS);
 				}
+			}
 
-				if(dummyPerson != null) {
-					try {
-						Context.addProxyPrivilege(PrivilegeConstants.PURGE_PERSONS);
-						personService.purgePerson(dummyPerson);
-						dummyPerson = null;
-					} finally {
-						Context.removeProxyPrivilege(PrivilegeConstants.PURGE_PERSONS);
-					}
+			if(dummyPerson != null && usersReferencingDummyPerson.isEmpty()) {
+				try {
+					Context.addProxyPrivilege(PrivilegeConstants.PURGE_PERSONS);
+					personService.purgePerson(dummyPerson);
+					dummyPerson = null;
+				} finally {
+					Context.removeProxyPrivilege(PrivilegeConstants.PURGE_PERSONS);
 				}
 			}
 			if(response != null) {
@@ -1052,6 +1023,59 @@ public class ImportHelperService {
 		placeholderUser.setPerson(getDummyPerson());
 		placeholderUser.setCreator(userService.getUserByUsername("admin"));
 		return userService.createUser(placeholderUser, generatePassword());
+	}
+
+	private User searchAndImportUserFromImportedUsersCache(String userUuid) {
+		for(Map.Entry<User, Map<String, Object>> entry: importedUsersCache.entrySet()) {
+			if (userUuid.equals(entry.getKey().getUuid())) {
+				LOGGER.debug("importedUserCache HIT");
+				// We need to persist this user already, probably with a dummy person associated with it.
+				// Create a place holder user for creator/changer/retiree if provided and not yet filled
+				User cachedUser = entry.getKey();
+				Map cachedUserObject = entry.getValue();
+				if(cachedUser.getPerson() == null && cachedUserObject.containsKey("person")) {
+					usersReferencingDummyPerson.add(cachedUser);
+					cachedUser.setPerson(getDummyPerson());
+				}
+
+				//Audit info
+				Map userAuditInfo = (Map) cachedUserObject.get("auditInfo");
+				if(userAuditInfo.get("creator") != null && cachedUser.getCreator() == null) {
+					String creatorUuid = (String) ((Map) userAuditInfo.get("creator")).get("uuid");
+					User creator = userService.getUserByUuid(creatorUuid);
+					if (creator == null) {
+						usersReferencingPlaceholderUser.add(cachedUser);
+						cachedUser.setCreator(getPlaceholderUser());
+					} else {
+						cachedUser.setCreator(creator);
+					}
+				}
+
+				if(userAuditInfo.get("changedBy") != null && cachedUser.getChangedBy() == null) {
+					String changerUuid = (String) ((Map) userAuditInfo.get("changedBy")).get("uuid");
+					User changer = userService.getUserByUuid(changerUuid);
+					if (changer == null) {
+						cachedUser.setChangedBy(getPlaceholderUser());
+					} else {
+						cachedUser.setChangedBy(changer);
+					}
+				}
+
+				if(userAuditInfo.get("retiredBy") != null && cachedUser.getRetiredBy() == null) {
+					String retireeUuid = (String) ((Map) userAuditInfo.get("retiredBy")).get("uuid");
+					User retiree = userService.getUserByUuid(retireeUuid);
+					if (retiree == null) {
+						cachedUser.setRetiredBy(getPlaceholderUser());
+					} else {
+						cachedUser.setRetiredBy(retiree);
+					}
+				}
+
+				importedUsersCache.remove(cachedUser);
+				return persistUser(cachedUser);
+			}
+		}
+		return null;
 	}
 
 	private User persistUser(User user) {
