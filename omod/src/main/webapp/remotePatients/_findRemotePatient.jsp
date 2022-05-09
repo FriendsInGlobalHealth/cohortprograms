@@ -672,12 +672,12 @@
                 <thead>
                 <tr>
                     <th></th>
-                    <th>Identifier</th>
-                    <th>Full name</th>
-                    <th>Gender</th>
-                    <th>Birth date</th>
-                    <th>Age</th>
-                    <th>Address</th>
+                    <th><openmrs:message code="esaudefeatures.remote.patients.identifier"/></th>
+                    <th><openmrs:message code="esaudefeatures.remote.patients.fullname"/></th>
+                    <th><openmrs:message code="esaudefeatures.remote.patients.gender"/></th>
+                    <th><openmrs:message code="esaudefeatures.remote.patients.birthdate"/></th>
+                    <th><openmrs:message code="esaudefeatures.remote.patients.age"/></th>
+                    <th><openmrs:message code="esaudefeatures.remote.patients.address"/></th>
                 </tr>
                 </thead>
                 <tbody></tbody>
