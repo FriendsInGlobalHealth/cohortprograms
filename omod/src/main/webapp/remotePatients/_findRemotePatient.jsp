@@ -54,29 +54,30 @@
         var searchController = null;
 
         function searchErrorHandler(error) {
+            var __doStuffWithError = function(error) {
+                $j('#search-busy-gif').css("visibility", "hidden");
+                $j("#find-remote-patients-button").prop('disabled', false);
+                if(error.includes('Failed to connect to')) {
+                    $j('#dialog').dialog('open');
+                } else {
+                    $j('#remote_patient_error_msg').html(ERROR_DURING_SEARCH_MSG_PREFIX + ': ' + error);
+                    $j('#remote_patient_error_msg').css('visibility', 'visible');
+                }
+            };
             if(typeof error === 'object' && error.name !== 'AbortError') {
                 if(error instanceof HttpError) {
                     error.response.text().then(message => {
                         console.log('error', message);
-                        $j('#remote_patient_error_msg').html(ERROR_DURING_SEARCH_MSG_PREFIX + ': ' + message);
-                        $j('#remote_patient_error_msg').css('visibility', 'visible');
-                        $j('#search-busy-gif').css("visibility", "hidden");
-                        $j("#find-remote-patients-button").prop('disabled', false);
+                        __doStuffWithError(message);
                     })
                 } else {
                     console.log('error', error);
-                    $j('#remote_patient_error_msg').html(ERROR_DURING_SEARCH_MSG_PREFIX + ': ' + error);
-                    $j('#remote_patient_error_msg').css('visibility', 'visible');
-                    $j('#search-busy-gif').css("visibility", "hidden");
-                    $j("#find-remote-patients-button").prop('disabled', false);
+                    __doStuffWithError(error);
                 }
             } else {
                 console.log('error', error);
                 if(!(typeof error === 'object' && error.name === 'AbortError')) {
-                    $j('#remote_patient_error_msg').html(ERROR_DURING_SEARCH_MSG_PREFIX + ': ' + error);
-                    $j('#remote_patient_error_msg').css('visibility', 'visible');
-                    $j('#search-busy-gif').css("visibility", "hidden");
-                    $j("#find-remote-patients-button").prop('disabled', false);
+                    __doStuffWithError(error);
                 }
             }
         }
@@ -636,6 +637,9 @@
         }
 
         $j(document).ready(function() {
+            $j('#dialog').dialog({
+                autoOpen: false
+            });
             patientTable = $j('#found-patients').dataTable({
                 aaData: [],
                 bFilter: false,
@@ -644,22 +648,13 @@
 
             $j("#find-remote-patients-button").on('click', function(e) {
                 var searchText = $j('#find-remote-patients').val();
-                if(searchText !== null) searchText.trim();
-                if(lastSearchedText === null || searchText !== lastSearchedText) {
-                    $j('#remote_patient_error_msg').css('visibility', 'hidden');
-                    $j('#openmrs_msg').css('visibility', 'hidden');
-                    if(searchText.length >= MIN_SEARCH_LENGTH) {
+                if(searchText !== null) {
+                    searchText.trim();
+                    if(searchText.length > 0) {
+                        $j('#remote_patient_error_msg').css('visibility', 'hidden');
+                        $j('#openmrs_msg').css('visibility', 'hidden');
                         searchPatientsFromRemoteServer(searchText);
-                    } else if(lastSearchedText !== null) {
-                        if(searchController !== null) {
-                            searchController.abort();
-                        }
-                        // Subsequent searches with text less than minimum length.
-                        foundPatientList = null;
-                        refreshTable(patientTable, []);
-                        $j('#search-busy-gif').css("visibility", "hidden");
                     }
-                    lastSearchedText = searchText;
                 }
             });
         });
@@ -691,3 +686,7 @@
         </div>
     </div>
 </c:if>
+
+<div id="dialog" title="<openmrs:message code="esaudefeatures.remote.patients.connection.problem"/>">
+    <p><openmrs:message code="esaudefeatures.remote.patients.connection.problem.message"/></p>
+</div>
