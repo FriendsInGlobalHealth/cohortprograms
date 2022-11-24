@@ -61,12 +61,14 @@
                         $j('#remote_patient_error_msg').html(ERROR_DURING_SEARCH_MSG_PREFIX + ': ' + message);
                         $j('#remote_patient_error_msg').css('visibility', 'visible');
                         $j('#search-busy-gif').css("visibility", "hidden");
+                        $j("#find-remote-patients-button").prop('disabled', false);
                     })
                 } else {
                     console.log('error', error);
                     $j('#remote_patient_error_msg').html(ERROR_DURING_SEARCH_MSG_PREFIX + ': ' + error);
                     $j('#remote_patient_error_msg').css('visibility', 'visible');
                     $j('#search-busy-gif').css("visibility", "hidden");
+                    $j("#find-remote-patients-button").prop('disabled', false);
                 }
             } else {
                 console.log('error', error);
@@ -74,12 +76,14 @@
                     $j('#remote_patient_error_msg').html(ERROR_DURING_SEARCH_MSG_PREFIX + ': ' + error);
                     $j('#remote_patient_error_msg').css('visibility', 'visible');
                     $j('#search-busy-gif').css("visibility", "hidden");
+                    $j("#find-remote-patients-button").prop('disabled', false);
                 }
             }
         }
 
         function searchPatientsFromRemoteServer(searchText) {
             $j('#search-busy-gif').css("visibility", "visible");
+            $j("#find-remote-patients-button").prop('disabled', true);
             var requestHeaders = new Headers({
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
@@ -126,6 +130,7 @@
                     }
                     refreshTable(patientTable, results);
                     $j('#search-busy-gif').css("visibility", "hidden");
+                    $j("#find-remote-patients-button").prop('disabled', false);
                 }).catch(error => {
                     searchErrorHandler(error);
                 });
@@ -637,8 +642,8 @@
                 bSort: false
             });
 
-            $j("#find-remote-patients").on('change keyup cut paste', function(e) {
-                var searchText = $j(this).val();
+            $j("#find-remote-patients-button").on('click', function(e) {
+                var searchText = $j('#find-remote-patients').val();
                 if(searchText !== null) searchText.trim();
                 if(lastSearchedText === null || searchText !== lastSearchedText) {
                     $j('#remote_patient_error_msg').css('visibility', 'hidden');
@@ -667,6 +672,7 @@
             <openmrs:message code="esaudefeatures.remote.patients.search" javaScriptEscape="true"/>
             <input type="text" id="find-remote-patients"
                    placeholder="<openmrs:message code="esaudefeatures.remote.patients.search.placeholder" javaScriptEscape="true"/>"/>
+            <button id="find-remote-patients-button"><openmrs:message  code="esaudefeatures.remote.patients.search.button"/></button>
             <img id="search-busy-gif" src="${pageContext.request.contextPath}/moduleResources/esaudefeatures/images/loading.gif" style="visibility:hidden;"/>
             <table id="found-patients" class="display nowrap" style="width:100%">
                 <thead>
