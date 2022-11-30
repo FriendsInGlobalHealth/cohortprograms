@@ -20,6 +20,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENCR_REMOTE_SERVER_URL_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_PASSWORD_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_URL_GP;
@@ -133,5 +137,17 @@ public class OpenmrsSearchController {
 				throw new RemoteOpenmrsSearchException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
 			}
 		}
+	}
+	
+	@RequestMapping(method = RequestMethod.GET, value = "/module/esaudefeatures/openmrsRemoteGetRequest.json", produces = { "application/json " })
+	public SimpleObject remoteGetRequest(HttpServletRequest request) throws Exception {
+		if(!request.getParameterMap().containsKey("resource")) {
+			throw new RemoteOpenmrsSearchException("Openmrs REST resource not specified", HttpStatus.BAD_REQUEST.value());
+		}
+		final Map<String, String> params = new HashMap<>(request.getParameterMap().size() - 1);
+		for(Object key: request.getParameterMap().keySet()) {
+			params.put((String) key, request.getParameter((String) key));
+		}
+		return delegate.runRemoteOpenmrsRestRequest(params);
 	}
 }

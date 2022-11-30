@@ -42,6 +42,10 @@
         const REMOTE_SERVER_TYPE = "${remoteServerType}";
         const OPENCR_NID_CODE = 'NID_TARV';
         const OPENCR_PERSON_UUID_CODE = 'OpenMRS_PATIENT_UUID';
+        const ART_TREATMENT_PROGRAM_UUID = 'efe2481f-9e75-4515-8d5a-86bfde2b5ad3';
+        const PREP_PROGRAM_UUID = 'ac7c5d2b-854a-48c4-a68f-0b8a92e11f4a';
+        const ART_START_DATE_CONCEPT_UUID = 'e1d8f690-1d5f-11e0-b929-000c29ad1d07';
+        const PHARMACY_ENCOUNTER_TYPE_UUID = 'e279133c-1d5f-11e0-b929-000c29ad1d07';
 
         class HttpError extends Error {
             constructor(response) {
@@ -52,6 +56,9 @@
         }
 
         var searchController = null;
+        var patientProgramsSearchController = null;
+        var artStartDateFetchController = null;
+        var lastArtPickupFetchController = null;
 
         function searchErrorHandler(error) {
             var __doStuffWithError = function(error) {
@@ -72,7 +79,7 @@
                     })
                 } else {
                     console.log('error', error);
-                    __doStuffWithError(error);
+                    __doStuffWithError(error.message);
                 }
             } else {
                 console.log('error', error);
@@ -80,6 +87,54 @@
                     __doStuffWithError(error);
                 }
             }
+        }
+
+        function searchExtraInfo(patient, patientUuid) {
+            var __fetchAndUpdateInfo = function(url, infoStore, requestController, infoUpdaterCallback) {
+                var requestOptions = {
+                    method: 'GET',
+                    headers:  new Headers({
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }),
+                };
+
+                if(requestController !== null) {
+                    requestController.abort();
+                }
+                requestController = new AbortController();
+                requestOptions.signal = requestController.signal;
+
+                fetch(url, requestOptions)
+                    .then(response => {
+                        if(response.status !== 200) {
+                            throw new HttpError(response);
+                        } else {
+                            return response.json()
+                        }
+                    })
+                    .then(data => {
+                        if(Array.isArray(data) && data.length > 0) {
+                            infoStore = data;
+                        }
+                        infoUpdaterCallback(patientUuid, infoStore);
+                    }).catch(error => {
+                    searchErrorHandler(error);
+                });
+            };
+
+            var programsUrl = localOpenmrsContextPath + "/module/esaudefeatures/openmrsRemoteGetRequest.json?patient=" + patientUuid;
+            programsUrl += '&resource=programenrollment&v=custom:(uuid,dateEnrolled,dateCompleted,program:(uuid,name))';
+            __fetchAndUpdateInfo(programsUrl, patient.programInfo, patientProgramsSearchController,insertProgramInfoInDetailsColumn);
+
+            var artStartDateUrl = localOpenmrsContextPath + "/module/esaudefeatures/openmrsRemoteGetRequest.json?patient=" + patientUuid;
+            artStartDateUrl += '&resource=obs&limit=1&v=custom:(uuid,value)&concepts=' + ART_START_DATE_CONCEPT_UUID;
+            __fetchAndUpdateInfo(artStartDateUrl, patient.artDrugStartDateInfo, artStartDateFetchController,insertArtStartDateInDetailsColumn);
+
+            var lastArtDrugPickupUrl = localOpenmrsContextPath + "/module/esaudefeatures/openmrsRemoteGetRequest.json?patient=" + patientUuid;
+            lastArtDrugPickupUrl += '&resource=encounter&v=custom:(uuid,encounterDatetime,location:(uuid,name)&order=desc&limit=1';
+            lastArtDrugPickupUrl += '&encounterType=' + PHARMACY_ENCOUNTER_TYPE_UUID;
+            __fetchAndUpdateInfo(lastArtDrugPickupUrl, patient.lastArtDrugPickupInfo, lastArtPickupFetchController,insertLastArtPickupInDetailsColumn);
         }
 
         function searchPatientsFromRemoteServer(searchText) {
@@ -252,6 +307,73 @@
             }
         }
 
+        function insertArtStartDateInDetailsColumn(patientUuid, artDrugStartDateInfo) {
+            var priorRow = $j('#program-info-' + patientUuid);
+            if(Array.isArray(artDrugStartDateInfo) && artDrugStartDateInfo.length > 0) {
+                var artDrugStartDate = '<openmrs:message code="esaudefeatures.remote.patients.no.value"/>';
+                if (artDrugStartDateInfo[0].value !== null && artDrugStartDateInfo[0].value !== undefined) {
+                    artDrugStartDate = new Date(artDrugStartDateInfo[0].value).toLocaleDateString('pt', DATE_DISPLAY_OPTIONS);
+                }
+                var artInfoRow = '<tr><td><openmrs:message code="esaudefeatures.remote.patients.art.drug.start.date"/></td><td>' + artDrugStartDate + '</td></tr>';
+                $j(artInfoRow).insertAfter(priorRow);
+            } else {
+                var artInfoRow = '<tr><td><openmrs:message code="esaudefeatures.remote.patients.art.drug.start.date"/></td>'
+                    + '<td><openmrs:message code="esaudefeatures.remote.patients.information.not.found"/></td></tr>';
+                $j(artInfoRow).insertAfter(priorRow);
+            }
+        }
+
+        function insertLastArtPickupInDetailsColumn(patientUuid, lastArtPickupInfo) {
+            var priorRow = $j('#program-info-' + patientUuid);
+            if(Array.isArray(lastArtPickupInfo) && lastArtPickupInfo.length > 0) {
+                var lastArtPickupDate = '<openmrs:message code="esaudefeatures.remote.patients.no.value"/>';
+                if (lastArtPickupInfo[0].encounterDatetime !== null && lastArtPickupInfo[0].encounterDatetime !== undefined) {
+                    lastArtPickupDate = new Date(lastArtPickupInfo[0].encounterDatetime).toLocaleDateString('pt', DATE_DISPLAY_OPTIONS);
+                }
+                var lastPickupDateRow = '<tr><td><openmrs:message code="esaudefeatures.remote.patients.last.art.drug.pickup.date"/></td><td>' + lastArtPickupDate + '</td></tr>';
+                $j(lastPickupDateRow).insertAfter(priorRow);
+                if(typeof lastArtPickupInfo[0].location === 'object') {
+                    var locationRow = '<tr><td><openmrs:message code="esaudefeatures.remote.patients.last.art.drug.pickup.location"/></td><td>' + lastArtPickupInfo[0].location.name + '</td></tr>';
+                    $j(locationRow).insertAfter(priorRow);
+                }
+            } else {
+                var lastPickupDateRow = '<tr><td><openmrs:message code="esaudefeatures.remote.patients.art.drug.start.date"/></td>'
+                    + '<td><openmrs:message code="esaudefeatures.remote.patients.information.not.found"/></tr>';
+                $j(lastPickupDateRow).insertAfter(priorRow);
+            }
+        }
+
+        function insertProgramInfoInDetailsColumn(patientUuid, patientPrograms) {
+            if(Array.isArray(patientPrograms) && patientPrograms.length > 0) {
+                var currentRow =  $j('#program-info-' + patientUuid);
+                currentRow.html('<td colspan="2" style="border-bottom: solid; border-top:solid;"><openmrs:message code="esaudefeatures.remote.patients.programInfo"/></td>');
+
+                var artProgram = patientPrograms.find(program => program.program.uuid == ART_TREATMENT_PROGRAM_UUID);
+                var programInfoAvailable = false;
+                if(artProgram) {
+                    var artDateEnrolled = new Date(artProgram.dateEnrolled).toLocaleDateString('pt', DATE_DISPLAY_OPTIONS);
+                    var artInfoRow = '<tr><td><openmrs:message code="esaudefeatures.remote.patients.art.enrollment.date"/></td><td>' + artDateEnrolled + '</td></tr>';
+                    $j(artInfoRow).insertAfter(currentRow);
+                    currentRow = $j(artInfoRow);
+                    programInfoAvailable = true;
+                }
+                var prepProgram =  patientPrograms.find(program => program.program.uuid == PREP_PROGRAM_UUID);
+                if(prepProgram) {
+                    var prepDateEnrolled = new Date(prepProgram.dateEnrolled).toLocaleDateString('pt', DATE_DISPLAY_OPTIONS);
+                    var prepInfoRow = '<tr><td><openmrs:message code="esaudefeatures.remote.patients.prep.enrollment.date"/></td><td>' + prepDateEnrolled + '</td></tr>';
+                    $j(prepInfoRow).insertAfter(currentRow);
+                    currentRow = $j(prepInfoRow);
+                    programInfoAvailable = true;
+                }
+
+                if(!programInfoAvailable) {
+                    $j('<td><openmrs:message code="esaudefeatures.remote.patients.programInfo.not.found"/></td>').insertAfter(currentRow);
+                }
+            } else {
+                $j('#program-info-' + patientUuid).html('<td colspan="2" style="border-bottom: solid; border-top:solid;"><openmrs:message code="esaudefeatures.remote.patients.programInfo.not.found"/></td>');
+            }
+        }
+
         function insertDetailsColumnInResultsTable(oTable) {
             var _searchPatientFromList = (uuid, patient) => {
                 if(REMOTE_SERVER_TYPE === 'OPENMRS') {
@@ -304,13 +426,6 @@
                         return UUID != null && UUID.value === patientUuid;
                     });
                     var remotePatientDetailsTitle ='<openmrs:message code="esaudefeatures.remote.patients.remote.patient.details"/>';
-                    if(REMOTE_SERVER_TYPE === 'OPENMRS') {
-                        var detailsWithButtonEnabled = createPatientDetailsHtmlTable(patient, remotePatientDetailsTitle, true, false);
-                        var detailsWithButtonDisabled = createPatientDetailsHtmlTable(patient, remotePatientDetailsTitle, true, true);
-                    } else {
-                        var detailsWithButtonEnabled = createPatientDetailsHtmlTableForOpenCR(patient, remotePatientDetailsTitle, true, false);
-                        var detailsWithButtonDisabled = createPatientDetailsHtmlTableForOpenCR(patient, remotePatientDetailsTitle, true, true);
-                    }
                     var localPatietSearchUrl = localOpenmrsContextPath + '/ws/rest/v1/patient/' + patientUuid + '?v=full';
                     var requestHeaders = new Headers({
                         'Content-Type': 'application/json',
@@ -324,19 +439,30 @@
 
                     fetch(localPatietSearchUrl, requestOptions)
                         .then(response => {
+                            if(REMOTE_SERVER_TYPE === 'OPENMRS') {
+                                var detailsWithButtonEnabled = createPatientDetailsHtmlTable(patient, remotePatientDetailsTitle, true, false);
+                            } else {
+                                var detailsWithButtonEnabled = createPatientDetailsHtmlTableForOpenCR(patient, remotePatientDetailsTitle, true, false);
+                            }
                             if(response.status === 200) {
                                 response.json().then(localPatient => {
                                     var detailsTitle = '<openmrs:message code="esaudefeatures.remote.patients.same.uuid.local"/>';
                                     var localPatientTable = '<div style="float:left; border:2.5px solid red; background-color: #FF9033">'
                                         + createPatientDetailsHtmlTable(localPatient, detailsTitle, false)
-                                        + '</div>'
+                                        + '</div>';
+                                    if(REMOTE_SERVER_TYPE === 'OPENMRS') {
+                                        var detailsWithButtonDisabled = createPatientDetailsHtmlTable(patient, remotePatientDetailsTitle, true, true);
+                                    } else {
+                                        var detailsWithButtonDisabled = createPatientDetailsHtmlTableForOpenCR(patient, remotePatientDetailsTitle, true, true);
+                                    }
                                     detailsWithButtonDisabled += localPatientTable;
                                     oTable.fnOpen(nTr, detailsWithButtonDisabled, 'details' );
                                 });
 
-                            } else if(response.status === 404) {
+                            } else if(response.status === 404 && REMOTE_SERVER_TYPE === 'OPENMRS') {
                                 // TODO: Go for identifiers & names (After discussion with the team)
                                 var localPatientSearchUrlUsingIdentifier = localOpenmrsContextPath + '/ws/rest/v1/patient?v=full&identifier=';
+                                // TODO: Fix this for OpenCR payload.
                                 if(patient.identifiers.length > 0) {
                                     localPatientSearchUrlUsingIdentifier += patient.identifiers[0].identifier;
                                     fetch(localPatientSearchUrlUsingIdentifier, requestOptions)
@@ -349,7 +475,12 @@
                                                         var detailsTitle = '<openmrs:message code="esaudefeatures.remote.patients.same.uuid.local"/>';
                                                         var localPatientTable = '<div style="float:left; border:2.5px solid red; background-color: #FF9033">'
                                                             + createPatientDetailsHtmlTable(data.results[0], detailsTitle, false)
-                                                            + '</div>'
+                                                            + '</div>';
+                                                        if(REMOTE_SERVER_TYPE === 'OPENMRS') {
+                                                            var detailsWithButtonDisabled = createPatientDetailsHtmlTable(patient, remotePatientDetailsTitle, true, true);
+                                                        } else {
+                                                            var detailsWithButtonDisabled = createPatientDetailsHtmlTableForOpenCR(patient, remotePatientDetailsTitle, true, true);
+                                                        }
                                                         detailsWithButtonDisabled += localPatientTable;
                                                         oTable.fnOpen(nTr, detailsWithButtonDisabled, 'details' );
                                                     } else {
@@ -371,6 +502,11 @@
                         })
                         .catch(error => {
                             console.log('error', error);
+                            if(REMOTE_SERVER_TYPE === 'OPENMRS') {
+                                var detailsWithButtonEnabled = createPatientDetailsHtmlTable(patient, remotePatientDetailsTitle, true, false);
+                            } else {
+                                var detailsWithButtonEnabled = createPatientDetailsHtmlTableForOpenCR(patient, remotePatientDetailsTitle, true, false);
+                            }
                             oTable.fnOpen(nTr, detailsWithButtonEnabled, 'details' );
                         });
                 }
@@ -532,6 +668,19 @@
                     }
                     patientDetailsTable += '<tr><td>' + label + ':</td><td>' + contact.value + '</td>';
                 }
+            }
+
+            var UUID = patient.resource.identifier.find(ident => ident.type.coding.find(coding => OPENCR_PERSON_UUID_CODE == coding.code));
+            patientDetailsTable += '<tr id="program-info-' + UUID.value + '"><td colspan="2" style="border-bottom: solid; border-top:solid;"><openmrs:message code="esaudefeatures.remote.patients.fetching.program.enrollment"/>...</td></tr>';
+            if(patient.programInfo || patient.artDrugStartDateInfo || patient.lastArtDrugPickupInfo) {
+                // A hack to wait for the DOM to be updated with details page.
+                setTimeout(function () {
+                    insertProgramInfoInDetailsColumn(UUID.value, patient.programInfo);
+                    insertArtStartDateInDetailsColumn(UUID.value, patient.artDrugStartDateInfo);
+                    insertLastArtPickupInDetailsColumn(UUID.value, patient.lastArtDrugPickupInfo);
+                }, 500);
+            } else {
+                searchExtraInfo(patient, UUID.value);
             }
 
             if(addImportButton) {

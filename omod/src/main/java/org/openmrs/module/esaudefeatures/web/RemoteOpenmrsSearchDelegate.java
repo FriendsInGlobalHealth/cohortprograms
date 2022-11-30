@@ -34,6 +34,8 @@ public class RemoteOpenmrsSearchDelegate {
 	
 	private static final String OPENMRS_REST_PATIENT_PATH = "ws/rest/v1/patient";
 	
+	private static final String OPENMRS_REST_BASE_PATH = "ws/rest/v1";
+	
 	private AdministrationService adminService;
 	
 	private ImportHelperService helperService;
@@ -127,6 +129,39 @@ public class RemoteOpenmrsSearchDelegate {
 			} else if (response.code() == HttpServletResponse.SC_NOT_FOUND) {
 				LOGGER.debug("Patient with uuid {} does not exist on the server {}", uuid, remoteServerUrl);
 				return null;
+			}
+			String errorMessage = String.format("Error fetching response from server %s (%s)", remoteServerUrl,
+			    response.message());
+			LOGGER.error(errorMessage);
+			throw new RemoteOpenmrsSearchException(errorMessage, response.code());
+		}
+		finally {
+			if (response != null) {
+				response.close();
+			}
+		}
+	}
+	
+	public SimpleObject runRemoteOpenmrsRestRequest(final Map<String, String> params) throws Exception {
+		String[] urlUsernamePassword = helperService.getRemoteOpenmrsHostUsernamePassword();
+		String remoteServerUrl = urlUsernamePassword[0];
+		String remoteServerUsername = urlUsernamePassword[1];
+		String remoteServerPassword = urlUsernamePassword[2];
+		
+		boolean skipHostnameVerification = Boolean.parseBoolean(adminService.getGlobalProperty(
+		    REMOTE_SERVER_SKIP_HOSTNAME_VERIFICATION_GP, "FALSE"));
+		
+		String[] pathSegments = { OPENMRS_REST_BASE_PATH, params.get("resource") };
+		params.remove("resource");
+		Request fetchRequest = Utils.createBasicAuthGetRequest(remoteServerUrl, remoteServerUsername, remoteServerPassword,
+		    pathSegments, params);
+		
+		OkHttpClient okHttpClient = Utils.createOkHttpClient(skipHostnameVerification);
+		
+		Response response = okHttpClient.newCall(fetchRequest).execute();
+		try {
+			if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
+				return parseServerResponse(response);
 			}
 			String errorMessage = String.format("Error fetching response from server %s (%s)", remoteServerUrl,
 			    response.message());
