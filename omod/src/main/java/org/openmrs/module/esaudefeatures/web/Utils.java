@@ -18,6 +18,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENCR_PATIENT_UUID_CONCEPT_MAP_GP;
 
@@ -26,9 +27,19 @@ import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENCR_P
  */
 public class Utils {
 	
+	static final long CONNECT_TIMEOUT = 0;
+	
+	static final long READ_TIMEOUT = 0;
+	
+	static final long WRITE_TIMEOUT = 0;
+	
 	static SimpleDateFormat[] DATE_FORMARTS = { new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
 	        new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS"), new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS'Z'"),
 	        new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"), };
+	
+	private static OkHttpClient skipHostnameVerificationClient;
+	
+	private static OkHttpClient okHttpClient;
 	
 	/**
 	 * Copied from org.apache.solr.common.util.Base64 class to avoid dependency issues between 1.x
@@ -82,15 +93,27 @@ public class Utils {
 	
 	public static OkHttpClient createOkHttpClient(final boolean skipHostnameVerification) throws Exception {
 		if (skipHostnameVerification) {
-			return new OkHttpClient.Builder().hostnameVerifier(new HostnameVerifier() {
-				
-				@Override
-				public boolean verify(String hostname, SSLSession session) {
-					return true;
-				}
-			}).build();
+			if (skipHostnameVerificationClient == null) {
+				skipHostnameVerificationClient = new OkHttpClient.Builder()
+				        .connectTimeout(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS)
+				        .readTimeout(READ_TIMEOUT, TimeUnit.MILLISECONDS).writeTimeout(WRITE_TIMEOUT, TimeUnit.MILLISECONDS)
+				        .hostnameVerifier(new HostnameVerifier() {
+					        
+					        @Override
+					        public boolean verify(String hostname, SSLSession session) {
+						        return true;
+					        }
+				        }).build();
+			}
+			return skipHostnameVerificationClient;
 		}
-		return new OkHttpClient();
+		
+		if (okHttpClient == null) {
+			okHttpClient = new OkHttpClient.Builder().connectTimeout(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS)
+			        .readTimeout(READ_TIMEOUT, TimeUnit.MILLISECONDS).writeTimeout(WRITE_TIMEOUT, TimeUnit.MILLISECONDS)
+			        .build();
+		}
+		return okHttpClient;
 	}
 	
 	public static Request createBasicAuthGetRequest(final String url, final String username, final String password,
