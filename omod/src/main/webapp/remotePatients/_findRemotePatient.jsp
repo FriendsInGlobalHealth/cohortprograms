@@ -337,7 +337,7 @@
                     $j(locationRow).insertAfter(priorRow);
                 }
             } else {
-                var lastPickupDateRow = '<tr><td><openmrs:message code="esaudefeatures.remote.patients.art.drug.start.date"/></td>'
+                var lastPickupDateRow = '<tr><td><openmrs:message code="esaudefeatures.remote.patients.last.art.drug.pickup.date"/></td>'
                     + '<td><openmrs:message code="esaudefeatures.remote.patients.information.not.found"/></tr>';
                 $j(lastPickupDateRow).insertAfter(priorRow);
             }
