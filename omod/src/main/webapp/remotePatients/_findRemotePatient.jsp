@@ -64,7 +64,8 @@
             var __doStuffWithError = function(error) {
                 $j('#search-busy-gif').css("visibility", "hidden");
                 $j("#find-remote-patients-button").prop('disabled', false);
-                if(error.includes('Failed to connect to')) {
+                if(error.includes('Failed to connect to') || error.includes('java.net.SocketTimeoutException') ||
+                    error.includes('java.net.SocketException')) {
                     $j('#dialog').dialog('open');
                 } else {
                     $j('#remote_patient_error_msg').html(ERROR_DURING_SEARCH_MSG_PREFIX + ': ' + error);
