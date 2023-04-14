@@ -1,0 +1,78 @@
+{
+  "resourceType": "Patient",
+  "id": "5ef156f4-e615-48ae-9d4e-7224a29a2154",
+  "meta": {
+    "versionId": "cb642625-c37f-47d0-aa71-fc328793daa7",
+    "lastUpdated": "2023-04-03T08:40:35.956713+00:00",
+    "security": [
+      {
+        "system": "http://santedb.org/security/policy",
+        "code": "1.3.6.1.4.1.33349.3.1.5.9.2.2.3"
+      }
+    ],
+    "tag": [
+      {
+        "system": "http://santedb.org/fhir/tags",
+        "code": "$mdm.type:M"
+      },
+      {
+        "system": "http://santedb.org/fhir/tags",
+        "code": "$mdm.resource:Patient"
+      },
+      {
+        "system": "http://santedb.org/fhir/tags",
+        "code": "$generated:true"
+      },
+      {
+        "system": "http://santedb.org/fhir/tags",
+        "code": "$alt.keys:49a17cfc-4373-4271-9ef5-16b1c7cb1988"
+      }
+    ]
+  },
+  "identifier": [
+    {
+      "system": "http://metadata.epts.e-saude.net/dictionary/patient-uuid",
+      "value": "83bacb77-58c3-4902-807f-54ad96d4718f"
+    },
+    {
+      "system": "http://metadata.epts.e-saude.net/dictionary/patient-identifiers/nid-tarv",
+      "value": "0104140801/2021/00242"
+    }
+  ],
+  "active": true,
+  "name": [
+    {
+      "use": "official",
+      "family": "Omaga",
+      "given": [
+        "Maria",
+        "Adriano"
+      ]
+    }
+  ],
+  "gender": "female",
+  "birthDate": "1969-01-01",
+  "address": [
+    {
+      "use": "home",
+      "line": [
+        "Macuse",
+        "Macuse Sede",
+        "Manonga",
+        "Perto de Capela",
+        "Secretario Manonga"
+      ],
+      "district": "Namacurra",
+      "state": "Zambézia",
+      "country": "Moçambique"
+    }
+  ],
+  "link": [
+    {
+      "other": {
+        "reference": "Patient/49a17cfc-4373-4271-9ef5-16b1c7cb1988"
+      },
+      "type": "seealso"
+    }
+  ]
+}

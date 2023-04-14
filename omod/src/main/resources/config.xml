@@ -58,10 +58,10 @@
 		</description>
 	</globalProperty>
 	<globalProperty>
-		<property>@MODULE_ID@.opencr.remote.server.url</property>
+		<property>@MODULE_ID@.fhir.remote.server.url</property>
 		<defaultValue></defaultValue>
 		<description>
-			The URL of the OpenCR MPI server from which to search for patients
+			The URL of the OpenCR MPI or SANTEMPI server from which to search for patients
 		</description>
 	</globalProperty>
 	<globalProperty>
@@ -96,9 +96,9 @@
 	</globalProperty>
 	<globalProperty>
 		<property>@MODULE_ID@.remote.server.type</property>
-		<defaultValue>OPENCR</defaultValue>
+		<defaultValue>SANTEMPI</defaultValue>
 		<description>
-			The remote server type. Can have one of the two values, either OPENMRS or OPENCR
+			The remote server type. Can have one of the three values, either OPENMRS or OPENCR or SANTEMPI
 		</description>
 	</globalProperty>
 	<globalProperty>
@@ -110,30 +110,46 @@
 		</description>
 	</globalProperty>
 	<globalProperty>
-		<property>@MODULE_ID@.opencr.identifier.type.concept.mappings</property>
+		<property>@MODULE_ID@.openmrs.uuid.fhir.identifier.system.mappings</property>
 		<defaultValue>
-			8d793bee-c2cc-11de-8d13-0010c6dffd0f:OpenMRS_ID_NUM:OpenMRS ID Number,e2b966d0-1d5f-11e0-b929-000c29ad1d07:NID_TARV:NID SERVICO TARV,
-			e2b9682e-1d5f-11e0-b929-000c29ad1d07:BI:BILHETE DE IDENTIDADE,e2b9698c-1d5f-11e0-b929-000c29ad1d07:CDG_ATS:CODIGO ATS/UATS,
-			e2b96ad6-1d5f-11e0-b929-000c29ad1d07:CDG_PTV_PRE_NATAL:CODIGO PTV PRE-NATAL,e2b96c16-1d5f-11e0-b929-000c29ad1d07:CDG_ITS:CODIGO ITS,
-			e2b96d56-1d5f-11e0-b929-000c29ad1d07:CDG_PTV_MATERNIDADE:CODIGO PTV (MATERNIDADE),e2b97b70-1d5f-11e0-b929-000c29ad1d07:NID_CCR:NID (CCR),
-			e2b97cec-1d5f-11e0-b929-000c29ad1d07:PCR_NUM_REG:PCR (NUMERO DE REGISTO),e2b97e40-1d5f-11e0-b929-000c29ad1d07:NIT_TB:NIT (SECTOR DE TB),
-			e2b97f8a-1d5f-11e0-b929-000c29ad1d07:NUM_CANCRO_CERVICAL:NUMERO CANCRO CERVICAL,e89c8925-35cc-4a29-9002-6b36bf3fd47f:NUIC:NUIC,
-			79ad599a-50df-48f8-865c-0095ec9a9d01:NID_DISA:NID DISA,1c72703d-fb55-439e-af4f-ef39a1049e19:CRAM_ID:CRAM ID,
-			bce7c891-27e9-42ec-abb0-aec3a641175e:NID_PREP:NID PREP,a5d38e09-efcb-4d91-a526-50ce1ba5011a:OpenEMPI_ID:OpenEMPI ID,
-			05a29f94-c0ed-11e2-94be-8c13b969e334:OpenMRS_ID:OpenMRS ID
+			8d793bee-c2cc-11de-8d13-0010c6dffd0f^http://metadata.epts.e-saude.net/dictionary/patient-identifiers/openmrs-num,
+			e2b966d0-1d5f-11e0-b929-000c29ad1d07^http://metadata.epts.e-saude.net/dictionary/patient-identifiers/nid-tarv,
+			e2b9682e-1d5f-11e0-b929-000c29ad1d07^http://metadata.epts.e-saude.net/dictionary/patient-identifiers/bi,
+			e2b9698c-1d5f-11e0-b929-000c29ad1d07^http://metadata.epts.e-saude.net/dictionary/patient-identifiers/cdg-ats,
+			e2b96ad6-1d5f-11e0-b929-000c29ad1d07^http://metadata.epts.e-saude.net/dictionary/patient-identifiers/cdg-ptv-pre-natal,
+			e2b96c16-1d5f-11e0-b929-000c29ad1d07^http://metadata.epts.e-saude.net/dictionary/patient-identifiers/cdg-its,
+			e2b96d56-1d5f-11e0-b929-000c29ad1d07^http://metadata.epts.e-saude.net/dictionary/patient-identifiers/cdg-ptc-maternidade,
+			e2b97b70-1d5f-11e0-b929-000c29ad1d07^http://metadata.epts.e-saude.net/dictionary/patient-identifiers/nid-ccr,
+			e2b97cec-1d5f-11e0-b929-000c29ad1d07^http://metadata.epts.e-saude.net/dictionary/patient-identifiers/pcr-num-reg,
+			e2b97e40-1d5f-11e0-b929-000c29ad1d07^http://metadata.epts.e-saude.net/dictionary/patient-identifiers/nit-tb,
+			e2b97f8a-1d5f-11e0-b929-000c29ad1d07^http://metadata.epts.e-saude.net/dictionary/patient-identifiers/num-cancro-cervical,
+			e89c8925-35cc-4a29-9002-6b36bf3fd47f^http://metadata.epts.e-saude.net/dictionary/patient-identifiers/nuic,
+			79ad599a-50df-48f8-865c-0095ec9a9d01^http://metadata.epts.e-saude.net/dictionary/patient-identifiers/nid-disa,
+			1c72703d-fb55-439e-af4f-ef39a1049e19^http://metadata.epts.e-saude.net/dictionary/patient-identifiers/cram-id,
+			bce7c891-27e9-42ec-abb0-aec3a641175e^http://metadata.epts.e-saude.net/dictionary/patient-identifiers/nid-prep,
+			a5d38e09-efcb-4d91-a526-50ce1ba5011a^http://metadata.epts.e-saude.net/dictionary/patient-identifiers/openempi-id,
+			05a29f94-c0ed-11e2-94be-8c13b969e334^http://metadata.epts.e-saude.net/dictionary/patient-identifiers/openmrs-id
 		</defaultValue>
 		<description>
-			The identifier type to concept mapping used for mapping the identifier types to associated concept definition. The mapping in this property
-			contains the uuid of the identifier type as the first segment. The module uses these to get the corresponding UUIDs from the code stored
-			in OpenCR server.
+			The identifier system to Openmrs identifier type uuid mapping used for mapping the identifier types to associated fhir system.
+			The mapping in this property contains the uuid of the identifier type as the first segment and system uri as the second segment separated
+			by a carret (^).
 		</description>
 	</globalProperty>
 	<globalProperty>
-		<property>@MODULE_ID@.opencr.patient.uuid.concept.map</property>
-		<defaultValue>OpenMRS_PATIENT_UUID:OpenMRS Patient UUID</defaultValue>
+		<property>@MODULE_ID@.fhir.identifier.system.for.openmrs.patient.uuid</property>
+		<defaultValue>http://metadata.epts.e-saude.net/dictionary/patient-uuid</defaultValue>
 		<description>
-			The concept mapping indicating the code used to represent the patient/person UUID in Opencr/FHIR coding system.
+			The FHIR identifier system used to represent the patient/person UUID in the MPI.
 		</description>
+	</globalProperty>
+	<globalProperty>
+		<property>@MODULE_ID@.oauth2.client.id</property>
+		<description>Client ID of the application configured on SanteMPI</description>
+	</globalProperty>
+	<globalProperty>
+		<property>@MODULE_ID@.oauth2.client.secret</property>
+		<description>Secret code provided by the SanteMPI server for this application</description>
 	</globalProperty>
 
 	<!--

@@ -24,7 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENCR_REMOTE_SERVER_URL_GP;
+import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.FHIR_REMOTE_SERVER_URL_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_PASSWORD_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_URL_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_USERNAME_GP;
@@ -69,7 +69,7 @@ public class OpenmrsSearchController {
 			    adminService.getGlobalProperty(OPENMRS_REMOTE_SERVER_URL_GP));
 		} else {
 			modelAndView.getModelMap().addAttribute("remoteServerUrl",
-			    adminService.getGlobalProperty(OPENCR_REMOTE_SERVER_URL_GP));
+			    adminService.getGlobalProperty(FHIR_REMOTE_SERVER_URL_GP));
 		}
 		
 		modelAndView.getModelMap().addAttribute("remoteServerType",

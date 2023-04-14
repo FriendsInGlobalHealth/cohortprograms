@@ -424,7 +424,7 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 		final Integer HOME_PHONE_PAT_ATTR_ID = 97;
 		final Integer MOBILE_PHONE_PAT_ATTR_ID = 101;
 		
-		Mockito.when(adminService.getGlobalProperty(EsaudeFeaturesConstants.OPENCR_IDENTIFIER_TYPE_CONCEPT_MAPPINGS_GP))
+		Mockito.when(adminService.getGlobalProperty(EsaudeFeaturesConstants.FHIR_IDENTIFIER_SYSTEM_FOR_OPENMRS_UUID_GP))
 		        .thenReturn("b0d10dc0-d8ce-11e3-9c1a-0800200c9a66:NID_TARV:NID SERVICO TARV");
 		
 		setUpMockWebServerToReturnPersonPropertiesInRequiredOrder();

@@ -31,6 +31,7 @@ import org.openmrs.api.PatientService;
 import org.openmrs.api.PersonService;
 import org.openmrs.api.UserService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants;
 import org.openmrs.module.esaudefeatures.web.exception.RemoteImportException;
 import org.openmrs.module.esaudefeatures.web.exception.RemoteOpenmrsSearchException;
 import org.openmrs.module.webservices.rest.SimpleObject;
@@ -64,8 +65,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.HOME_PHONE_PERSON_ATTR_TYPE_UUID;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.MOBILE_PHONE_PERSON_ATTR_TYPE_UUID;
-import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENCR_IDENTIFIER_TYPE_CONCEPT_MAPPINGS_GP;
-import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENCR_PATIENT_UUID_CONCEPT_MAP_GP;
+import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.FHIR_IDENTIFIER_SYSTEM_FOR_OPENMRS_UUID_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_PASSWORD_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_URL_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_USERNAME_GP;
@@ -140,31 +140,31 @@ public class ImportHelperService {
 		this.userService = userService;
 	}
 
-	public Patient getPatientFromOpencrPatientResource(org.hl7.fhir.r4.model.Patient opencrPatient) {
+	public Patient getPatientFromFhirPatientResource(org.hl7.fhir.r4.model.Patient fhirPatientResource) {
 		Person person = new Person();
-		String patientUuidConceptMap = adminService.getGlobalProperty(OPENCR_PATIENT_UUID_CONCEPT_MAP_GP);
+		String patientUuidConceptMap = adminService.getGlobalProperty(FHIR_IDENTIFIER_SYSTEM_FOR_OPENMRS_UUID_GP);
 		String opencrPatientUuidCode = patientUuidConceptMap.split(":")[0];
-		String openmrsUuid = Utils.getOpenmrsUuidFromOpencrIdentifiers(opencrPatient.getIdentifier(), opencrPatientUuidCode);
+		String openmrsUuid = Utils.getOpenmrsUuidFromFhirIdentifiers(fhirPatientResource.getIdentifier(), opencrPatientUuidCode);
 		if(openmrsUuid != null) {
 			person.setUuid(openmrsUuid);
 		} else {
-			person.setUuid(opencrPatient.getIdElement().getIdPart());
+			person.setUuid(fhirPatientResource.getIdElement().getIdPart());
 		}
 		Patient openmrsPatient = new Patient(person);
-		openmrsPatient.setBirthdate(opencrPatient.getBirthDate());
-		if(opencrPatient.hasGender()) {
-			openmrsPatient.setGender(String.valueOf(opencrPatient.getGender().getDefinition().charAt(0)));
+		openmrsPatient.setBirthdate(fhirPatientResource.getBirthDate());
+		if(fhirPatientResource.hasGender()) {
+			openmrsPatient.setGender(String.valueOf(fhirPatientResource.getGender().getDefinition().charAt(0)));
 		}
 
-		if(opencrPatient.hasDeceasedDateTimeType()) {
+		if(fhirPatientResource.hasDeceasedDateTimeType()) {
 			try {
-				openmrsPatient.setDeathDate(opencrPatient.getDeceasedDateTimeType().getValue());
+				openmrsPatient.setDeathDate(fhirPatientResource.getDeceasedDateTimeType().getValue());
 			} catch (FHIRException e) {
 				e.printStackTrace();
 			}
 		}
 
-		for(HumanName opencrName: opencrPatient.getName()) {
+		for(HumanName opencrName: fhirPatientResource.getName()) {
 			PersonName openmrsName = new PersonName();
 			openmrsName.setUuid(opencrName.getId());
 			updatePersonNameWithOpencrDetails(openmrsName, opencrName);
@@ -172,8 +172,8 @@ public class ImportHelperService {
 			person.addName(openmrsName);
 		}
 
-		String identifyTypeConceptMappings = adminService.getGlobalProperty(OPENCR_IDENTIFIER_TYPE_CONCEPT_MAPPINGS_GP);
-		for(Identifier identifier: opencrPatient.getIdentifier()) {
+		String identifyTypeConceptMappings = adminService.getGlobalProperty(EsaudeFeaturesConstants.FHIR_IDENTIFIER_SYSTEM_FOR_OPENMRS_UUID_GP);
+		for(Identifier identifier: fhirPatientResource.getIdentifier()) {
 			String openmrsIdentifierTypeUuid = Utils.getOpenmrsIdentifierTypeUuid(identifier, identifyTypeConceptMappings);
 			if(openmrsIdentifierTypeUuid != null) {
 				PatientIdentifier patientIdentifier = new PatientIdentifier();
@@ -189,7 +189,7 @@ public class ImportHelperService {
 			}
 		}
 
-		for(Address opencrAddress: opencrPatient.getAddress()) {
+		for(Address opencrAddress: fhirPatientResource.getAddress()) {
 			PersonAddress openmrsAddress = new PersonAddress();
 			openmrsAddress.setUuid(opencrAddress.getId());
 			updatePersonAddressWithOpencrDetails(openmrsAddress, opencrAddress);
@@ -197,7 +197,7 @@ public class ImportHelperService {
 			openmrsPatient.addAddress(openmrsAddress);
 		}
 
-		updateOpenmrsPatientContactFromOpencrDetails(openmrsPatient, opencrPatient);
+		updateOpenmrsPatientContactFromOpencrDetails(openmrsPatient, fhirPatientResource);
 
 		return openmrsPatient;
 	}
@@ -883,7 +883,7 @@ public class ImportHelperService {
 			}
 		}
 
-		String identifyTypeConceptMappings = adminService.getGlobalProperty(OPENCR_IDENTIFIER_TYPE_CONCEPT_MAPPINGS_GP);
+		String identifyTypeConceptMappings = adminService.getGlobalProperty(EsaudeFeaturesConstants.FHIR_IDENTIFIER_SYSTEM_FOR_OPENMRS_UUID_GP);
 		for(Identifier identifier: opencrPatient.getIdentifier()) {
 			String openmrsIdentifierTypeUuid = Utils.getOpenmrsIdentifierTypeUuid(identifier, identifyTypeConceptMappings);
 			if(openmrsIdentifierTypeUuid != null) {

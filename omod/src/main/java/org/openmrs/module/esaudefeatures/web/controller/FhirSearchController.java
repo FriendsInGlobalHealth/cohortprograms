@@ -4,37 +4,51 @@ import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
 import org.hl7.fhir.r4.model.Bundle;
 import org.openmrs.Patient;
-import org.openmrs.module.esaudefeatures.web.OpencrSearchDelegate;
+import org.openmrs.api.AdministrationService;
+import org.openmrs.module.esaudefeatures.web.FhirSearchDelegate;
 import org.openmrs.module.esaudefeatures.web.RemoteOpenmrsSearchDelegate;
+import org.openmrs.module.esaudefeatures.web.exception.FhirResourceSearchException;
 import org.openmrs.module.esaudefeatures.web.exception.RemoteImportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+import javax.servlet.http.HttpServletResponse;
+
+import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.REMOTE_SERVER_TYPE_GP;
+
 /**
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 11/22/21.
  */
-@Controller("esaudefeatures.opencrSearchController")
-public class OpencrSearchController {
+@Controller("esaudefeatures.fhirSearchController")
+public class FhirSearchController {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(OpencrSearchController.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(FhirSearchController.class);
 	
-	private OpencrSearchDelegate opencrSearchDelegate;
+	private FhirSearchDelegate fhirSearchDelegate;
 	
 	private RemoteOpenmrsSearchDelegate openmrsSearchDelegate;
 	
 	private IParser parser = FhirContext.forR4().newJsonParser();
 	
+	private AdministrationService adminService;
+	
 	@Autowired
-	public void setOpencrSearchDelegate(OpencrSearchDelegate opencrSearchDelegate) {
-		this.opencrSearchDelegate = opencrSearchDelegate;
+	public void setAdminService(AdministrationService adminService) {
+		this.adminService = adminService;
+	}
+	
+	@Autowired
+	public void setFhirSearchDelegate(FhirSearchDelegate fhirSearchDelegate) {
+		this.fhirSearchDelegate = fhirSearchDelegate;
 	}
 	
 	@Autowired
@@ -46,7 +60,13 @@ public class OpencrSearchController {
 	@RequestMapping(method = RequestMethod.GET, value = "/module/esaudefeatures/opencrRemotePatients.json", produces = {
 	        "application/json", "application/json+fhir" })
 	public String searchOpencrForPatient(@RequestParam("text") String searchText) throws Exception {
-		Bundle bundle = opencrSearchDelegate.searchOpencrForPatients(searchText);
+		String message = "Could not fetch data, Global property %s not set";
+		String fhirProvider = adminService.getGlobalProperty(REMOTE_SERVER_TYPE_GP);
+		if (StringUtils.isEmpty(fhirProvider)) {
+			LOGGER.warn(String.format(message, REMOTE_SERVER_TYPE_GP));
+			throw new FhirResourceSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
+		Bundle bundle = fhirSearchDelegate.searchForPatients(searchText, fhirProvider);
 		return parser.encodeResourceToString(bundle);
 	}
 	
@@ -54,8 +74,14 @@ public class OpencrSearchController {
 	@RequestMapping(method = RequestMethod.POST, value = "/module/esaudefeatures/opencrPatient.json", produces = { "application/json" })
 	@ResponseBody
 	public String importPatient(@RequestParam("patientId") String opencrPatientId) {
+		String message = "Could not fetch data, Global property %s not set";
+		String fhirProvider = adminService.getGlobalProperty(REMOTE_SERVER_TYPE_GP);
+		if (StringUtils.isEmpty(fhirProvider)) {
+			LOGGER.warn(String.format(message, REMOTE_SERVER_TYPE_GP));
+			throw new FhirResourceSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
 		try {
-			Patient patient = opencrSearchDelegate.importOpencrPatient(opencrPatientId);
+			Patient patient = fhirSearchDelegate.importPatient(opencrPatientId, fhirProvider);
 			
 			try {
 				openmrsSearchDelegate.importRelationshipsForPerson(patient.getPerson());

@@ -7,7 +7,6 @@ import okhttp3.Request;
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Identifier;
-import org.openmrs.api.AdministrationService;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
@@ -19,8 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-
-import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENCR_PATIENT_UUID_CONCEPT_MAP_GP;
 
 /**
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 2/17/22.
@@ -191,30 +188,22 @@ public class Utils {
 		return password.toString();
 	}
 	
-	public static String getOpenmrsIdentifierTypeUuid(final Identifier identifier, final String identifyTypeConceptMappings) {
-		String[] maps = identifyTypeConceptMappings.split(",");
+	public static String getOpenmrsIdentifierTypeUuid(final Identifier identifier, final String identifyTypeUuidSystemMappings) {
+		String[] maps = identifyTypeUuidSystemMappings.split(",");
 		for (String map : maps) {
-			if (identifier.hasType() && identifier.getType().hasCoding()) {
-				String[] mapParts = map.split(":");
-				for (Coding coding : identifier.getType().getCoding()) {
-					if (coding.hasCode() && coding.getCode().equalsIgnoreCase(mapParts[1])) {
-						return mapParts[0];
-					}
-				}
+			String[] mapParts = map.split("\\^");
+			if (identifier.hasSystem() && identifier.getSystem().equals(mapParts[1].trim())) {
+				return mapParts[0].trim();
 			}
 		}
 		return null;
 	}
 	
-	public static String getOpenmrsUuidFromOpencrIdentifiers(List<Identifier> identifiers, String opencrPatientUuidCode) {
+	public static String getOpenmrsUuidFromFhirIdentifiers(final List<Identifier> identifiers, final String fhirSystemValue) {
 		for (int i = 0; i < identifiers.size(); i++) {
 			Identifier identifier = identifiers.get(i);
-			if (identifier.hasType() && identifier.getType().hasCoding()) {
-				for (Coding coding : identifier.getType().getCoding()) {
-					if (opencrPatientUuidCode.equalsIgnoreCase(coding.getCode())) {
-						return identifier.getValue();
-					}
-				}
+			if (identifier.hasSystem() && identifier.getSystem().equals(fhirSystemValue)) {
+				return identifier.getValue();
 			}
 		}
 		return null;

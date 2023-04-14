@@ -18,8 +18,8 @@ import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants;
-import org.openmrs.module.esaudefeatures.web.controller.OpencrAuthenticationException;
-import org.openmrs.module.esaudefeatures.web.exception.OpencrSearchException;
+import org.openmrs.module.esaudefeatures.web.controller.FhirProviderAuthenticationException;
+import org.openmrs.module.esaudefeatures.web.exception.FhirResourceSearchException;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -36,7 +36,7 @@ import static org.junit.Assert.assertTrue;
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 11/22/21.
  */
 @RunWith(MockitoJUnitRunner.class)
-public class OpencrSearchDelegateTest {
+public class FhirSearchDelegateTest {
 	
 	private static final FhirContext FHIR_CONTEXT = FhirContext.forR4();
 	
@@ -58,14 +58,14 @@ public class OpencrSearchDelegateTest {
 	private AdministrationService adminService;
 	
 	@InjectMocks
-	private OpencrSearchDelegate delegate = new OpencrSearchDelegate();
+	private FhirSearchDelegate delegate = new FhirSearchDelegate();
 	
 	@Before
 	public void setup() throws Exception {
 		mockWebServer = new MockWebServer();
 		mockWebServer.start();
 		baseRemoteServerUrl = mockWebServer.url("/").toString();
-		Mockito.when(adminService.getGlobalProperty(EsaudeFeaturesConstants.OPENCR_REMOTE_SERVER_URL_GP)).thenReturn(
+		Mockito.when(adminService.getGlobalProperty(EsaudeFeaturesConstants.FHIR_REMOTE_SERVER_URL_GP)).thenReturn(
 		    baseRemoteServerUrl);
 		Mockito.when(adminService.getGlobalProperty(EsaudeFeaturesConstants.OPENCR_REMOTE_SERVER_USERNAME_GP)).thenReturn(
 		    USERNAME);
@@ -84,7 +84,7 @@ public class OpencrSearchDelegateTest {
 		mockWebServer.enqueue(new MockResponse().setResponseCode(200).addHeader("Content-Type", "application/json")
 		        .setBody(EXPECTED_TOKEN));
 		
-		delegate.clearServerJWTAuthenticationToken();
+		delegate.clearServerAuthenticationToken();
 		String token = delegate.getServerJWTAuthenticationToken();
 		RecordedRequest request = mockWebServer.takeRequest();
 		HttpUrl requestUrl = request.getRequestUrl();
@@ -102,11 +102,11 @@ public class OpencrSearchDelegateTest {
 		assertEquals("test-token", token);
 	}
 	
-	@Test(expected = OpencrAuthenticationException.class)
+	@Test(expected = FhirProviderAuthenticationException.class)
 	public void getServerJWTAuthenticationTokenShouldThrowForWrongCredentials() throws Exception {
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_BAD_REQUEST)
 		        .addHeader("Content-Type", "application/json").setBody("{}"));
-		delegate.clearServerJWTAuthenticationToken();
+		delegate.clearServerAuthenticationToken();
 		delegate.getServerJWTAuthenticationToken();
 		mockWebServer.takeRequest();
 	}
@@ -123,7 +123,7 @@ public class OpencrSearchDelegateTest {
 		        .addHeader("Content-Type", "application/json").setBody(EXPECTED_JSON_RESPONSE));
 		delegate.setCachedToken("test-token");
 		
-		Bundle matchedEntries = delegate.searchOpencrForPatients("Atibo");
+		Bundle matchedEntries = delegate.searchForPatients("Atibo", "OPENCR");
 		
 		RecordedRequest request = mockWebServer.takeRequest();
 		HttpUrl requestUrl = request.getRequestUrl();
@@ -154,7 +154,7 @@ public class OpencrSearchDelegateTest {
 		        .addHeader("Content-Type", "application/json").setBody(EXPECTED_JSON_RESPONSE));
 		delegate.setCachedToken("test-token");
 		
-		delegate.searchOpencrForPatients(IDENTIFIER_TO_SEARCH);
+		delegate.searchForPatients(IDENTIFIER_TO_SEARCH, "OPENCR");
 		
 		RecordedRequest request = mockWebServer.takeRequest();
 		HttpUrl requestUrl = request.getRequestUrl();
@@ -179,7 +179,7 @@ public class OpencrSearchDelegateTest {
 		        .addHeader("Content-Type", "application/json").setBody(EXPECTED_JSON_RESPONSE));
 		delegate.setCachedToken("test-token");
 		
-		delegate.searchOpencrForPatients(SEARCH_TEXT);
+		delegate.searchForPatients(SEARCH_TEXT, "OPENCR");
 		
 		RecordedRequest request = mockWebServer.takeRequest();
 		HttpUrl requestUrl = request.getRequestUrl();
@@ -192,13 +192,13 @@ public class OpencrSearchDelegateTest {
 		assertEquals("true", requestUrl.queryParameter("active"));
 	}
 	
-	@Test(expected = OpencrSearchException.class)
+	@Test(expected = FhirResourceSearchException.class)
 	public void searchOpencrForPatientShouldThrowExceptionIfCouldNotAuthenticate() throws Exception {
 		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_BAD_REQUEST)
 		        .addHeader("Content-Type", "application/json").setBody("{}"));
 		
-		delegate.clearServerJWTAuthenticationToken();
-		delegate.searchOpencrForPatients("sometext");
+		delegate.clearServerAuthenticationToken();
+		delegate.searchForPatients("sometext", "OPENCR");
 	}
 	
 	@After
