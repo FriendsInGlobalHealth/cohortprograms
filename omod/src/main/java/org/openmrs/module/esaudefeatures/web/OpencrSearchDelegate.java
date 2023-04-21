@@ -355,18 +355,7 @@ public class OpencrSearchDelegate {
 		LOGGER.debug("Initializing the okHttp Client for OpenCR search");
 		String skipHostnameVerification = adminService.getGlobalProperty(REMOTE_SERVER_SKIP_HOSTNAME_VERIFICATION_GP,
 		    "FALSE");
-		if (Boolean.parseBoolean(skipHostnameVerification)) {
-			LOGGER.debug("Configuring okHttp client to skip hostname verification.");
-			return new OkHttpClient.Builder().hostnameVerifier(new HostnameVerifier() {
-				
-				@Override
-				public boolean verify(String hostname, SSLSession session) {
-					LOGGER.debug("Skipping hostname {} verification", hostname);
-					return true;
-				}
-			}).build();
-		}
-		return new OkHttpClient();
+		return Utils.createOkHttpClient(Boolean.parseBoolean(skipHostnameVerification));
 	}
 	
 	private static void stashEntriesIntoCache(Bundle bundle) {
