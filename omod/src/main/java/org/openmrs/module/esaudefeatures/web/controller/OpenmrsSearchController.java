@@ -24,6 +24,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.FHIR_IDENTIFIER_SYSTEM_FOR_OPENMRS_UUID_GP;
+import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.FHIR_IDENTIFIER_SYSTEM_TO_OPENMRS_IDENTIFIER_TYPE_UUID_MAPPINGS_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.FHIR_REMOTE_SERVER_URL_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_PASSWORD_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENMRS_REMOTE_SERVER_URL_GP;
@@ -74,6 +76,12 @@ public class OpenmrsSearchController {
 		
 		modelAndView.getModelMap().addAttribute("remoteServerType",
 		    adminService.getGlobalProperty(REMOTE_SERVER_TYPE_GP, "OPENMRS"));
+		
+		modelAndView.getModelMap().addAttribute("fhirIdentifierSystemMappings",
+		    adminService.getGlobalProperty(FHIR_IDENTIFIER_SYSTEM_TO_OPENMRS_IDENTIFIER_TYPE_UUID_MAPPINGS_GP));
+		
+		modelAndView.getModelMap().addAttribute("openmrsPersonUuidFhirSystemValue",
+		    adminService.getGlobalProperty(FHIR_IDENTIFIER_SYSTEM_FOR_OPENMRS_UUID_GP));
 		
 		String remoteServerUsername = adminService.getGlobalProperty(OPENMRS_REMOTE_SERVER_USERNAME_GP);
 		String remoteServerPassword = adminService.getGlobalProperty(OPENMRS_REMOTE_SERVER_PASSWORD_GP);

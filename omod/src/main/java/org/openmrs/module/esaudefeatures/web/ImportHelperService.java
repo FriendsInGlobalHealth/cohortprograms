@@ -172,7 +172,8 @@ public class ImportHelperService {
 			person.addName(openmrsName);
 		}
 
-		String identifyTypeConceptMappings = adminService.getGlobalProperty(EsaudeFeaturesConstants.FHIR_IDENTIFIER_SYSTEM_FOR_OPENMRS_UUID_GP);
+		String identifyTypeConceptMappings =
+				adminService.getGlobalProperty(EsaudeFeaturesConstants.FHIR_IDENTIFIER_SYSTEM_TO_OPENMRS_IDENTIFIER_TYPE_UUID_MAPPINGS_GP);
 		for(Identifier identifier: fhirPatientResource.getIdentifier()) {
 			String openmrsIdentifierTypeUuid = Utils.getOpenmrsIdentifierTypeUuid(identifier, identifyTypeConceptMappings);
 			if(openmrsIdentifierTypeUuid != null) {
@@ -883,7 +884,8 @@ public class ImportHelperService {
 			}
 		}
 
-		String identifyTypeConceptMappings = adminService.getGlobalProperty(EsaudeFeaturesConstants.FHIR_IDENTIFIER_SYSTEM_FOR_OPENMRS_UUID_GP);
+		String identifyTypeConceptMappings =
+				adminService.getGlobalProperty(EsaudeFeaturesConstants.FHIR_IDENTIFIER_SYSTEM_TO_OPENMRS_IDENTIFIER_TYPE_UUID_MAPPINGS_GP);
 		for(Identifier identifier: opencrPatient.getIdentifier()) {
 			String openmrsIdentifierTypeUuid = Utils.getOpenmrsIdentifierTypeUuid(identifier, identifyTypeConceptMappings);
 			if(openmrsIdentifierTypeUuid != null) {

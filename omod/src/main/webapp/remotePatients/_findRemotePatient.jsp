@@ -40,12 +40,27 @@
         const ERROR_DURING_SEARCH_MSG_PREFIX = '<openmrs:message code="esaudefeatures.remote.patients.search.error"/>'
         const IMPORT_CONFIRM_MSG_PREFIX = '<openmrs:message code="esaudefeatures.remote.patients.import.confirmation"/>';
         const REMOTE_SERVER_TYPE = "${remoteServerType}";
-        const OPENCR_NID_CODE = 'NID_TARV';
-        const OPENCR_PERSON_UUID_CODE = 'OpenMRS_PATIENT_UUID';
+        const FHIR_IDENTIFIER_SYS_MAPPINGS_STRING = `${fhirIdentifierSystemMappings}`;
+        const NID_TARV_IDENTIFIER_TYPE_UUID = 'e2b966d0-1d5f-11e0-b929-000c29ad1d07';
+        const OPENMRS_PERSON_UUID_FHIR_SYSTEM_VALUE = "${openmrsPersonUuidFhirSystemValue}";
         const ART_TREATMENT_PROGRAM_UUID = 'efe2481f-9e75-4515-8d5a-86bfde2b5ad3';
         const PREP_PROGRAM_UUID = 'ac7c5d2b-854a-48c4-a68f-0b8a92e11f4a';
         const ART_START_DATE_CONCEPT_UUID = 'e1d8f690-1d5f-11e0-b929-000c29ad1d07';
         const PHARMACY_ENCOUNTER_TYPE_UUID = 'e279133c-1d5f-11e0-b929-000c29ad1d07';
+
+        const FHIR_IDENTIFIER_SYS_MAPPINGS = {};
+        FHIR_IDENTIFIER_SYS_MAPPINGS[OPENMRS_PERSON_UUID_FHIR_SYSTEM_VALUE] = "OpenMRS Internal UUID";
+        let NID_SYSTEM_VALUE;
+        if(FHIR_IDENTIFIER_SYS_MAPPINGS_STRING.length > 0) {
+            FHIR_IDENTIFIER_SYS_MAPPINGS_STRING.split(',').forEach(component => {
+                let parts = component.trim().split('^');
+                FHIR_IDENTIFIER_SYS_MAPPINGS[parts[1]] = parts[0];
+                if(parts[0] === NID_TARV_IDENTIFIER_TYPE_UUID) {
+                    NID_SYSTEM_VALUE = parts[1];
+                    FHIR_IDENTIFIER_SYS_MAPPINGS[parts[1]] = "NID (SERVICO TARV)";
+                }
+            });
+        }
 
         class HttpError extends Error {
             constructor(response) {
@@ -215,7 +230,7 @@
         }
 
         function mapResults(results) {
-            if(REMOTE_SERVER_TYPE === 'OPENCR') {
+            if(REMOTE_SERVER_TYPE === 'OPENCR' || REMOTE_SERVER_TYPE === 'SANTEMPI') {
                 var _age = (birthdate) => {
                     var now = new Date();
                     var curYear = now.getFullYear();
@@ -260,12 +275,12 @@
                 var NID_REGEX = /^\d+\/{1,3}\d+\/{1,3}\d+$/;
 
                 return results.map(result => {
-                    var NID = result.resource.identifier.find(ident => ident.type.coding.find(coding => OPENCR_NID_CODE == coding.code));
+                    var NID = result.resource.identifier.find(ident => ident.system === NID_SYSTEM_VALUE);
                     var NIDDisplay = '';
                     if(NID) {
                         NIDDisplay = NID.value;
                     }
-                    var openmrsUuid = result.resource.identifier.find(ident => ident.type.coding.find(coding => OPENCR_PERSON_UUID_CODE == coding.code));
+                    var openmrsUuid = result.resource.identifier.find(ident => ident.system === OPENMRS_PERSON_UUID_FHIR_SYSTEM_VALUE);
                     var openmrsUuidDisplay = openmrsUuid ? openmrsUuid.value : '';
                     var mapped = [openmrsUuidDisplay, NIDDisplay, _fullname(result.resource.name), result.resource.gender]
                     var birthDate = new Date(result.resource.birthDate);
@@ -423,7 +438,7 @@
                         if(REMOTE_SERVER_TYPE === 'OPENMRS') {
                             return patient.uuid === patientUuid;
                         }
-                        var UUID = patient.resource.identifier.find(ident => ident.type.coding.find(coding => OPENCR_PERSON_UUID_CODE == coding.code));
+                        var UUID = patient.resource.identifier.find(ident => ident.system === OPENMRS_PERSON_UUID_FHIR_SYSTEM_VALUE);
                         return UUID != null && UUID.value === patientUuid;
                     });
                     var remotePatientDetailsTitle ='<openmrs:message code="esaudefeatures.remote.patients.remote.patient.details"/>';
@@ -618,7 +633,7 @@
                     mergedPatientDetailsTable += '<openmrs:message code="esaudefeatures.remote.patients.identifiers"/></td></tr>';
                     if(Array.isArray(patient.resource.identifier) && patient.resource.identifier.length > 0) {
                         for(let identifier of patient.resource.identifier) {
-                            mergedPatientDetailsTable += '<tr><td>' + identifier.type.text + ':</td><td>' + identifier.value + '</td>';
+                            mergedPatientDetailsTable += '<tr><td>' + FHIR_IDENTIFIER_SYS_MAPPINGS[identifier.system] + ':</td><td>' + identifier.value + '</td>';
                         }
                     } else {
                         mergedPatientDetailsTable += '<tr><td colspan="2"><openmrs:message code="esaudefeatures.remote.patients.no.identifiers"/> </td></tr>';
@@ -651,7 +666,7 @@
             patientDetailsTable += '<openmrs:message code="esaudefeatures.remote.patients.identifiers"/></td></tr>';
             if(Array.isArray(patient.resource.identifier) && patient.resource.identifier.length > 0) {
                 for(let identifier of patient.resource.identifier) {
-                    patientDetailsTable += '<tr><td>' + identifier.type.text + ':</td><td>' + identifier.value + '</td>';
+                    patientDetailsTable += '<tr><td>' + FHIR_IDENTIFIER_SYS_MAPPINGS[identifier.system] + ':</td><td>' + identifier.value + '</td>';
                 }
             } else {
                 patientDetailsTable += '<tr><td colspan="2"><openmrs:message code="esaudefeatures.remote.patients.no.identifiers"/> </td></tr>';
@@ -671,7 +686,7 @@
                 }
             }
 
-            var UUID = patient.resource.identifier.find(ident => ident.type.coding.find(coding => OPENCR_PERSON_UUID_CODE == coding.code));
+            var UUID = patient.resource.identifier.find(ident => ident.system === OPENMRS_PERSON_UUID_FHIR_SYSTEM_VALUE);
             patientDetailsTable += '<tr id="program-info-' + UUID.value + '"><td colspan="2" style="border-bottom: solid; border-top:solid;"><openmrs:message code="esaudefeatures.remote.patients.fetching.program.enrollment"/>...</td></tr>';
             if(patient.programInfo || patient.artDrugStartDateInfo || patient.lastArtDrugPickupInfo) {
                 // A hack to wait for the DOM to be updated with details page.

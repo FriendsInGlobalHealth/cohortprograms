@@ -188,7 +188,8 @@ public class Utils {
 		return password.toString();
 	}
 	
-	public static String getOpenmrsIdentifierTypeUuid(final Identifier identifier, final String identifyTypeUuidSystemMappings) {
+	public static String getOpenmrsIdentifierTypeUuid(final Identifier identifier,
+	        final String identifyTypeUuidSystemMappings) {
 		String[] maps = identifyTypeUuidSystemMappings.split(",");
 		for (String map : maps) {
 			String[] mapParts = map.split("\\^");

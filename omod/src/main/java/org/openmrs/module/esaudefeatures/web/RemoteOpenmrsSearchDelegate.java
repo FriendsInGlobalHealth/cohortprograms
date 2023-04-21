@@ -93,8 +93,8 @@ public class RemoteOpenmrsSearchDelegate {
 			if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
 				return parseServerResponse(response);
 			}
-			String errorMessage = String.format("Error fetching response from server %s (%s)", remoteServerUrl,
-			    response.message());
+			String errorMessage = String.format("Error fetching response from server %s (code: %d)", remoteServerUrl,
+			    response.code());
 			LOGGER.error(errorMessage);
 			throw new RemoteOpenmrsSearchException(errorMessage, response.code());
 		}
@@ -130,8 +130,8 @@ public class RemoteOpenmrsSearchDelegate {
 				LOGGER.debug("Patient with uuid {} does not exist on the server {}", uuid, remoteServerUrl);
 				return null;
 			}
-			String errorMessage = String.format("Error fetching response from server %s (%s)", remoteServerUrl,
-			    response.message());
+			String errorMessage = String.format("Error fetching response from server %s (code: %d)", remoteServerUrl,
+			    response.code());
 			LOGGER.error(errorMessage);
 			throw new RemoteOpenmrsSearchException(errorMessage, response.code());
 		}
@@ -163,8 +163,8 @@ public class RemoteOpenmrsSearchDelegate {
 			if (response.isSuccessful() && response.code() == HttpServletResponse.SC_OK) {
 				return parseServerResponse(response);
 			}
-			String errorMessage = String.format("Error fetching response from server %s (%s)", remoteServerUrl,
-			    response.message());
+			String errorMessage = String.format("Error fetching response from server %s (code: %d)", remoteServerUrl,
+			    response.code());
 			LOGGER.error(errorMessage);
 			throw new RemoteOpenmrsSearchException(errorMessage, response.code());
 		}

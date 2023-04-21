@@ -123,7 +123,8 @@ public class FhirSearchDelegate {
 		Response fhirResponse = okHttpClient.newCall(clientRequest).execute();
 		if (fhirResponse.isSuccessful() && fhirResponse.code() == HttpServletResponse.SC_OK) {
 			return parser.parseResource(Patient.class, fhirResponse.body().string());
-		} else if (fhirResponse.code() == HttpServletResponse.SC_UNAUTHORIZED || fhirResponse.code() == HttpServletResponse.SC_FORBIDDEN) {
+		} else if (fhirResponse.code() == HttpServletResponse.SC_UNAUTHORIZED
+		        || fhirResponse.code() == HttpServletResponse.SC_FORBIDDEN) {
 			// Deal with authentication error.
 			final String responseBody = fhirResponse.body().string();
 			if (responseBody.contains("Token expired") || responseBody.contains("is expired")) {
@@ -213,7 +214,8 @@ public class FhirSearchDelegate {
 				Bundle bundle = parser.parseResource(Bundle.class, fhirResponse.body().string());
 				stashEntriesIntoCache(bundle);
 				return bundle;
-			} else if (fhirResponse.code() == HttpServletResponse.SC_UNAUTHORIZED || fhirResponse.code() == HttpServletResponse.SC_FORBIDDEN) {
+			} else if (fhirResponse.code() == HttpServletResponse.SC_UNAUTHORIZED
+			        || fhirResponse.code() == HttpServletResponse.SC_FORBIDDEN) {
 				// Deal with authentication error.
 				final String responseString = fhirResponse.body().string();
 				if (responseString.contains("Token expired") || responseString.contains("is expired")) {
@@ -272,10 +274,9 @@ public class FhirSearchDelegate {
 	@Transactional
 	public org.openmrs.Patient importPatient(@NotNull final Patient patientResource) throws Exception {
 		//Find the corresponding patient from the central server.
-		String patientUuidConceptMap = adminService.getGlobalProperty(FHIR_IDENTIFIER_SYSTEM_FOR_OPENMRS_UUID_GP);
-		String opencrPatientUuidCode = patientUuidConceptMap.split(":")[0];
+		String openmrsUuidFhirSystemValue = adminService.getGlobalProperty(FHIR_IDENTIFIER_SYSTEM_FOR_OPENMRS_UUID_GP);
 		String openmrsUuid = Utils.getOpenmrsUuidFromFhirIdentifiers(patientResource.getIdentifier(),
-																	 opencrPatientUuidCode);
+		    openmrsUuidFhirSystemValue);
 		
 		org.openmrs.Patient opPatient = null;
 		if (openmrsUuid != null) {
@@ -283,7 +284,7 @@ public class FhirSearchDelegate {
 			SimpleObject patientObject = openmrsSearchDelegate.getRemotePatientByUuid(openmrsUuid);
 			if (patientObject != null) {
 				opPatient = helperService.getPatientFromOpenmrsRestPayload(patientObject);
-				helperService.updateOpenmrsPatientWithMPIData(opPatient, patientResource);
+				//				helperService.updateOpenmrsPatientWithMPIData(opPatient, patientResource);
 			}
 		}
 		

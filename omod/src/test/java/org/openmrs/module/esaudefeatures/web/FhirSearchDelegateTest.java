@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -199,6 +200,18 @@ public class FhirSearchDelegateTest {
 		
 		delegate.clearServerAuthenticationToken();
 		delegate.searchForPatients("sometext", "OPENCR");
+	}
+	
+	@Test
+	public void shouldHaveNoTimeOutSet() throws Exception {
+		final String EXPECTED_JSON_RESPONSE = IOUtils.toString(getClass()
+		        .getResourceAsStream(MATCHED_PATIENT_LIST_FILE_NAME));
+		MockResponse response = new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
+		        .setBodyDelay(15l, TimeUnit.SECONDS).addHeader("Content-Type", "application/json")
+		        .setBody(EXPECTED_JSON_RESPONSE);
+		mockWebServer.enqueue(response);
+		delegate.setCachedToken("test-token");
+		delegate.searchForPatients("Oyoo oyooo", "OPENCR");
 	}
 	
 	@After

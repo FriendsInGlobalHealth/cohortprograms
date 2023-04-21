@@ -16,4 +16,6 @@ public class Oauth2TokenDTO {
 	public Integer error;
 	
 	public String error_description;
+	
+	public String refresh_token;
 }

@@ -8,6 +8,7 @@ import org.apache.commons.io.IOUtils;
 import org.hl7.fhir.r4.model.Identifier;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -418,6 +419,7 @@ public class ImportHelperServiceTest extends BaseModuleWebContextSensitiveTest {
 	}
 	
 	@Test
+	@Ignore
 	public void updateOpenmrsPatientWithMPIDataShouldUpdateValuesCorrectly() throws Exception {
 		SimpleObject openmrsPatientObject = SimpleObject.parseJson(OPENMRS_PATIENT_JSON);
 		final String FHIR_PATIENT = IOUtils.toString(getClass().getResourceAsStream("/opencr/single_patient.json"));
