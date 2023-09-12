@@ -45,7 +45,9 @@ public class FhirSearchDelegateTest {
 	
 	private static final String IDENTIFIER_MATCHED_PATIENT = "/opencr/opencr_identifier_matched_patient.json";
 	
-	private static final String EXPECTED_PATIENT_PATH = "/ocrux/fhir/Patient";
+	private static final String OPENCR_EXPECTED_PATIENT_PATH = "/ocrux/fhir/Patient";
+	
+	private static final String SANTEMPI_EXPECTED_PATIENT_PATH = "/fhir/Patient";
 	
 	private static final String USERNAME = "test-user";
 	
@@ -113,7 +115,7 @@ public class FhirSearchDelegateTest {
 	}
 	
 	@Test
-	public void searchOpencrForPatientShouldIssueCorrectRequestForName() throws Exception {
+	public void searchForPatientShouldIssueCorrectRequestForName() throws Exception {
 		final Collection<String> EXPECTED_QUERY_PARAMETERS = new HashSet<String>();
 		Collections.addAll(EXPECTED_QUERY_PARAMETERS, "active", "name");
 		
@@ -129,7 +131,7 @@ public class FhirSearchDelegateTest {
 		RecordedRequest request = mockWebServer.takeRequest();
 		HttpUrl requestUrl = request.getRequestUrl();
 		assertEquals("GET", request.getMethod());
-		assertTrue(request.getPath().startsWith(EXPECTED_PATIENT_PATH));
+		assertTrue(request.getPath().startsWith(OPENCR_EXPECTED_PATIENT_PATH));
 		assertFalse(requestUrl.isHttps());
 		
 		Set<String> parameterNames = requestUrl.queryParameterNames();
@@ -144,33 +146,23 @@ public class FhirSearchDelegateTest {
 	}
 	
 	@Test
-	public void searchOpencrForPatientShouldIssueCorrectRequestForIdentifier() throws Exception {
+	public void searchForPatientShouldIssueCorrectRequestForIdentifierForOpenCR() throws Exception {
 		final String IDENTIFIER_TO_SEARCH = "id12000M2";
-		final Collection<String> EXPECTED_QUERY_PARAMETERS = new HashSet<String>();
-		Collections.addAll(EXPECTED_QUERY_PARAMETERS, "active", "identifier");
-		
-		final String EXPECTED_JSON_RESPONSE = IOUtils.toString(getClass().getResourceAsStream(IDENTIFIER_MATCHED_PATIENT));
-		
-		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
-		        .addHeader("Content-Type", "application/json").setBody(EXPECTED_JSON_RESPONSE));
-		delegate.setCachedToken("test-token");
-		
-		delegate.searchForPatients(IDENTIFIER_TO_SEARCH, "OPENCR");
-		
-		RecordedRequest request = mockWebServer.takeRequest();
-		HttpUrl requestUrl = request.getRequestUrl();
-		assertEquals("GET", request.getMethod());
-		assertTrue(request.getPath().startsWith(EXPECTED_PATIENT_PATH));
-		
-		Set<String> parameterNames = requestUrl.queryParameterNames();
-		assertEquals(2, parameterNames.size());
-		assertTrue(parameterNames.containsAll(EXPECTED_QUERY_PARAMETERS));
-		assertEquals(IDENTIFIER_TO_SEARCH, requestUrl.queryParameter("identifier"));
-		assertEquals("true", requestUrl.queryParameter("active"));
+		RecordedRequest request = identifierSearch(IDENTIFIER_TO_SEARCH, "OPENCR");
+		assertTrue(request.getPath().startsWith(OPENCR_EXPECTED_PATIENT_PATH));
+		assertEquals(IDENTIFIER_TO_SEARCH, request.getRequestUrl().queryParameter("identifier"));
 	}
 	
 	@Test
-	public void searchOpencrForPatientShouldIssueACorrectQueryForMultipleNames() throws Exception {
+	public void searchForPatientShouldIssueCorrectRequestForIdentifierForSanteMPI() throws Exception {
+		final String IDENTIFIER_TO_SEARCH = "id12000M2";
+		RecordedRequest request = identifierSearch(IDENTIFIER_TO_SEARCH, "SANTEMPI");
+		assertTrue(request.getPath().startsWith(SANTEMPI_EXPECTED_PATIENT_PATH));
+		assertEquals("|".concat(IDENTIFIER_TO_SEARCH), request.getRequestUrl().queryParameter("identifier"));
+	}
+	
+	@Test
+	public void searchForPatientShouldIssueACorrectQueryForMultipleNames() throws Exception {
 		final String SEARCH_TEXT = "Nashada Mhawila";
 		String[] names = SEARCH_TEXT.split(" ");
 		final String EXPECTED_JSON_RESPONSE = IOUtils.toString(getClass()
@@ -185,7 +177,7 @@ public class FhirSearchDelegateTest {
 		RecordedRequest request = mockWebServer.takeRequest();
 		HttpUrl requestUrl = request.getRequestUrl();
 		assertEquals("GET", request.getMethod());
-		assertTrue(request.getPath().startsWith(EXPECTED_PATIENT_PATH));
+		assertTrue(request.getPath().startsWith(OPENCR_EXPECTED_PATIENT_PATH));
 		assertFalse(requestUrl.isHttps());
 		
 		assertEquals(3, requestUrl.querySize());
@@ -218,6 +210,30 @@ public class FhirSearchDelegateTest {
 	public void teardown() throws IOException {
 		mockWebServer.close();
 		mockWebServer.shutdown();
+	}
+	
+	private RecordedRequest identifierSearch(String identifier, String fhirProvider) throws Exception {
+		final Collection<String> EXPECTED_QUERY_PARAMETERS = new HashSet<String>();
+		Collections.addAll(EXPECTED_QUERY_PARAMETERS, "active", "identifier");
+		
+		final String EXPECTED_JSON_RESPONSE = IOUtils.toString(getClass().getResourceAsStream(IDENTIFIER_MATCHED_PATIENT));
+		
+		mockWebServer.enqueue(new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
+		        .addHeader("Content-Type", "application/json").setBody(EXPECTED_JSON_RESPONSE));
+		delegate.setCachedToken("test-token");
+		
+		delegate.searchForPatients(identifier, fhirProvider);
+		
+		RecordedRequest request = mockWebServer.takeRequest();
+		HttpUrl requestUrl = request.getRequestUrl();
+		assertEquals("GET", request.getMethod());
+		
+		Set<String> parameterNames = requestUrl.queryParameterNames();
+		assertEquals(2, parameterNames.size());
+		assertTrue(parameterNames.containsAll(EXPECTED_QUERY_PARAMETERS));
+		assertEquals("true", requestUrl.queryParameter("active"));
+		
+		return request;
 	}
 	
 }

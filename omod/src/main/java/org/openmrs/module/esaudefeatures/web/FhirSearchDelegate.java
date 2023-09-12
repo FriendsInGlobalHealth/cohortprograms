@@ -173,7 +173,7 @@ public class FhirSearchDelegate {
 			for (String text : texts) {
 				if (text.matches(IDENTIFIER_REGEX)) {
 					// Go for identifier search.
-					urlBuilder.addQueryParameter("identifier", text);
+					addIdentifierQueryParameter(urlBuilder, fhirProvider, text);
 				} else {
 					urlBuilder.addQueryParameter("name", text);
 				}
@@ -181,7 +181,7 @@ public class FhirSearchDelegate {
 		} else {
 			if (searchText.matches(IDENTIFIER_REGEX)) {
 				// Go for identifier search.
-				urlBuilder.addQueryParameter("identifier", searchText);
+				addIdentifierQueryParameter(urlBuilder, fhirProvider, searchText);
 			} else {
 				urlBuilder.addQueryParameter("name", searchText);
 			}
@@ -455,6 +455,14 @@ public class FhirSearchDelegate {
 			if (entryComponent.getResource().getResourceType().equals(ResourceType.Patient)) {
 				PATIENTS_CACHE.put(entryComponent.getResource().getId(), entryComponent);
 			}
+		}
+	}
+	
+	private static void addIdentifierQueryParameter(HttpUrl.Builder builder, String fhirProvider, String searchText) {
+		if ("SANTEMPI".equalsIgnoreCase(fhirProvider)) {
+			builder.addQueryParameter("identifier", "|".concat(searchText));
+		} else {
+			builder.addQueryParameter("identifier", searchText);
 		}
 	}
 }
