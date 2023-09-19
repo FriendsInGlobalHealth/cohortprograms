@@ -132,6 +132,8 @@
                     .then(data => {
                         if(Array.isArray(data) && data.length > 0) {
                             infoStore = data;
+                        } else if(data['results'] && Array.isArray((data['results'])) && data['results'].length > 0) {
+                            infoStore = data['results'];
                         }
                         infoUpdaterCallback(patientUuid, infoStore);
                     }).catch(error => {
@@ -140,7 +142,8 @@
             };
 
             var programsUrl = localOpenmrsContextPath + "/module/esaudefeatures/openmrsRemoteGetRequest.json?patient=" + patientUuid;
-            programsUrl += '&resource=programenrollment&v=custom:(uuid,dateEnrolled,dateCompleted,program:(uuid,name))';
+            programsUrl += '&resource=programenrollment&v=custom:(uuid,dateEnrolled,dateCompleted,program:(uuid,name),'
+            programsUrl += 'location:(uuid,name,address6,parentLocation:(uuid,name))';
             __fetchAndUpdateInfo(programsUrl, patient.programInfo, patientProgramsSearchController,insertProgramInfoInDetailsColumn);
 
             var artStartDateUrl = localOpenmrsContextPath + "/module/esaudefeatures/openmrsRemoteGetRequest.json?patient=" + patientUuid;
@@ -370,7 +373,11 @@
                     var artDateEnrolled = new Date(artProgram.dateEnrolled).toLocaleDateString('pt', DATE_DISPLAY_OPTIONS);
                     var artInfoRow = '<tr><td><openmrs:message code="esaudefeatures.remote.patients.art.enrollment.date"/></td><td>' + artDateEnrolled + '</td></tr>';
                     $j(artInfoRow).insertAfter(currentRow);
-                    currentRow = $j(artInfoRow);
+                    if(artProgram['location']) {
+                        var artLocationInfoRow = '<tr><td><openmrs:message code="esaudefeatures.remote.patients.art.enrollment.location"/></td><td>';
+                        artLocationInfoRow += artProgram['location']['name'] + '</td></tr>';
+                        $j(artLocationInfoRow).insertAfter(currentRow);
+                    }
                     programInfoAvailable = true;
                 }
                 var prepProgram =  patientPrograms.find(program => program.program.uuid == PREP_PROGRAM_UUID);
@@ -378,7 +385,11 @@
                     var prepDateEnrolled = new Date(prepProgram.dateEnrolled).toLocaleDateString('pt', DATE_DISPLAY_OPTIONS);
                     var prepInfoRow = '<tr><td><openmrs:message code="esaudefeatures.remote.patients.prep.enrollment.date"/></td><td>' + prepDateEnrolled + '</td></tr>';
                     $j(prepInfoRow).insertAfter(currentRow);
-                    currentRow = $j(prepInfoRow);
+                    if(prepProgram['location']) {
+                        var prepLocationInfoRow = '<tr><td><openmrs:message code="esaudefeatures.remote.patients.prep.enrollment.location"/></td><td>';
+                        prepLocationInfoRow += prepProgram['location']['name'] + '</td></tr>';
+                        $j(prepLocationInfoRow).insertAfter(currentRow);
+                    }
                     programInfoAvailable = true;
                 }
 
