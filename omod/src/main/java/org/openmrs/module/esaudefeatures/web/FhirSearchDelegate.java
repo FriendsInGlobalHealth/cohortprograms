@@ -10,8 +10,10 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.ResourceType;
+import org.hl7.fhir.r4.model.StringType;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.PatientService;
 import org.openmrs.module.esaudefeatures.web.controller.FhirProviderAuthenticationException;
@@ -30,6 +32,10 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
 
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OAUTH2_CLIENT_ID_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OAUTH2_CLIENT_SECRET_GP;
@@ -166,16 +172,25 @@ public class FhirSearchDelegate {
 		
 		final String fhirPath = "OPENCR".equalsIgnoreCase(fhirProvider) ? OPENCR_FHIR_PATIENT_PATH : SANTE_FHIR_PATIENT_PATH;
 		HttpUrl.Builder urlBuilder = HttpUrl.parse(remoteServerUrl).newBuilder().addPathSegments(fhirPath)
-		        .addQueryParameter("active", "true");
+		        .addQueryParameter("active", "true").addQueryParameter("_count", "200");
 		
 		String[] texts = searchText.split("\\s+");
+		List<String> searchedNames = new ArrayList<>();
 		if (texts.length > 1) {
 			for (String text : texts) {
 				if (text.matches(IDENTIFIER_REGEX)) {
 					// Go for identifier search.
 					addIdentifierQueryParameter(urlBuilder, fhirProvider, text);
 				} else {
-					urlBuilder.addQueryParameter("name", text);
+					searchedNames.add(text);
+				}
+			}
+
+			if(searchedNames.size() == 1) {
+				urlBuilder.addQueryParameter("name", searchedNames.get(0));
+			} else if(searchedNames.size() >= 2) {
+				for(int i=0; i < searchedNames.size(); i++) {
+					urlBuilder.addQueryParameter("given", searchedNames.get(i));
 				}
 			}
 		} else {
@@ -212,6 +227,24 @@ public class FhirSearchDelegate {
 		try {
 			if (fhirResponse.isSuccessful() && fhirResponse.code() == HttpServletResponse.SC_OK) {
 				Bundle bundle = parser.parseResource(Bundle.class, fhirResponse.body().string());
+				if(searchedNames.size() >= 2) {
+					List<Bundle.BundleEntryComponent> relevantEntries = getRelevantEntries(bundle.getEntry(), searchedNames);
+
+					// search the last entered name as the family name.
+					int lastNameIndex = searchedNames.size() - 1;
+					urlBuilder.addQueryParameter("family", searchedNames.get(lastNameIndex));
+					clientRequest = new Request.Builder().url(urlBuilder.build()).addHeader("Authorization", bearerToken).build();
+					fhirResponse = okHttpClient.newCall(clientRequest).execute();
+					if (fhirResponse.isSuccessful() && fhirResponse.code() == HttpServletResponse.SC_OK) {
+						Bundle another = parser.parseResource(Bundle.class, fhirResponse.body().string());
+						relevantEntries.addAll(getRelevantEntries(another.getEntry(), searchedNames));
+					}
+
+					if(relevantEntries.size() > 0) {
+						bundle.setTotal(relevantEntries.size());
+						bundle.setEntry(relevantEntries);
+					}
+				}
 				stashEntriesIntoCache(bundle);
 				return bundle;
 			} else if (fhirResponse.code() == HttpServletResponse.SC_UNAUTHORIZED
@@ -464,5 +497,34 @@ public class FhirSearchDelegate {
 		} else {
 			builder.addQueryParameter("identifier", searchText);
 		}
+	}
+	
+	private static List<Bundle.BundleEntryComponent> getRelevantEntries(List<Bundle.BundleEntryComponent> entries, List<String> searchedNames) {
+		List<Bundle.BundleEntryComponent> relevantEntries = new ArrayList<>();
+		List<String> allSearchedNamesButLast = new ArrayList<>();
+		for(int i=0; i < searchedNames.size() - 1; i++) {
+			allSearchedNamesButLast.add(searchedNames.get(i));
+		}
+		for(Bundle.BundleEntryComponent entry: entries) {
+			if(entry.getResource().getResourceType() == ResourceType.Patient) {
+				Patient p = (Patient) entry.getResource();
+				for(HumanName name: p.getName()) {
+					if(name.hasGiven()) {
+						List<String> givenNames = new ArrayList<>();
+						for (StringType gName : name.getGiven()) {
+							givenNames.add(gName.getValue());
+						}
+						if (searchedNames.size() >= 2) {
+							if (givenNames.containsAll(searchedNames) ||
+									(givenNames.containsAll(allSearchedNamesButLast)
+											&& name.getFamily().contains(searchedNames.get(searchedNames.size() - 1)))) {
+								relevantEntries.add(entry);
+							}
+						}
+					}
+				}
+			}
+		}
+		return relevantEntries;
 	}
 }
