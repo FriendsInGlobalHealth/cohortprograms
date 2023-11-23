@@ -31,7 +31,6 @@
         var patientTable = null;
         var foundPatientList = null;
         var opencrMergedPatients = {};
-        const EMPTY_COLUMN_HEADER_ID = 'empty-header-column';
         const DATE_DISPLAY_OPTIONS = '%d-%b-%Y';
         const IMPORT_SUCCESS_MSG_PREFIX = $j('#openmrs_msg').html();
         const IMPORT_ERROR_MSG_PREFIX = $j('#remote_patient_error_msg').html();
@@ -274,8 +273,7 @@
                     return address;
                 };
 
-                var NID_REGEX = /^\d+\/{1,3}\d+\/{1,3}\d+$/;
-
+                var openButtonImageLink = '<img src="${pageContext.request.contextPath}/moduleResources/esaudefeatures/images/details_open.png"/>';
                 return results.map(result => {
                     var NID = result.resource.identifier.find(ident => ident.system === NID_SYSTEM_VALUE);
                     var NIDDisplay = '';
@@ -284,7 +282,7 @@
                     }
                     var openmrsUuid = result.resource.identifier.find(ident => ident.system === OPENMRS_PERSON_UUID_FHIR_SYSTEM_VALUE);
                     var openmrsUuidDisplay = openmrsUuid ? openmrsUuid.value : '';
-                    var mapped = [openmrsUuidDisplay, NIDDisplay, _fullname(result.resource.name), result.resource.gender]
+                    var mapped = [openmrsUuidDisplay, openButtonImageLink, '', NIDDisplay, _fullname(result.resource.name), result.resource.gender];
                     var birthDate = new Date(result.resource.birthDate);
                     mapped.push(birthDate.toLocaleDateString('pt', DATE_DISPLAY_OPTIONS));
                     mapped.push(_age(birthDate));
@@ -400,161 +398,9 @@
             }
         }
 
-        function insertDetailsColumnInResultsTable(oTable) {
-            var _searchPatientFromList = (uuid, patient) => {
-                if(REMOTE_SERVER_TYPE === 'OPENMRS') {
-                    return patient.uuid === uuid;
-                }
-                return patient.resource.identifier.find(ident => /openmrs/.test(ident.system)).value === uuid;
-            };
-            /*
-             * Insert a 'details' column to the table
-             */
-            var nCloneTh = document.createElement('th');
-            nCloneTh.setAttribute("id", EMPTY_COLUMN_HEADER_ID);
-
-            var nCloneTd = document.createElement('td');
-            nCloneTd.innerHTML = '<img src="${pageContext.request.contextPath}/moduleResources/esaudefeatures/images/details_open.png" />';
-            nCloneTd.className = "center";
-
-            $j('#found-patients thead tr').each(function () {
-                this.insertBefore(nCloneTh, this.childNodes[1]);
-            });
-
-            $j('#found-patients tbody tr').each( function () {
-                this.insertBefore(nCloneTd.cloneNode(true), this.childNodes[1] );
-            });
-
-            /* Add event listener for opening and closing details
-             * Note that the indicator for showing which row is open is not controlled by DataTables,
-             * rather it is done here
-             */
-            $j('#found-patients tbody td img').on('click', function () {
-                var nTr = this.parentNode.parentNode;
-                if ( this.src.match('details_close') ) {
-                    /* This row is already open - close it */
-                    this.src = "${pageContext.request.contextPath}/moduleResources/esaudefeatures/images/details_open.png";
-                    oTable.fnClose(nTr);
-                }
-                else {
-                    /* Open this row */
-                    this.src = "${pageContext.request.contextPath}/moduleResources/esaudefeatures/images/details_close.png";
-
-                    // Fetch Similar records first.
-                    // 1. First try by uuid.
-                    var rowData = oTable.fnGetData(nTr);
-                    var patientUuid = rowData[0];
-                    var patient = foundPatientList.find((patient) => {
-                        if(REMOTE_SERVER_TYPE === 'OPENMRS') {
-                            return patient.uuid === patientUuid;
-                        }
-                        var UUID = patient.resource.identifier.find(ident => ident.system === OPENMRS_PERSON_UUID_FHIR_SYSTEM_VALUE);
-                        return UUID != null && UUID.value === patientUuid;
-                    });
-                    var remotePatientDetailsTitle ='<openmrs:message code="esaudefeatures.remote.patients.remote.patient.details"/>';
-                    var localPatietSearchUrl = localOpenmrsContextPath + '/ws/rest/v1/patient/' + patientUuid + '?v=full';
-                    var requestHeaders = new Headers({
-                        'Content-Type': 'application/json',
-                    });
-
-                    var requestOptions = {
-                        method: 'GET',
-                        headers: requestHeaders,
-                        redirect: 'follow'
-                    };
-
-                    fetch(localPatietSearchUrl, requestOptions)
-                        .then(response => {
-                            if(REMOTE_SERVER_TYPE === 'OPENMRS') {
-                                var detailsWithButtonEnabled = createPatientDetailsHtmlTable(patient, remotePatientDetailsTitle, true, false);
-                            } else {
-                                var detailsWithButtonEnabled = createPatientDetailsHtmlTableForOpenCR(patient, remotePatientDetailsTitle, true, false);
-                            }
-                            if(response.status === 200) {
-                                response.json().then(localPatient => {
-                                    var detailsTitle = '<openmrs:message code="esaudefeatures.remote.patients.same.uuid.local"/>';
-                                    var localPatientTable = '<div style="float:left; border:2.5px solid red; background-color: #FF9033">'
-                                        + createPatientDetailsHtmlTable(localPatient, detailsTitle, false)
-                                        + '</div>';
-                                    if(REMOTE_SERVER_TYPE === 'OPENMRS') {
-                                        var detailsWithButtonDisabled = createPatientDetailsHtmlTable(patient, remotePatientDetailsTitle, true, true);
-                                    } else {
-                                        var detailsWithButtonDisabled = createPatientDetailsHtmlTableForOpenCR(patient, remotePatientDetailsTitle, true, true);
-                                    }
-                                    detailsWithButtonDisabled += localPatientTable;
-                                    oTable.fnOpen(nTr, detailsWithButtonDisabled, 'details' );
-                                });
-
-                            } else if(response.status === 404 && REMOTE_SERVER_TYPE === 'OPENMRS') {
-                                // TODO: Go for identifiers & names (After discussion with the team)
-                                var localPatientSearchUrlUsingIdentifier = localOpenmrsContextPath + '/ws/rest/v1/patient?v=full&identifier=';
-                                // TODO: Fix this for OpenCR payload.
-                                if(patient.identifiers.length > 0) {
-                                    localPatientSearchUrlUsingIdentifier += patient.identifiers[0].identifier;
-                                    fetch(localPatientSearchUrlUsingIdentifier, requestOptions)
-                                        .then(response => {
-                                            if(response.status === 200) {
-                                                response.json().then(data => {
-                                                    if(data.results.length > 0) {
-                                                        // Only get the first one
-                                                        // TODO: Accommodate all found patients later (this is a very rare case)
-                                                        var detailsTitle = '<openmrs:message code="esaudefeatures.remote.patients.same.uuid.local"/>';
-                                                        var localPatientTable = '<div style="float:left; border:2.5px solid red; background-color: #FF9033">'
-                                                            + createPatientDetailsHtmlTable(data.results[0], detailsTitle, false)
-                                                            + '</div>';
-                                                        if(REMOTE_SERVER_TYPE === 'OPENMRS') {
-                                                            var detailsWithButtonDisabled = createPatientDetailsHtmlTable(patient, remotePatientDetailsTitle, true, true);
-                                                        } else {
-                                                            var detailsWithButtonDisabled = createPatientDetailsHtmlTableForOpenCR(patient, remotePatientDetailsTitle, true, true);
-                                                        }
-                                                        detailsWithButtonDisabled += localPatientTable;
-                                                        oTable.fnOpen(nTr, detailsWithButtonDisabled, 'details' );
-                                                    } else {
-                                                        oTable.fnOpen(nTr, detailsWithButtonEnabled, 'details' );
-                                                    }
-                                                })
-                                            } else {
-                                                oTable.fnOpen(nTr, detailsWithButtonEnabled, 'details' );
-                                            }
-                                        })
-                                        .catch(error => {
-                                            console.log('error', error);
-                                            oTable.fnOpen(nTr, detailsWithButtonEnabled, 'details' );
-                                        });
-                                }
-                            } else {
-                                oTable.fnOpen(nTr, detailsWithButtonEnabled, 'details' );
-                            }
-                        })
-                        .catch(error => {
-                            console.log('error', error);
-                            if(REMOTE_SERVER_TYPE === 'OPENMRS') {
-                                var detailsWithButtonEnabled = createPatientDetailsHtmlTable(patient, remotePatientDetailsTitle, true, false);
-                            } else {
-                                var detailsWithButtonEnabled = createPatientDetailsHtmlTableForOpenCR(patient, remotePatientDetailsTitle, true, false);
-                            }
-                            oTable.fnOpen(nTr, detailsWithButtonEnabled, 'details' );
-                        });
-                }
-            });
-        }
-
         function refreshTable(oTable, data) {
             oTable.fnClearTable();
             oTable.fnAddData(data);
-
-            oTable.fnDraw();
-
-            oTable.fnSetColumnVis(0, true);
-            var emptyColumnHeader = document.getElementById(EMPTY_COLUMN_HEADER_ID);
-            if(emptyColumnHeader !== null) {
-                emptyColumnHeader.parentNode.removeChild(emptyColumnHeader);
-            }
-
-            if(Array.isArray(data) && data.length > 0) {
-                insertDetailsColumnInResultsTable(oTable);
-                oTable.fnSetColumnVis(0, false);
-            }
         }
 
         function createPatientDetailsHtmlTable(patient, title, addImportButton, disableImportButton) {
@@ -811,6 +657,115 @@
             }
         }
 
+        function openCloseButtonHandler(oTable) {
+            var nTr = this.parentNode.parentNode;
+            if ( this.src.match('details_close') ) {
+                /* This row is already open - close it */
+                this.src = "${pageContext.request.contextPath}/moduleResources/esaudefeatures/images/details_open.png";
+                oTable.fnClose(nTr);
+            }
+            else {
+                /* Open this row */
+                this.src = "${pageContext.request.contextPath}/moduleResources/esaudefeatures/images/details_close.png";
+
+                // Fetch Similar records first.
+                // 1. First try by uuid.
+                var rowData = oTable.fnGetData(nTr);
+                var patientUuid = rowData[0];
+                var patient = foundPatientList.find((patient) => {
+                    if(REMOTE_SERVER_TYPE === 'OPENMRS') {
+                        return patient.uuid === patientUuid;
+                    }
+                    var UUID = patient.resource.identifier.find(ident => ident.system === OPENMRS_PERSON_UUID_FHIR_SYSTEM_VALUE);
+                    return UUID != null && UUID.value === patientUuid;
+                });
+                var remotePatientDetailsTitle ='<openmrs:message code="esaudefeatures.remote.patients.remote.patient.details"/>';
+                var localPatietSearchUrl = localOpenmrsContextPath + '/ws/rest/v1/patient/' + patientUuid + '?v=full';
+                var requestHeaders = new Headers({
+                    'Content-Type': 'application/json',
+                });
+
+                var requestOptions = {
+                    method: 'GET',
+                    headers: requestHeaders,
+                    redirect: 'follow'
+                };
+
+                fetch(localPatietSearchUrl, requestOptions)
+                    .then(response => {
+                        if(REMOTE_SERVER_TYPE === 'OPENMRS') {
+                            var detailsWithButtonEnabled = createPatientDetailsHtmlTable(patient, remotePatientDetailsTitle, true, false);
+                        } else {
+                            var detailsWithButtonEnabled = createPatientDetailsHtmlTableForOpenCR(patient, remotePatientDetailsTitle, true, false);
+                        }
+                        if(response.status === 200) {
+                            response.json().then(localPatient => {
+                                var detailsTitle = '<openmrs:message code="esaudefeatures.remote.patients.same.uuid.local"/>';
+                                var localPatientTable = '<div style="float:left; border:2.5px solid red; background-color: #FF9033">'
+                                    + createPatientDetailsHtmlTable(localPatient, detailsTitle, false)
+                                    + '</div>';
+                                if(REMOTE_SERVER_TYPE === 'OPENMRS') {
+                                    var detailsWithButtonDisabled = createPatientDetailsHtmlTable(patient, remotePatientDetailsTitle, true, true);
+                                } else {
+                                    var detailsWithButtonDisabled = createPatientDetailsHtmlTableForOpenCR(patient, remotePatientDetailsTitle, true, true);
+                                }
+                                detailsWithButtonDisabled += localPatientTable;
+                                oTable.fnOpen(nTr, detailsWithButtonDisabled, 'details' );
+                            });
+
+                        } else if(response.status === 404 && REMOTE_SERVER_TYPE === 'OPENMRS') {
+                            // TODO: Go for identifiers & names (After discussion with the team)
+                            var localPatientSearchUrlUsingIdentifier = localOpenmrsContextPath + '/ws/rest/v1/patient?v=full&identifier=';
+                            // TODO: Fix this for OpenCR payload.
+                            if(patient.identifiers.length > 0) {
+                                localPatientSearchUrlUsingIdentifier += patient.identifiers[0].identifier;
+                                fetch(localPatientSearchUrlUsingIdentifier, requestOptions)
+                                    .then(response => {
+                                        if(response.status === 200) {
+                                            response.json().then(data => {
+                                                if(data.results.length > 0) {
+                                                    // Only get the first one
+                                                    // TODO: Accommodate all found patients later (this is a very rare case)
+                                                    var detailsTitle = '<openmrs:message code="esaudefeatures.remote.patients.same.uuid.local"/>';
+                                                    var localPatientTable = '<div style="float:left; border:2.5px solid red; background-color: #FF9033">'
+                                                        + createPatientDetailsHtmlTable(data.results[0], detailsTitle, false)
+                                                        + '</div>';
+                                                    if(REMOTE_SERVER_TYPE === 'OPENMRS') {
+                                                        var detailsWithButtonDisabled = createPatientDetailsHtmlTable(patient, remotePatientDetailsTitle, true, true);
+                                                    } else {
+                                                        var detailsWithButtonDisabled = createPatientDetailsHtmlTableForOpenCR(patient, remotePatientDetailsTitle, true, true);
+                                                    }
+                                                    detailsWithButtonDisabled += localPatientTable;
+                                                    oTable.fnOpen(nTr, detailsWithButtonDisabled, 'details' );
+                                                } else {
+                                                    oTable.fnOpen(nTr, detailsWithButtonEnabled, 'details' );
+                                                }
+                                            })
+                                        } else {
+                                            oTable.fnOpen(nTr, detailsWithButtonEnabled, 'details' );
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.log('error', error);
+                                        oTable.fnOpen(nTr, detailsWithButtonEnabled, 'details' );
+                                    });
+                            }
+                        } else {
+                            oTable.fnOpen(nTr, detailsWithButtonEnabled, 'details' );
+                        }
+                    })
+                    .catch(error => {
+                        console.log('error', error);
+                        if(REMOTE_SERVER_TYPE === 'OPENMRS') {
+                            var detailsWithButtonEnabled = createPatientDetailsHtmlTable(patient, remotePatientDetailsTitle, true, false);
+                        } else {
+                            var detailsWithButtonEnabled = createPatientDetailsHtmlTableForOpenCR(patient, remotePatientDetailsTitle, true, false);
+                        }
+                        oTable.fnOpen(nTr, detailsWithButtonEnabled, 'details' );
+                    });
+            }
+        }
+
         $j(document).ready(function() {
             $j('#dialog').dialog({
                 autoOpen: false
@@ -818,8 +773,25 @@
             patientTable = $j('#found-patients').dataTable({
                 aaData: [],
                 bFilter: false,
-                bSort: false
+                bSort: false,
+                fnRowCallback: function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
+                    $j('td:eq(1)', nRow).html(iDisplayIndexFull + 1);
+                    return nRow;
+                }
             });
+
+            // A bit hacky.
+            Array.prototype.push.apply(patientTable.fnSettings().aoDrawCallback, [{
+                fn: function() {
+                    $j('#found-patients tbody td img').on('click', function() {
+                        openCloseButtonHandler.call(this, patientTable);
+                    });
+                }
+            }, {
+                fn: function() {
+                    patientTable.fnSetColumnVis(0, false);
+                }
+            }]);
 
             $j("#find-remote-patients-button").on('click', function(e) {
                 var searchText = $j('#find-remote-patients').val();
@@ -855,6 +827,8 @@
                 <thead>
                 <tr>
                     <th></th>
+                    <th></th>
+                    <th>S/N</th>
                     <th><openmrs:message code="esaudefeatures.remote.patients.identifier"/></th>
                     <th><openmrs:message code="esaudefeatures.remote.patients.fullname"/></th>
                     <th><openmrs:message code="esaudefeatures.remote.patients.gender"/></th>
