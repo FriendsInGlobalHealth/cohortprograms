@@ -57,21 +57,22 @@ public class FhirSearchController {
 	}
 	
 	@ResponseBody
-	@RequestMapping(method = RequestMethod.GET, value = "/module/esaudefeatures/opencrRemotePatients.json", produces = {
+	@RequestMapping(method = RequestMethod.GET, value = "/module/esaudefeatures/fhirRemotePatients.json", produces = {
 	        "application/json", "application/json+fhir" })
-	public String searchOpencrForPatient(@RequestParam("text") String searchText) throws Exception {
+	public String searchFhirServerForPatient(@RequestParam("text") String searchText,
+	        @RequestParam("matchMode") String matchMode) throws Exception {
 		String message = "Could not fetch data, Global property %s not set";
 		String fhirProvider = adminService.getGlobalProperty(REMOTE_SERVER_TYPE_GP);
 		if (StringUtils.isEmpty(fhirProvider)) {
 			LOGGER.warn(String.format(message, REMOTE_SERVER_TYPE_GP));
 			throw new FhirResourceSearchException(message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
-		Bundle bundle = fhirSearchDelegate.searchForPatients(searchText, fhirProvider);
+		Bundle bundle = fhirSearchDelegate.searchForPatients(searchText, fhirProvider, matchMode);
 		return parser.encodeResourceToString(bundle);
 	}
 	
 	@ResponseStatus(HttpStatus.CREATED)
-	@RequestMapping(method = RequestMethod.POST, value = "/module/esaudefeatures/opencrPatient.json", produces = { "application/json" })
+	@RequestMapping(method = RequestMethod.POST, value = "/module/esaudefeatures/fhirPatient.json", produces = { "application/json" })
 	@ResponseBody
 	public String importPatient(@RequestParam("patientId") String opencrPatientId) {
 		String message = "Could not fetch data, Global property %s not set";

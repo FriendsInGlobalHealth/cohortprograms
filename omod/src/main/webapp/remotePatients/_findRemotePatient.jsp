@@ -29,10 +29,8 @@
         var localOpenmrsContextPath = '${pageContext.request.contextPath}';
         var importedPatientLocationUuid = "${importedPatientLocationUuid}";
         var patientTable = null;
-        var lastSearchedText = null;
         var foundPatientList = null;
         var opencrMergedPatients = {};
-        const MIN_SEARCH_LENGTH = 3;
         const EMPTY_COLUMN_HEADER_ID = 'empty-header-column';
         const DATE_DISPLAY_OPTIONS = '%d-%b-%Y';
         const IMPORT_SUCCESS_MSG_PREFIX = $j('#openmrs_msg').html();
@@ -156,7 +154,7 @@
             __fetchAndUpdateInfo(lastArtDrugPickupUrl, patient.lastArtDrugPickupInfo, lastArtPickupFetchController,insertLastArtPickupInDetailsColumn);
         }
 
-        function searchPatientsFromRemoteServer(searchText) {
+        function searchPatientsFromRemoteServer(searchText, matchMode) {
             $j('#search-busy-gif').css("visibility", "visible");
             $j("#find-remote-patients-button").prop('disabled', true);
             var requestHeaders = new Headers({
@@ -169,10 +167,11 @@
                 headers: requestHeaders,
             };
 
+            var patientSearchUrl = localOpenmrsContextPath + "/module/esaudefeatures/";
             if(REMOTE_SERVER_TYPE === 'OPENMRS') {
-                var patientSearchUrl = localOpenmrsContextPath + "/module/esaudefeatures/openmrsRemotePatients.json?text=" + searchText;
+                patientSearchUrl += 'openmrsRemotePatients.json?text=' + searchText + '&matchMode=' + matchMode;
             } else {
-                var patientSearchUrl = localOpenmrsContextPath + '/module/esaudefeatures/opencrRemotePatients.json?text=' + searchText;
+                patientSearchUrl += 'fhirRemotePatients.json?text=' + searchText + '&matchMode=' + matchMode;
             }
 
             if(searchController !== null) {
@@ -807,7 +806,7 @@
             } else {
                 // OpenCR
                 var opencrPatient = foundPatientList.find(patient => patient.resource.id === patientUuid);
-                var importPatientUrl = localOpenmrsContextPath + '/module/esaudefeatures/opencrPatient.json?patientId=' + patientUuid;
+                var importPatientUrl = localOpenmrsContextPath + '/module/esaudefeatures/fhirPatient.json?patientId=' + patientUuid;
                 _importWork(opencrPatient.resource.fullname, importPatientUrl);
             }
         }
@@ -827,9 +826,13 @@
                 if(searchText !== null) {
                     searchText.trim();
                     if(searchText.length > 0) {
+                        var matchMode = 'fuzzy';
+                        if($j('#remote-patient-match-mode-exact').is(':checked')) {
+                            matchMode = 'exact';
+                        }
                         $j('#remote_patient_error_msg').css('visibility', 'hidden');
                         $j('#openmrs_msg').css('visibility', 'hidden');
-                        searchPatientsFromRemoteServer(searchText);
+                        searchPatientsFromRemoteServer(searchText, matchMode);
                     }
                 }
             });
@@ -840,6 +843,9 @@
     <div>
         <b class="boxHeader"><openmrs:message code="esaudefeatures.remote.patients.search"/></b>
         <div class="box">
+            <openmrs:message code="esaudefeatures.remote.patients.match.mode.message" javaScriptEscape="true"/>
+            <input type="checkbox" name="remote-patient-match-mode" id="remote-patient-match-mode-exact" value="exact" ${matchModeExact}/>
+            <br/>
             <openmrs:message code="esaudefeatures.remote.patients.search" javaScriptEscape="true"/>
             <input type="text" id="find-remote-patients"
                    placeholder="<openmrs:message code="esaudefeatures.remote.patients.search.placeholder" javaScriptEscape="true"/>"/>

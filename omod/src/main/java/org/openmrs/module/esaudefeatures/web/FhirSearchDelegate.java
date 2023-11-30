@@ -10,10 +10,8 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.hl7.fhir.r4.model.Bundle;
-import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.ResourceType;
-import org.hl7.fhir.r4.model.StringType;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.PatientService;
 import org.openmrs.module.esaudefeatures.web.controller.FhirProviderAuthenticationException;
@@ -28,20 +26,17 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSession;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
-
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 
+import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.FHIR_IDENTIFIER_SYSTEM_FOR_OPENMRS_UUID_GP;
+import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.FHIR_REMOTE_SERVER_URL_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OAUTH2_CLIENT_ID_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OAUTH2_CLIENT_SECRET_GP;
-import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.FHIR_IDENTIFIER_SYSTEM_FOR_OPENMRS_UUID_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENCR_REMOTE_SERVER_PASSWORD_GP;
-import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.FHIR_REMOTE_SERVER_URL_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.OPENCR_REMOTE_SERVER_USERNAME_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.REMOTE_SERVER_SKIP_HOSTNAME_VERIFICATION_GP;
 
@@ -161,6 +156,10 @@ public class FhirSearchDelegate {
 	}
 	
 	public Bundle searchForPatients(final String searchText, final String fhirProvider) throws Exception {
+		return searchForPatients(searchText, fhirProvider, "exact");
+	}
+	
+	public Bundle searchForPatients(final String searchText, final String fhirProvider, String matchMode) throws Exception {
 		IParser parser = FHIR_CONTEXT.newJsonParser();
 		String remoteServerUrl = adminService.getGlobalProperty(FHIR_REMOTE_SERVER_URL_GP);
 		if (StringUtils.isEmpty(remoteServerUrl)) {
@@ -187,18 +186,27 @@ public class FhirSearchDelegate {
 			}
 
 			if(searchedNames.size() == 1) {
-				urlBuilder.addQueryParameter("name", searchedNames.get(0));
+				if("exact".equalsIgnoreCase(matchMode)) {
+					urlBuilder.addQueryParameter("name", searchedNames.get(0));
+				} else {
+					urlBuilder.addQueryParameter("name", "~".concat(searchedNames.get(0)));
+				}
 			} else if(searchedNames.size() >= 2) {
-				for(int i=0; i < searchedNames.size(); i++) {
-					urlBuilder.addQueryParameter("given", searchedNames.get(i));
+				String givenNames = org.apache.commons.lang3.StringUtils.join(searchedNames, ' ');
+				if("exact".equalsIgnoreCase(matchMode)) {
+					urlBuilder.addQueryParameter("given", givenNames);
+				} else {
+					urlBuilder.addQueryParameter("given", "~".concat(givenNames));
 				}
 			}
 		} else {
 			if (searchText.matches(IDENTIFIER_REGEX)) {
 				// Go for identifier search.
 				addIdentifierQueryParameter(urlBuilder, fhirProvider, searchText);
-			} else {
+			} else if("exact".equalsIgnoreCase(matchMode)) {
 				urlBuilder.addQueryParameter("name", searchText);
+			} else {
+				urlBuilder.addQueryParameter("name", "~".concat(searchText));
 			}
 		}
 		LOGGER.trace("Remote FHIR URL for searching is {} ", urlBuilder.toString());
@@ -226,27 +234,7 @@ public class FhirSearchDelegate {
 		
 		try {
 			if (fhirResponse.isSuccessful() && fhirResponse.code() == HttpServletResponse.SC_OK) {
-				Bundle bundle = parser.parseResource(Bundle.class, fhirResponse.body().string());
-				if(searchedNames.size() >= 2) {
-					List<Bundle.BundleEntryComponent> relevantEntries = getRelevantEntries(bundle.getEntry(), searchedNames);
-
-					// search the last entered name as the family name.
-					int lastNameIndex = searchedNames.size() - 1;
-					urlBuilder.addQueryParameter("family", searchedNames.get(lastNameIndex));
-					clientRequest = new Request.Builder().url(urlBuilder.build()).addHeader("Authorization", bearerToken).build();
-					fhirResponse = okHttpClient.newCall(clientRequest).execute();
-					if (fhirResponse.isSuccessful() && fhirResponse.code() == HttpServletResponse.SC_OK) {
-						Bundle another = parser.parseResource(Bundle.class, fhirResponse.body().string());
-						relevantEntries.addAll(getRelevantEntries(another.getEntry(), searchedNames));
-					}
-
-					if(relevantEntries.size() > 0) {
-						bundle.setTotal(relevantEntries.size());
-						bundle.setEntry(relevantEntries);
-					}
-				}
-				stashEntriesIntoCache(bundle);
-				return bundle;
+				return processSuccessfulSearches(fhirResponse, urlBuilder, okHttpClient, parser, bearerToken, searchedNames, matchMode);
 			} else if (fhirResponse.code() == HttpServletResponse.SC_UNAUTHORIZED
 			        || fhirResponse.code() == HttpServletResponse.SC_FORBIDDEN) {
 				// Deal with authentication error.
@@ -264,9 +252,7 @@ public class FhirSearchDelegate {
 					        .addHeader("Authorization", "Bearer ".concat(authToken)).build();
 					fhirResponse = okHttpClient.newCall(clientRequest).execute();
 					if (fhirResponse.isSuccessful() && fhirResponse.code() == HttpServletResponse.SC_OK) {
-						Bundle bundle = parser.parseResource(Bundle.class, fhirResponse.body().string());
-						stashEntriesIntoCache(bundle);
-						return bundle;
+						return processSuccessfulSearches(fhirResponse, urlBuilder, okHttpClient, parser, bearerToken, searchedNames, matchMode);
 					} else {
 						// Return error to the client.
 						LOGGER.error("Response from {} server: {}", remoteServerUrl, fhirResponse.body().string());
@@ -499,32 +485,36 @@ public class FhirSearchDelegate {
 		}
 	}
 	
-	private static List<Bundle.BundleEntryComponent> getRelevantEntries(List<Bundle.BundleEntryComponent> entries, List<String> searchedNames) {
-		List<Bundle.BundleEntryComponent> relevantEntries = new ArrayList<>();
-		List<String> allSearchedNamesButLast = new ArrayList<>();
-		for(int i=0; i < searchedNames.size() - 1; i++) {
-			allSearchedNamesButLast.add(searchedNames.get(i));
-		}
-		for(Bundle.BundleEntryComponent entry: entries) {
-			if(entry.getResource().getResourceType() == ResourceType.Patient) {
-				Patient p = (Patient) entry.getResource();
-				for(HumanName name: p.getName()) {
-					if(name.hasGiven()) {
-						List<String> givenNames = new ArrayList<>();
-						for (StringType gName : name.getGiven()) {
-							givenNames.add(gName.getValue());
-						}
-						if (searchedNames.size() >= 2) {
-							if (givenNames.containsAll(searchedNames) ||
-									(givenNames.containsAll(allSearchedNamesButLast)
-											&& name.getFamily().contains(searchedNames.get(searchedNames.size() - 1)))) {
-								relevantEntries.add(entry);
-							}
-						}
-					}
-				}
+	private static Bundle processSuccessfulSearches(Response fhirResponse, HttpUrl.Builder urlBuilder,
+	        OkHttpClient okHttpClient, IParser parser, String bearerToken, List<String> searchedNames, String matchMode)
+	        throws IOException {
+		Bundle bundle = parser.parseResource(Bundle.class, fhirResponse.body().string());
+		if (searchedNames.size() >= 2) {
+			StringBuilder givenNames = new StringBuilder(searchedNames.get(0));
+			for (int i = 1; i < searchedNames.size() - 1; i++) {
+				givenNames.append(' ').append(searchedNames.get(i));
 			}
+			
+			urlBuilder.removeAllQueryParameters("given");
+			if ("exact".equalsIgnoreCase(matchMode)) {
+				urlBuilder.addQueryParameter("given", givenNames.toString());
+				urlBuilder.addQueryParameter("family", searchedNames.get(searchedNames.size() - 1));
+			} else {
+				urlBuilder.addQueryParameter("given", "~".concat(givenNames.toString()));
+				urlBuilder.addQueryParameter("family", "~".concat(searchedNames.get(searchedNames.size() - 1)));
+			}
+			
+			Request clientRequest = new Request.Builder().url(urlBuilder.build()).addHeader("Authorization", bearerToken)
+			        .build();
+			fhirResponse = okHttpClient.newCall(clientRequest).execute();
+			if (fhirResponse.isSuccessful() && fhirResponse.code() == HttpServletResponse.SC_OK) {
+				Bundle another = parser.parseResource(Bundle.class, fhirResponse.body().string());
+				bundle.getEntry().addAll(another.getEntry());
+				bundle.setTotal(bundle.getEntry().size());
+			}
+			
 		}
-		return relevantEntries;
+		stashEntriesIntoCache(bundle);
+		return bundle;
 	}
 }

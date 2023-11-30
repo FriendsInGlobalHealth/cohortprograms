@@ -35,4 +35,6 @@ public class EsaudeFeaturesConstants {
 	
 	public static final String OAUTH2_CLIENT_SECRET_GP = "esaudefeatures.oauth2.client.secret";
 	
+	public static final String DEFAULT_PATIENT_NAMES_MATCH_MODE_GP = "esaudefeatures.default.patient.names.match.mode";
+	
 }

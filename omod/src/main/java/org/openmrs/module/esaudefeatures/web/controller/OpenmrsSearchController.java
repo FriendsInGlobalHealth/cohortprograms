@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.DEFAULT_PATIENT_NAMES_MATCH_MODE_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.FHIR_IDENTIFIER_SYSTEM_FOR_OPENMRS_UUID_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.FHIR_IDENTIFIER_SYSTEM_TO_OPENMRS_IDENTIFIER_TYPE_UUID_MAPPINGS_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.FHIR_REMOTE_SERVER_URL_GP;
@@ -82,6 +83,13 @@ public class OpenmrsSearchController {
 		
 		modelAndView.getModelMap().addAttribute("openmrsPersonUuidFhirSystemValue",
 		    adminService.getGlobalProperty(FHIR_IDENTIFIER_SYSTEM_FOR_OPENMRS_UUID_GP));
+		
+		String defaultMatchMode = adminService.getGlobalProperty(DEFAULT_PATIENT_NAMES_MATCH_MODE_GP, "fuzzy");
+		if ("exact".equalsIgnoreCase(defaultMatchMode)) {
+			modelAndView.getModelMap().addAttribute("matchModeExact", "checked");
+		} else {
+			modelAndView.getModelMap().addAttribute("matchModeExact", "");
+		}
 		
 		String remoteServerUsername = adminService.getGlobalProperty(OPENMRS_REMOTE_SERVER_USERNAME_GP);
 		String remoteServerPassword = adminService.getGlobalProperty(OPENMRS_REMOTE_SERVER_PASSWORD_GP);

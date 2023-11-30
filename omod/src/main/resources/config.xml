@@ -151,6 +151,13 @@
 		<property>@MODULE_ID@.oauth2.client.secret</property>
 		<description>Secret code provided by the SanteMPI server for this application</description>
 	</globalProperty>
+	<globalProperty>
+		<property>@MODULE_ID@.default.patient.names.match.mode</property>
+		<defaultValue>FUZZY</defaultValue>
+		<description>
+			The default patient names match mode, only FUZZY or EXACT allowed.
+		</description>
+	</globalProperty>
 
 	<!--
 	<dwr>
