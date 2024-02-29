@@ -58,4 +58,43 @@
                                  constraintName="esaudefeatures_program_cohort_cohort_fk"
                                  referencedTableName="cohort" referencedColumnNames="cohort_id"/>
     </changeSet>
+
+    <changeSet id="esaudefeatures-2024-02-28-14:51EAT" author="Willa">
+        <preConditions onError="MARK_RAN">
+            <not><tableExists tableName="esaudefeatures_rps_import_log"/></not>
+        </preConditions>
+        <comment>
+            Creating esaudefeatures_rps_import_log table
+        </comment>
+        <createTable tableName="esaudefeatures_rps_import_log">
+            <column name="date_imported" type="datetime">
+                <constraints nullable="false"/>
+            </column>
+            <column name="health_facility" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="patient_uuid" type="char(38)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="patient_nid" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="importer_username" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="importer_uuid" type="char(38)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="esaudefeatures-2024-03-07-09:19EAT" author="Willa">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="esaudefeatures_rps_import_log" columnName="patient_nid"/>
+        </preConditions>
+        <comment>
+            Remove column patient_nid from esaudefeatures_rps_import_log table
+        </comment>
+        <dropColumn tableName="esaudefeatures_rps_import_log" columnName="patient_nid"/>
+    </changeSet>
 </databaseChangeLog>

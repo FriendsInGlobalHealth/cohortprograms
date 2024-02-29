@@ -14,11 +14,14 @@ import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.PatientService;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.esaudefeatures.ImportLogUtils;
 import org.openmrs.module.esaudefeatures.web.controller.FhirProviderAuthenticationException;
 import org.openmrs.module.esaudefeatures.web.dto.JWTTokenDTO;
 import org.openmrs.module.esaudefeatures.web.dto.Oauth2TokenDTO;
 import org.openmrs.module.esaudefeatures.web.exception.FhirResourceSearchException;
 import org.openmrs.module.webservices.rest.SimpleObject;
+import org.openmrs.util.OpenmrsConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -310,7 +313,12 @@ public class FhirSearchDelegate {
 		if (opPatient == null) {
 			opPatient = helperService.getPatientFromFhirPatientResource(patientResource);
 		}
-		return patientService.savePatient(opPatient);
+		
+		opPatient = patientService.savePatient(opPatient);
+		
+		String defaultLocation = adminService.getGlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_DEFAULT_LOCATION_NAME, "");
+		ImportLogUtils.addImportLogRecord(opPatient, defaultLocation, Context.getAuthenticatedUser());
+		return opPatient;
 	}
 	
 	public String reAuthenticate(final String fhirProvider) throws Exception {
