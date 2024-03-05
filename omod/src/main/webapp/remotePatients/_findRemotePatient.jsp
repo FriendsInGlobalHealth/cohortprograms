@@ -14,7 +14,7 @@
 <c:if test="${authenticatedUser != null}">
     <openmrs:require privilege="View Patients" otherwise="/login.htm" redirect="/index.htm" />
     <style>
-        #found-patients_wrapper{
+        #found-patients_wrapper {
             /* Removes the empty space after datatable if the table is short */
             /* Over ride the value set by datatables */
             min-height: 150px; height: auto !important;
@@ -22,6 +22,13 @@
 
         ul {
             list-style: none outside none;
+            padding-left: inherit;
+            padding-inline-start: 0px;
+            margin-top: 0px;
+        }
+
+        table tbody td.details-cell {
+            vertical-align: top;
         }
     </style>
     <openmrs:htmlInclude file="/scripts/jquery/dataTables/css/dataTables_jui.css"/>
@@ -424,12 +431,12 @@
             var familyName = patientName.familyName === null ? "" : patientName.familyName;
 
             // Names column
-            patientDetailsTable += '<tr><td><ul><li><em><openmrs:message code="esaudefeatures.remote.patients.givenName"/>:</em> ' + givenName + '</li></ul>';
+            patientDetailsTable += '<tr><td class="details-cell"><ul><li><em><openmrs:message code="esaudefeatures.remote.patients.givenName"/>:</em> ' + givenName + '</li></ul>';
             patientDetailsTable += '<ul><li><em><openmrs:message code="esaudefeatures.remote.patients.middleName"/>:</em> ' + middleName + '</li></ul>';
             patientDetailsTable += '<ul><li><em><openmrs:message code="esaudefeatures.remote.patients.familyName"/>:</em> ' + familyName + '</li></ul></td>';
 
             // Identifiers column
-            patientDetailsTable += '<td>';
+            patientDetailsTable += '<td class="details-cell">';
             if(Array.isArray(patient.identifiers) && patient.identifiers.length > 0) {
                 for(let identifier of patient.identifiers) {
                     patientDetailsTable += '<ul><li><em>' + identifier.identifierType.display + ':</em> ' + identifier.identifier + '</li></ul>';
@@ -440,7 +447,7 @@
             }
 
             // Other info
-            patientDetailsTable += '<td>';
+            patientDetailsTable += '<td class="details-cell">';
             if(Array.isArray(patient.person.attributes) && patient.person.attributes.length > 0) {
                 for(let personAttribute of patient.person.attributes) {
                     patientDetailsTable += '<ul><li><em>' + personAttribute.attributeType.display + ':</em> ' + __determineAttributeDisplayValue(personAttribute.value) + '</li></ul>';
@@ -449,7 +456,7 @@
             } else {
                 patientDetailsTable += '<openmrs:message code="esaudefeatures.remote.patients.no.attributes"/></td></tr>';
             }
-            patientDetailsTable += '<tr><td>uuid:</td><td colspan="2">' + patient.uuid + '</td></tr>';
+//            patientDetailsTable += '<tr><td>uuid:</td><td colspan="2">' + patient.uuid + '</td></tr>';
 
             if(addImportButton) {
                 if(disableImportButton) {
@@ -496,7 +503,7 @@
                     } else {
                         mergedPatientDetailsTable += '<tr><td colspan="2"><openmrs:message code="esaudefeatures.remote.patients.no.identifiers"/> </td></tr>';
                     }
-                    mergedPatientDetailsTable += '<tr><td><openmrs:message code="esaudefeatures.remote.opencr.record.id"/></td><td>' + patient.resource.id + '</td></tr>';
+                    <%--mergedPatientDetailsTable += '<tr><td><openmrs:message code="esaudefeatures.remote.opencr.record.id"/></td><td>' + patient.resource.id + '</td></tr>';--%>
                     mergedPatientDetailsTable += '</table></div>';
 
                     tables += mergedPatientDetailsTable;
@@ -523,24 +530,26 @@
             var familyName = patientName.family === null ? '' : patientName.family;
 
             // Names column
-            patientDetailsTable += '<tr><td><ul><li><em><openmrs:message code="esaudefeatures.remote.patients.givenNames"/>:</em> ' + givenNames + '</li></ul>';
+            patientDetailsTable += '<tr><td class="details-cell"><ul><li><em><openmrs:message code="esaudefeatures.remote.patients.givenNames"/>:</em> ' + givenNames + '</li></ul>';
             patientDetailsTable += '<ul><li><em><openmrs:message code="esaudefeatures.remote.patients.familyName"/>:</em> ' + familyName + '</li></ul></td>';
 
             // Patient identifiers
-            patientDetailsTable += '<td>';
+            patientDetailsTable += '<td class="details-cell">';
             if(Array.isArray(patient.resource.identifier) && patient.resource.identifier.length > 0) {
                 for(let identifier of patient.resource.identifier) {
-                    patientDetailsTable += '<ul><li><em>' + FHIR_IDENTIFIER_SYS_MAPPINGS[identifier.system] + ':</em>' + identifier.value + '</li></ul>';
+                    if(FHIR_IDENTIFIER_SYS_MAPPINGS[identifier.system] !== undefined && OPENMRS_PERSON_UUID_FHIR_SYSTEM_VALUE !== identifier.system) {
+                        patientDetailsTable += '<ul><li><em>' + FHIR_IDENTIFIER_SYS_MAPPINGS[identifier.system] + ':</em>' + identifier.value + '</li></ul>';
+                    }
                 }
             } else {
                 patientDetailsTable += '<ul><li><openmrs:message code="esaudefeatures.remote.patients.no.identifiers"/></li></ul>';
             }
-            patientDetailsTable += '<ul><li><em><openmrs:message code="esaudefeatures.remote.opencr.record.id"/>:</em> ' + patient.resource.id + '</li></ul></td>';
+            patientDetailsTable += '</td>';
 
             // Program Info
             var UUID = patient.resource.identifier.find(ident => ident.system === OPENMRS_PERSON_UUID_FHIR_SYSTEM_VALUE);
 
-            patientDetailsTable += '<td><span id="program-info-' + UUID.value + '">';
+            patientDetailsTable += '<td class="details-cell"><span id="program-info-' + UUID.value + '">';
             patientDetailsTable += '<em><openmrs:message code="esaudefeatures.remote.patients.fetching.program.enrollment"/>...</em></span></td>';
             if(patient.programInfo || patient.artDrugStartDateInfo || patient.lastArtDrugPickupInfo) {
                 // A hack to wait for the DOM to be updated with details page.
@@ -554,7 +563,7 @@
             }
 
             // Contact info
-            patientDetailsTable += '<td>';
+            patientDetailsTable += '<td class="details-cell">';
             if(Array.isArray(patient.resource.telecom) && patient.resource.telecom.length > 0) {
                 patientDetailsTable += '<ul>';
                 for(let contact of patient.resource.telecom) {
