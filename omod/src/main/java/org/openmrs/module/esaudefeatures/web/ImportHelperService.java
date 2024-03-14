@@ -40,6 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
+import org.springframework.format.datetime.DateFormatter;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
@@ -54,6 +55,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -429,7 +431,12 @@ public class ImportHelperService {
 							@Override
 							public void doWith(Field field) throws IllegalArgumentException, IllegalAccessException {
 								field.setAccessible(true);
-								field.set(personProperty, propertyMap.get(field.getName()));
+								// EFM-37 Quick fix
+								if(Date.class.equals(field.getType())) {
+									field.set(personProperty, parseDateString((String) propertyMap.get(field.getName())));
+								} else {
+									field.set(personProperty, propertyMap.get(field.getName()));
+								}
 								field.setAccessible(false);
 							}
 						}, new ReflectionUtils.FieldFilter() {
@@ -541,9 +548,7 @@ public class ImportHelperService {
 						personAttribute.setAttributeType(personAttributeType);
 						
 						Object attributeValue = attributeMap.get("value");
-						if (attributeValue instanceof String) {
-							personAttribute.setValue((String) attributeValue);
-						} else if (attributeValue instanceof Map) {
+						if (attributeValue instanceof Map) {
 							if ("org.openmrs.Concept".equals(personAttributeType.getFormat())) {
 								Concept concept = conceptService.getConceptByUuid((String) ((Map) attributeValue)
 								        .get("uuid"));
@@ -561,6 +566,8 @@ public class ImportHelperService {
 								// We gonna go on a limb and set the uuid (assuming it is openmrs domain object) as is (What could happen here?) (._.)
 								personAttribute.setValue((String) ((Map) attributeValue).get("uuid"));
 							}
+						} else {
+							personAttribute.setValue(String.valueOf(attributeValue));
 						}
 						updateAuditInfo(personAttribute, (Map) attributeMap.get("auditInfo"));
 						personAttribute.setPerson(person);
