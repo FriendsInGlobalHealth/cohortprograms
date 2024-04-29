@@ -3,6 +3,8 @@ package org.openmrs.module.esaudefeatures.web.controller;
 import org.openmrs.Patient;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants;
+import org.openmrs.module.esaudefeatures.ImportLogUtils;
 import org.openmrs.module.esaudefeatures.web.RemoteOpenmrsSearchDelegate;
 import org.openmrs.module.esaudefeatures.web.Utils;
 import org.openmrs.module.esaudefeatures.web.exception.RemoteOpenmrsSearchException;
@@ -21,6 +23,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,6 +46,8 @@ public class OpenmrsSearchController {
 	
 	private AdministrationService adminService;
 	
+	private ImportLogUtils importLogUtils;
+	
 	private RemoteOpenmrsSearchDelegate delegate;
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(OpenmrsSearchController.class);
@@ -53,6 +59,11 @@ public class OpenmrsSearchController {
 	@Autowired
 	public void setAdminService(AdministrationService adminService) {
 		this.adminService = adminService;
+	}
+	
+	@Autowired
+	public void setImportLogUtils(ImportLogUtils importLogUtils) {
+		this.importLogUtils = importLogUtils;
 	}
 	
 	@Autowired
@@ -111,6 +122,10 @@ public class OpenmrsSearchController {
 			LOGGER.warn("Global property {} not set", OPENMRS_REMOTE_SERVER_PASSWORD_GP);
 		}
 		
+		// Get all import logs
+		modelAndView.getModelMap().addAttribute("importLogs", importLogUtils.getAllImportLogs());
+		modelAndView.getModelMap().addAttribute("formatter",
+		    DateTimeFormatter.ofPattern(EsaudeFeaturesConstants.DATETIME_DISPLAY_PATTERN));
 		// if there's an authenticated user, put them, and their patient set, in the model
 		if (Context.getAuthenticatedUser() != null) {
 			modelAndView.getModelMap().addAttribute("authenticatedUser", Context.getAuthenticatedUser());

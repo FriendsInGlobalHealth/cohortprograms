@@ -37,4 +37,5 @@ public class EsaudeFeaturesConstants {
 	
 	public static final String DEFAULT_PATIENT_NAMES_MATCH_MODE_GP = "esaudefeatures.default.patient.names.match.mode";
 	
+	public final static String DATETIME_DISPLAY_PATTERN = "yyyy-MM-dd HH:mm:ss";
 }

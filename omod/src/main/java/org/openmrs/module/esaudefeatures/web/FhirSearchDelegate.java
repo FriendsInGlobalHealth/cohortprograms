@@ -76,6 +76,8 @@ public class FhirSearchDelegate {
 	
 	private PatientService patientService;
 	
+	private ImportLogUtils importLogUtils;
+	
 	@Autowired
 	public void setAdminService(AdministrationService adminService) {
 		this.adminService = adminService;
@@ -94,6 +96,11 @@ public class FhirSearchDelegate {
 	@Autowired
 	public void setPatientService(PatientService patientService) {
 		this.patientService = patientService;
+	}
+	
+	@Autowired
+	public void setImportLogUtils(ImportLogUtils importLogUtils) {
+		this.importLogUtils = importLogUtils;
 	}
 	
 	private Patient fetchPatientFromFhirServerById(final String id, String fhirProvider) throws Exception {
@@ -317,7 +324,7 @@ public class FhirSearchDelegate {
 		opPatient = patientService.savePatient(opPatient);
 		
 		String defaultLocation = adminService.getGlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_DEFAULT_LOCATION_NAME, "");
-		ImportLogUtils.addImportLogRecord(opPatient, defaultLocation, Context.getAuthenticatedUser());
+		importLogUtils.addImportLogRecord(opPatient, defaultLocation, Context.getAuthenticatedUser());
 		return opPatient;
 	}
 	
