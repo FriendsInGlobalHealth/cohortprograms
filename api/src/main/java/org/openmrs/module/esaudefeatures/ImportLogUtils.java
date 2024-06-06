@@ -1,14 +1,13 @@
 package org.openmrs.module.esaudefeatures;
 
 import org.openmrs.Patient;
-import org.openmrs.PatientIdentifier;
 import org.openmrs.User;
 import org.openmrs.util.DatabaseUpdater;
 
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
-import java.sql.Types;
 import java.util.Date;
+import java.util.UUID;
 
 /**
  * @uthor Willa Mhawila<a.mhawila@gmail.com> on 2/27/24.
@@ -20,8 +19,8 @@ public class ImportLogUtils {
 	public static void addImportLogRecord(final Patient patient, final String importLocation, final User importer)
 	        throws Exception {
 		String insertSql = new StringBuilder("INSERT INTO ").append(TABLE)
-		        .append("(date_imported, health_facility, patient_uuid, importer_username, importer_uuid)")
-		        .append(" VALUES(?,?,?,?,?)").toString();
+		        .append("(date_imported, health_facility, patient_uuid, importer_username, importer_uuid, uuid)")
+		        .append(" VALUES(?,?,?,?,?,?)").toString();
 		
 		PreparedStatement insertStatement = null;
 		try {
@@ -31,6 +30,7 @@ public class ImportLogUtils {
 			insertStatement.setString(3, patient.getUuid());
 			insertStatement.setString(4, importer.getUsername());
 			insertStatement.setString(5, importer.getUuid());
+			insertStatement.setString(6, UUID.randomUUID().toString());
 			insertStatement.execute();
 		}
 		finally {

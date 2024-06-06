@@ -97,4 +97,32 @@
         </comment>
         <dropColumn tableName="esaudefeatures_rps_import_log" columnName="patient_nid"/>
     </changeSet>
+
+    <changeSet id="esaudefeatures-2024-06-06-14:29EAT" author="Willa">
+        <preConditions onFail="MARK_RAN">
+            <not><columnExists tableName="esaudefeatures_rps_import_log" columnName="rps_import_log_id"/></not>
+        </preConditions>
+        <comment>
+            Add column rps_import_log_id and to esaudefeatures_rps_import_log table
+        </comment>
+        <addColumn tableName="esaudefeatures_rps_import_log">
+            <column name="rps_import_log_id" type="int(11)" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="esaudefeatures-2024-06-06-14:33EAT" author="Willa">
+        <preConditions onFail="MARK_RAN">
+            <not><columnExists tableName="esaudefeatures_rps_import_log" columnName="uuid"/></not>
+        </preConditions>
+        <comment>
+            Add column uuid and to esaudefeatures_rps_import_log table
+        </comment>
+        <addColumn tableName="esaudefeatures_rps_import_log">
+            <column name="uuid" type="char(38)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
