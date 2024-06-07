@@ -166,6 +166,7 @@ public class RemoteOpenmrsSearchDelegate {
 			String errorMessage = String.format("Error fetching response from server %s (code: %d)", remoteServerUrl,
 			    response.code());
 			LOGGER.error(errorMessage);
+			LOGGER.error("Response body: " + response.body().string());
 			throw new RemoteOpenmrsSearchException(errorMessage, response.code());
 		}
 		finally {

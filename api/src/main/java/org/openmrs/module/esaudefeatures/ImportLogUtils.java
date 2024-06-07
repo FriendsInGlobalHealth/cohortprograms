@@ -131,10 +131,12 @@ public class ImportLogUtils {
 
 				String patientUuid = results.getString("patient_uuid");
 				Patient importedPatient = patientService.getPatientByUuid(patientUuid);
-				importLog.put("patient", importedPatient);
-				PatientIdentifier patientNID = importedPatient.getPatientIdentifier(NID_TYPE_ID);
-				if(patientNID != null) {
-					importLog.put("patientNID", patientNID.getIdentifier());
+				if(importedPatient != null) {
+					importLog.put("patient", importedPatient);
+					PatientIdentifier patientNID = importedPatient.getPatientIdentifier(NID_TYPE_ID);
+					if (patientNID != null) {
+						importLog.put("patientNID", patientNID.getIdentifier());
+					}
 				}
 				importLog.put("initiator", userService.getUserByUuid(results.getString("importer_uuid")));
 				importLogs.add(importLog);

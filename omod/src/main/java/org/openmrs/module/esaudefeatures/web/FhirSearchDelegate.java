@@ -12,8 +12,14 @@ import okhttp3.Response;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.ResourceType;
+import org.openmrs.PatientProgram;
+import org.openmrs.PatientState;
+import org.openmrs.Program;
+import org.openmrs.ProgramWorkflowState;
 import org.openmrs.api.AdministrationService;
+import org.openmrs.api.LocationService;
 import org.openmrs.api.PatientService;
+import org.openmrs.api.ProgramWorkflowService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.esaudefeatures.ImportLogUtils;
 import org.openmrs.module.esaudefeatures.web.controller.FhirProviderAuthenticationException;
@@ -33,7 +39,10 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.FHIR_IDENTIFIER_SYSTEM_FOR_OPENMRS_UUID_GP;
 import static org.openmrs.module.esaudefeatures.EsaudeFeaturesConstants.FHIR_REMOTE_SERVER_URL_GP;
@@ -62,6 +71,14 @@ public class FhirSearchDelegate {
 	// Assume text with a number in it is an identifier.
 	private static final String IDENTIFIER_REGEX = "^.*\\d+?.*$";
 	
+	private static final String ART_PROGRAM_UUID = "efe2481f-9e75-4515-8d5a-86bfde2b5ad3";
+	
+	private static final String ACTIVE_IN_ART_STATE_UUID = "c50d6bdc-8a79-43ae-ab45-abbaa6b45e7d";
+	
+	private static final String ART_TRANSFERED_IN_STATE_UUID = "ef06e6df-6026-4d5a-88f9-b2c3e0495dc8";
+	
+	private static final String ART_TRANSFERED_OUT_STATE_UUID = "9f2f86e9-303c-4b98-a6ae-37e8806a6f47";
+	
 	private static final Logger LOGGER = LoggerFactory.getLogger(FhirSearchDelegate.class);
 	
 	private static final FhirContext FHIR_CONTEXT = FhirContext.forR4();
@@ -75,6 +92,10 @@ public class FhirSearchDelegate {
 	private ImportHelperService helperService;
 	
 	private PatientService patientService;
+	
+	private ProgramWorkflowService programWorkflowService;
+	
+	private LocationService locationService;
 	
 	private ImportLogUtils importLogUtils;
 	
@@ -101,6 +122,16 @@ public class FhirSearchDelegate {
 	@Autowired
 	public void setImportLogUtils(ImportLogUtils importLogUtils) {
 		this.importLogUtils = importLogUtils;
+	}
+	
+	@Autowired
+	public void setProgramWorkflowService(ProgramWorkflowService programWorkflowService) {
+		this.programWorkflowService = programWorkflowService;
+	}
+	
+	@Autowired
+	public void setLocationService(LocationService locationService) {
+		this.locationService = locationService;
 	}
 	
 	private Patient fetchPatientFromFhirServerById(final String id, String fhirProvider) throws Exception {
@@ -325,6 +356,44 @@ public class FhirSearchDelegate {
 		
 		String defaultLocation = adminService.getGlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_DEFAULT_LOCATION_NAME, "");
 		importLogUtils.addImportLogRecord(opPatient, defaultLocation, Context.getAuthenticatedUser());
+
+		// Enroll the patient into programs (Starting with ART if enrolled on central, then any other if ART not available)
+		// Fetch patient programs.
+		Map<String, String> params = new HashMap<>();
+		params.put("patient", opPatient.getUuid());
+		String rep = new StringBuilder("custom:(uuid,dateEnrolled,dateCompleted,program:(uuid,name),")
+				.append("location:(uuid,name,address6,parentLocation:(uuid,name)),")
+				.append("states:(uuid,state:(uuid,concept:(uuid,name:(uuid,name,locale))),startDate,endDate,voided))")
+				.toString();
+		params.put("v", rep);
+		params.put("resource", "programenrollment");
+		try {
+			SimpleObject enrolments = openmrsSearchDelegate.runRemoteOpenmrsRestRequest(params);
+			List<Map> results = enrolments.get("results");
+			if (!results.isEmpty() && patientInARTProgram(results)) {
+				//Enroll.
+				Program artProgram = programWorkflowService.getProgramByUuid(ART_PROGRAM_UUID);
+				ProgramWorkflowState transferredInART = programWorkflowService.getStateByUuid(ART_TRANSFERED_IN_STATE_UUID);
+				PatientProgram patientProgram = new PatientProgram();
+				patientProgram.setDateEnrolled(new Date());
+				patientProgram.setPatient(opPatient);
+				patientProgram.setProgram(artProgram);
+				patientProgram.setLocation(locationService.getDefaultLocation());
+				PatientState patientState = new PatientState();
+				patientState.setState(transferredInART);
+				patientState.setStartDate(new Date());
+				patientState.setPatientProgram(patientProgram);
+				patientProgram.setPatient(opPatient);
+				patientProgram.setProgram(artProgram);
+				patientProgram.setLocation(locationService.getDefaultLocation());
+				patientProgram.getStates().add(patientState);
+				programWorkflowService.savePatientProgram(patientProgram);
+			}
+		} catch (Exception e) {
+			// Swallow whatever exception.
+			LOGGER.error(e.getMessage());
+			LOGGER.info("Failed to enroll patient with patient_id " + opPatient.getPatientId() + " into ART program");
+		}
 		return opPatient;
 	}
 	
@@ -531,5 +600,15 @@ public class FhirSearchDelegate {
 		}
 		stashEntriesIntoCache(bundle);
 		return bundle;
+	}
+	
+	private static boolean patientInARTProgram(List<Map> enrolments) {
+		return enrolments.stream()
+				.anyMatch(enrolment -> ART_PROGRAM_UUID.equals(((Map) enrolment.get("program")).get("uuid")) &&
+						enrolment.containsKey("states") && ((List<Map>)enrolment.get("states")).stream()
+						.anyMatch(state -> (ACTIVE_IN_ART_STATE_UUID.equals(((Map)state.get("state")).get("uuid")) &&
+								state.get("endDate") == null && !(boolean)state.get("voided")) ||
+								(ART_TRANSFERED_OUT_STATE_UUID.equals(((Map)state.get("state")).get("uuid")) &&
+										!(boolean)state.get("voided"))));
 	}
 }
