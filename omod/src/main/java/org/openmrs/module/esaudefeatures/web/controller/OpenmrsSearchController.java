@@ -77,6 +77,20 @@ public class OpenmrsSearchController {
 			modelAndView = new ModelAndView();
 		}
 		
+		if (OPENMRS_VERSION_SHORT.startsWith("1")) {
+			modelAndView.setViewName("module/esaudefeatures/remotePatients/findRemotePatients1x");
+		} else {
+			modelAndView.setViewName("module/esaudefeatures/remotePatients/findRemotePatients2x");
+		}
+		
+		if (Context.getAuthenticatedUser() == null) {
+			return modelAndView;
+		}
+		
+		modelAndView.getModelMap().addAttribute("authenticatedUser", Context.getAuthenticatedUser());
+		// Get all import logs
+		modelAndView.getModelMap().addAttribute("importLogs", importLogUtils.getAllImportLogs());
+		
 		String serverType = adminService.getGlobalProperty(REMOTE_SERVER_TYPE_GP, "OPENMRS");
 		if ("OPENMRS".equalsIgnoreCase(serverType)) {
 			modelAndView.getModelMap().addAttribute("remoteServerUrl",
@@ -122,20 +136,8 @@ public class OpenmrsSearchController {
 			LOGGER.warn("Global property {} not set", OPENMRS_REMOTE_SERVER_PASSWORD_GP);
 		}
 		
-		// Get all import logs
-		modelAndView.getModelMap().addAttribute("importLogs", importLogUtils.getAllImportLogs());
 		modelAndView.getModelMap().addAttribute("formatter",
 		    DateTimeFormatter.ofPattern(EsaudeFeaturesConstants.DATETIME_DISPLAY_PATTERN));
-		// if there's an authenticated user, put them, and their patient set, in the model
-		if (Context.getAuthenticatedUser() != null) {
-			modelAndView.getModelMap().addAttribute("authenticatedUser", Context.getAuthenticatedUser());
-		}
-		
-		if (OPENMRS_VERSION_SHORT.startsWith("1")) {
-			modelAndView.setViewName("module/esaudefeatures/remotePatients/findRemotePatients1x");
-		} else {
-			modelAndView.setViewName("module/esaudefeatures/remotePatients/findRemotePatients2x");
-		}
 		return modelAndView;
 	}
 	
