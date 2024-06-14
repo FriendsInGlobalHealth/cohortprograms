@@ -829,7 +829,10 @@
                 $j('td:eq(1)', nRow).html(iDisplayIndexFull + 1);
                 $j(nRow).css('cursor', 'pointer');
                 return nRow;
-            }
+            },
+            sScrollX: "100%",
+            bScrollCollapse: true,
+            bAutoWidth: false
         });
 
         // A bit hacky.
