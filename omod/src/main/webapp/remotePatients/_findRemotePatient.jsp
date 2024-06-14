@@ -82,11 +82,11 @@
         FHIR_IDENTIFIER_SYS_MAPPINGS_STRING.split(',').forEach(component => {
             let parts = component.trim().split('^');
             FHIR_IDENTIFIER_SYS_MAPPINGS[parts[1]] = parts[0];
-            if(parts[0] === NID_TARV_IDENTIFIER_TYPE_UUID) {
-                NID_SYSTEM_VALUE = parts[1];
-                FHIR_IDENTIFIER_SYS_MAPPINGS[parts[1]] = "NID (SERVICO TARV)";
-            }
         });
+    }
+
+    function getFhirSystemFriendlyName(systemValue) {
+        return systemValue.slice(systemValue.lastIndexOf('/') + 1).replace('-', ' ').toUpperCase();
     }
 
     class HttpError extends Error {
@@ -305,7 +305,24 @@
 
             var openButtonImageLink = '<img src="${pageContext.request.contextPath}/moduleResources/esaudefeatures/images/details_open.png"/>';
             return results.map(result => {
+                var NID_CCR_SYS = 'http://metadata.epts.e-saude.net/dictionary/patient-identifiers/nid-ccr';
+                var NID_PREP_SYS = 'http://metadata.epts.e-saude.net/dictionary/patient-identifiers/nid-prep';
+                var NID_DISA_SYS = 'http://metadata.epts.e-saude.net/dictionary/patient-identifiers/nid-disa';
                 var NID = result.resource.identifier.find(ident => ident.system === NID_SYSTEM_VALUE);
+                if(!NID) {
+                    NID = result.resource.identifier.find(ident => ident.system === NID_CCR_SYS);
+                }
+                if(!NID) {
+                    NID = result.resource.identifier.find(ident => ident.system === NID_PREP_SYS);
+                }
+                if(!NID) {
+                    NID = result.resource.identifier.find(ident => ident.system === NID_DISA_SYS);
+                }
+
+                // If still null find anything that is not openmrs uuid
+                if(!NID) {
+                    NID = result.resource.identifier.find(ident => ident.system !== "http://metadata.epts.e-saude.net/dictionary/patient-uuid");
+                }
                 var NIDDisplay = '';
                 if(NID) {
                     NIDDisplay = NID.value;
@@ -517,7 +534,9 @@
                 mergedPatientDetailsTable += '<openmrs:message code="esaudefeatures.remote.patients.identifiers"/></td></tr>';
                 if(Array.isArray(patient.resource.identifier) && patient.resource.identifier.length > 0) {
                     for(let identifier of patient.resource.identifier) {
-                        mergedPatientDetailsTable += '<tr><td>' + FHIR_IDENTIFIER_SYS_MAPPINGS[identifier.system] + ':</td><td>' + identifier.value + '</td>';
+                        if(FHIR_IDENTIFIER_SYS_MAPPINGS[identifier.system] !== undefined && OPENMRS_PERSON_UUID_FHIR_SYSTEM_VALUE !== identifier.system) {
+                            mergedPatientDetailsTable += '<tr><td>' + getFhirSystemFriendlyName(identifier.system) + ':</td><td>' + identifier.value + '</td>';
+                        }
                     }
                 } else {
                     mergedPatientDetailsTable += '<tr><td colspan="2"><openmrs:message code="esaudefeatures.remote.patients.no.identifiers"/> </td></tr>';
@@ -557,7 +576,7 @@
         if(Array.isArray(patient.resource.identifier) && patient.resource.identifier.length > 0) {
             for(let identifier of patient.resource.identifier) {
                 if(FHIR_IDENTIFIER_SYS_MAPPINGS[identifier.system] !== undefined && OPENMRS_PERSON_UUID_FHIR_SYSTEM_VALUE !== identifier.system) {
-                    patientDetailsTable += '<ul><li><em>' + FHIR_IDENTIFIER_SYS_MAPPINGS[identifier.system] + ':</em>' + identifier.value + '</li></ul>';
+                    patientDetailsTable += '<ul><li><em>' + getFhirSystemFriendlyName(identifier.system) + ':</em>' + identifier.value + '</li></ul>';
                 }
             }
         } else {
