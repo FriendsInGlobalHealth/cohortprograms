@@ -1091,25 +1091,31 @@ public class ImportHelperService {
 		try {
 			// Elevate the user temporarily
 			Context.addProxyPrivilege(PrivilegeConstants.EDIT_USERS);
-			if (OPENMRS_VERSION_SHORT.startsWith("1")) {
-				return userService.saveUser(user, generatePassword());
-			} else {
+			int majorVersion = 2;
+			try {
+				majorVersion = Integer.parseInt(String.valueOf(OPENMRS_VERSION_SHORT.charAt(0)));
+			} catch (NumberFormatException nfe) {
+				// Swallow this.
+			}
+			if (majorVersion >= 2) {
 				if (user.getUserId() != null) {
-					// Reflectively get saveUser(User.class) method.
-					try {
-						Method saveUserMethod = UserService.class.getMethod("saveUser", User.class);
-						saveUserMethod.invoke(userService, user);
-						return user;
-					} catch (NoSuchMethodException e) {
-						LOGGER.error("Error persisting user", e);
-						throw new RemoteImportException(e.getMessage(), e, HttpStatus.INTERNAL_SERVER_ERROR);
-					} catch (IllegalAccessException e) {
-						throw new RemoteImportException(e.getMessage(), e, HttpStatus.INTERNAL_SERVER_ERROR);
-					} catch (InvocationTargetException e) {
-						throw new RemoteImportException(e.getMessage(), e, HttpStatus.INTERNAL_SERVER_ERROR);
-					}
+					return userService.saveUser(user);
 				} else {
 					return userService.createUser(user, generatePassword());
+				}
+			} else {
+				// Reflectively get saveUser(User.class) method.
+				try {
+					Method saveUserMethod = UserService.class.getMethod("saveUser", User.class, String.class);
+					saveUserMethod.invoke(userService, user, generatePassword());
+					return user;
+				} catch (NoSuchMethodException e) {
+					LOGGER.error("Error persisting user", e);
+					throw new RemoteImportException(e.getMessage(), e, HttpStatus.INTERNAL_SERVER_ERROR);
+				} catch (IllegalAccessException e) {
+					throw new RemoteImportException(e.getMessage(), e, HttpStatus.INTERNAL_SERVER_ERROR);
+				} catch (InvocationTargetException e) {
+					throw new RemoteImportException(e.getMessage(), e, HttpStatus.INTERNAL_SERVER_ERROR);
 				}
 			}
 		} finally {
